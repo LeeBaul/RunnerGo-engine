@@ -1,0 +1,35 @@
+
+
+
+
+
+log_level = "DEBUG"
+
+
+[server]
+name = "kp-runner"     # 本服务名称
+address = "0.0.0.0:8002"   # 本服务地址
+version = "v1"                   # 服务版本
+
+
+
+[mysql]
+hostname = ""
+port = 3306
+username = ""
+database = ""
+password = ""
+
+[consul]
+address = "127.0.0.1:8500" # 注册服务地址
+
+
+[httpClient]
+name = "kp-runner"
+noDefaultUserAgentHeader = true
+maxConnsPerHost = 5000
+maxIdleConnDuration = 5000
+writeTimeout = 5000
+maxConnWaitTimeout = 3000
+
+
