@@ -83,22 +83,4 @@ func main() {
 	<-quit
 	zap.S().Info("注销成功")
 
-	//if concurrency == 0 || totalNumber == 0 || (requestURL == "" && path == "") {
-	//	fmt.Printf("示例: go run main.go -c 1 -n 1 -u https://www.baidu.com/ \n")
-	//	fmt.Printf("压测地址或curl路径必填 \n")
-	//	fmt.Printf("当前请求参数: -c %d -n %d -d %v -u %s \n", concurrency, totalNumber, debugStr, requestURL)
-	//	flag.Usage()
-	//	return
-	//}
-	//debug := strings.ToLower(debugStr) == "true"
-	//request, err := execution.NewRequest(requestURL, verify, 0, debug, path, headers, body)
-	//if err != nil {
-	//	fmt.Printf("参数不合法 %v \n", err)
-	//	return
-	//}
-	//fmt.Printf("\n 开始启动  并发数:%d 请求数:%d 请求参数: \n", concurrency, totalNumber)
-	//request.Print()
-	//// 开始处理
-	//server.StartRun(concurrency, totalNumber, request)
-	//return
 }
