@@ -1,14 +1,16 @@
-// Package helper 帮助函数，时间、数组的通用处理
-package helper
+// Package tools  工具类
+
+package tools
 
 import (
 	"encoding/json"
 	"time"
 )
 
-// DiffNano 时间差，纳秒
-func DiffNano(startTime time.Time) (diff int64) {
-	diff = int64(time.Since(startTime))
+// TimeDifference 时间差，纳秒
+
+func TimeDifference(startTime int64) (difference uint64) {
+	difference = uint64(time.Now().UnixMilli() - startTime)
 	return
 }
 

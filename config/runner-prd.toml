@@ -32,4 +32,21 @@ maxIdleConnDuration = 5000
 writeTimeout = 5000
 maxConnWaitTimeout = 3000
 
+[pool]
+MaxPool = 5000
+
+[kafka]
+address = "127.0.0.1:9092"
+topic = "StressTestData"
+
+[es]
+address = "172.17.101.191:9200"
+
+
+[redis]
+host="172.17.101.191"
+password="apipost"
+port=6398
+
+
 

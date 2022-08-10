@@ -3,96 +3,31 @@ package golink
 
 import (
 	"fmt"
-	"sync"
-	"time"
-
-	"kp-runner/helper"
 	"kp-runner/model"
+	request2 "kp-runner/model/request"
 	"kp-runner/server/client"
 )
 
-const (
-	firstTime    = 1 * time.Second // 连接以后首次请求数据的时间
-	intervalTime = 1 * time.Second // 发送数据的时间间隔
-)
-
-var (
-	// 请求完成以后是否保持连接
-	keepAlive bool
-)
-
-func init() {
-	keepAlive = true
-}
-
-// WebSocket webSocket go link
-func WebSocket(chanID uint64, ch chan<- *model.RequestResults, totalNumber uint64, wg *sync.WaitGroup,
-	request *model.Request, ws *client.WebSocket) {
-	defer func() {
-		wg.Done()
-	}()
-	defer func() {
-		_ = ws.Close()
-	}()
-
+func webSocketSend(request request2.Request) (bool, int, uint64, int, int64) {
 	var (
-		i uint64
+		// startTime = time.Now()
+		isSucceed     = true
+		errCode       = model.NoError
+		contentLength = int64(0)
 	)
-	// 暂停60秒
-	t := time.NewTimer(firstTime)
-	for {
-		select {
-		case <-t.C:
-			t.Reset(intervalTime)
-			// 请求
-			webSocketRequest(chanID, ch, i, request, ws)
-			// 结束条件
-			i = i + 1
-			if i >= totalNumber {
-				goto end
-			}
-		}
+	headers := map[string][]string{}
+	for key, value := range request.Headers {
+		headers[key] = []string{value}
 	}
-end:
-	t.Stop()
+	resp, requestTime, sendBytes, err := client.WebSocketRequest(request.URL, request.GetBody(), headers, request.Timeout)
 
-	if keepAlive {
-		// 保持连接
-		chWaitFor := make(chan int, 0)
-		<-chWaitFor
-	}
-	return
-}
-
-// webSocketRequest 请求
-func webSocketRequest(chanID uint64, ch chan<- *model.RequestResults, i uint64, request *model.Request,
-	ws *client.WebSocket) {
-	var (
-		startTime = time.Now()
-		isSucceed = false
-		errCode   = model.HTTPOk
-		msg       []byte
-	)
-	// 需要发送的数据
-	seq := fmt.Sprintf("%d_%d", chanID, i)
-	err := ws.Write([]byte(`{"seq":"` + seq + `","cmd":"ping","data":{}}`))
 	if err != nil {
-		errCode = model.RequestErr // 请求错误
+		isSucceed = false
+		errCode = model.RequestError // 请求错误
 	} else {
-		msg, err = ws.Read()
-		if err != nil {
-			errCode = model.ParseError
-			fmt.Println("读取数据 失败~")
-		} else {
-			errCode, isSucceed = request.GetVerifyWebSocket()(request, seq, msg)
-		}
+		// 接收到的字节长度
+		contentLength = int64(len(resp))
 	}
-	requestTime := uint64(helper.DiffNano(startTime))
-	requestResults := &model.RequestResults{
-		Time:      requestTime,
-		IsSucceed: isSucceed,
-		ErrCode:   errCode,
-	}
-	requestResults.SetID(chanID, i)
-	ch <- requestResults
+	fmt.Println("resp", string(resp))
+	return isSucceed, errCode, requestTime, sendBytes, contentLength
 }

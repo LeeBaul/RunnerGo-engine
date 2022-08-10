@@ -1,14 +1,13 @@
-// Package model 数据模型
+// Package execution 数据模型
 package model
 
 import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"kp-runner/tools"
 	"os"
 	"strings"
-
-	"kp-runner/helper"
 )
 
 // CURL curl参数解析
@@ -146,7 +145,7 @@ func (c *CURL) GetMethod() (method string) {
 		return c.defaultMethod()
 	}
 	method = strings.ToUpper(value[0])
-	if helper.InArrayStr(method, []string{"GET", "POST", "PUT", "DELETE"}) {
+	if tools.InArrayStr(method, []string{"GET", "POST", "PUT", "DELETE"}) {
 		return method
 	}
 	return c.defaultMethod()

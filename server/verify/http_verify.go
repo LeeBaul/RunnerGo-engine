@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	model "kp-runner/model"
 	"net/http"
-
-	"kp-runnerr/model"
 )
 
 // getZipData 处理gzip压缩

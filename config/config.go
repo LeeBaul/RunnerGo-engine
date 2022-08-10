@@ -8,7 +8,7 @@ import (
 var Config map[string]interface{}
 
 func InitConfig() {
-	viper.SetConfigName("config\\runner")
+	viper.SetConfigName("config\\runner-dev")
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
@@ -34,5 +34,12 @@ func InitConfig() {
 	Config["httpClientMaxIdleConnDuration"] = viper.Get("httpClient.maxIdleConnDuration")
 	Config["httpClientWriteTimeout"] = viper.Get("httpClient.writeTimeout")
 	Config["httpClientMaxConnWaitTimeout"] = viper.Get("httpClient.maxConnWaitTimeout")
+
+	// kafka配置
+	Config["kafkaAddress"] = viper.Get("kafka.address")
+	Config["Topic"] = viper.Get("kafka.topic")
+
+	// es
+	Config["esHost"] = viper.Get("es.host")
 	zap.S().Info(Config)
 }

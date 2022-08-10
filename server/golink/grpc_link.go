@@ -3,10 +3,11 @@ package golink
 
 import (
 	"context"
+	"kp-runner/model/request"
+	"kp-runner/tools"
 	"sync"
 	"time"
 
-	"kp-runner/helper"
 	pb "kp-runner/proto"
 
 	"kp-runner/model"
@@ -14,8 +15,8 @@ import (
 )
 
 // Grpc grpc 接口请求
-func Grpc(chanID uint64, ch chan<- *model.RequestResults, totalNumber uint64, wg *sync.WaitGroup,
-	request *model.Request, ws *client.GrpcSocket) {
+func Grpc(chanID uint64, ch chan<- *model.TestResultDataMsg, totalNumber uint64, wg *sync.WaitGroup,
+	request *request.Request, ws *client.GrpcSocket) {
 	defer func() {
 		wg.Done()
 	}()
@@ -29,17 +30,17 @@ func Grpc(chanID uint64, ch chan<- *model.RequestResults, totalNumber uint64, wg
 }
 
 // grpcRequest 请求
-func grpcRequest(chanID uint64, ch chan<- *model.RequestResults, i uint64, request *model.Request,
+func grpcRequest(chanID uint64, ch chan<- *model.TestResultDataMsg, i uint64, request *request.Request,
 	ws *client.GrpcSocket) {
 	var (
-		startTime = time.Now()
+		startTime = time.Now().UnixMilli()
 		isSucceed = false
-		errCode   = model.HTTPOk
+		errCode   = model.NoError
 	)
 	// 需要发送的数据
 	conn := ws.GetConn()
 	if conn == nil {
-		errCode = model.RequestErr
+		errCode = model.RequestError
 	} else {
 		// TODO::请求接口示例
 		c := pb.NewApiServerClient(conn)
@@ -52,22 +53,21 @@ func grpcRequest(chanID uint64, ch chan<- *model.RequestResults, i uint64, reque
 		rsp, err := c.HelloWorld(ctx, req)
 		// fmt.Printf("rsp:%+v", rsp)
 		if err != nil {
-			errCode = model.RequestErr
+			errCode = model.RequestError
 		} else {
 			// 200 为成功
 			if rsp.Code != 200 {
-				errCode = model.RequestErr
+				errCode = model.RequestError
 			} else {
 				isSucceed = true
 			}
 		}
 	}
-	requestTime := uint64(helper.DiffNano(startTime))
-	requestResults := &model.RequestResults{
-		Time:      requestTime,
-		IsSucceed: isSucceed,
-		ErrCode:   errCode,
+	requestTime := tools.TimeDifference(startTime)
+	requestResults := &model.TestResultDataMsg{
+		RequestTime: requestTime,
+		IsSucceed:   isSucceed,
+		ErrorType:   errCode,
 	}
-	requestResults.SetID(chanID, i)
 	ch <- requestResults
 }

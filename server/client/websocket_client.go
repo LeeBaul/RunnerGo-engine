@@ -1,118 +1,65 @@
-// Package client webSocket 客户端
 package client
 
 import (
-	"errors"
-	"fmt"
-	"net/url"
-	"strings"
-
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
+	"kp-runner/log"
+	"kp-runner/tools"
+	"time"
 )
 
-const (
-	connRetry = 3 // 建立连接重试次数
-)
-
-// WebSocket webSocket
-type WebSocket struct {
-	conn    *websocket.Conn
-	URLLink string
-	URL     *url.URL
-	IsSsl   bool
+type WebsocketClient struct {
+	Conn    *websocket.Conn
+	Addr    *string
+	IsAlive bool
+	Timeout int
 }
 
-// NewWebSocket new
-func NewWebSocket(urlLink string) (ws *WebSocket) {
-	var isSsl bool
-	if strings.HasPrefix(urlLink, "wss://") {
-		isSsl = true
-	}
-	u, err := url.Parse(urlLink)
-	// 解析失败
-	if err != nil {
-		panic(err)
-	}
-	ws = &WebSocket{
-		URLLink: urlLink,
-		URL:     u,
-		IsSsl:   isSsl,
-	}
-	return
-}
+func WebSocketRequest(url string, body []byte, headers map[string][]string, timeout time.Duration) (resp []byte, requestTime uint64, sendBytes int, err error) {
+	websocketClient := NewWsClientManager(url, timeout)
+	log.Logger.Info("connecting to ", url)
+	if websocketClient.IsAlive == false {
+		for i := 0; i < 3; i++ {
+			startTime := time.Now().UnixMilli()
+			websocketClient.Conn, _, err = websocket.DefaultDialer.Dial(url, headers)
+			if err != nil {
+				requestTime = tools.TimeDifference(startTime)
+				log.Logger.Error("第", i, "次connecting to:", url, "失败")
+				continue
+			}
+			websocketClient.IsAlive = true
+			err = websocketClient.Conn.WriteMessage(websocket.TextMessage, body)
+			sendBytes = len(body)
+			if err != nil {
+				requestTime = tools.TimeDifference(startTime)
+				log.Logger.Error("第", i, "次向", url, "写消息失败失败")
+				continue
+			}
 
-// getLink 获取连接
-func (w *WebSocket) getLink() (link string) {
-	return w.URLLink
-}
+			_, resp, err = websocketClient.Conn.ReadMessage()
 
-// getOrigin 获取源连接
-func (w *WebSocket) getOrigin() (origin string) {
-	origin = "http://"
-	if w.IsSsl {
-		origin = "https://"
-	}
-	origin = fmt.Sprintf("%s%s/", origin, w.URL.Host)
-	return
-}
-
-// Close 关闭
-func (w *WebSocket) Close() (err error) {
-	if w == nil {
-		return
-	}
-	if w.conn == nil {
-		return
-	}
-	return w.conn.Close()
-}
-
-// GetConn 获取连接
-func (w *WebSocket) GetConn() (err error) {
-	var (
-		conn *websocket.Conn
-		i    int
-	)
-	for i = 0; i < connRetry; i++ {
-		conn, err = websocket.Dial(w.getLink(), "", w.getOrigin())
-		if err != nil {
-			fmt.Println("GetConn 建立连接失败 in...", i, err)
-			continue
+			if err != nil {
+				requestTime = tools.TimeDifference(startTime)
+				log.Logger.Error("读取websocket消息错误, 尝试重连", err)
+				websocketClient.IsAlive = false
+				// 出现错误，退出读取，尝试重连
+				continue
+			}
+			//requestTime = tools.TimeDifference(startTime)
+			requestTime = tools.TimeDifference(startTime)
+			break
 		}
-		w.conn = conn
-		return
-	}
-	if err != nil {
-		fmt.Println("GetConn 建立连接失败", i, err)
 	}
 	return
+
 }
 
-// Write 发送数据
-func (w *WebSocket) Write(body []byte) (err error) {
-	if w.conn == nil {
-		err = errors.New("未建立连接")
-		return
+// NewWsClientManager 构造函数
+func NewWsClientManager(url string, timeout time.Duration) *WebsocketClient {
+	var conn *websocket.Conn
+	return &WebsocketClient{
+		Addr:    &url,
+		Conn:    conn,
+		IsAlive: false,
+		Timeout: int(timeout),
 	}
-	_, err = w.conn.Write(body)
-	if err != nil {
-		fmt.Println("发送数据失败:", err)
-		return
-	}
-	return
-}
-
-// Read 接收数据
-func (w *WebSocket) Read() (msg []byte, err error) {
-	if w.conn == nil {
-		err = errors.New("未建立连接")
-		return
-	}
-	msg = make([]byte, 512)
-	n, err := w.conn.Read(msg)
-	if err != nil {
-		fmt.Println("接收数据失败:", err)
-		return nil, err
-	}
-	return msg[:n], nil
 }
