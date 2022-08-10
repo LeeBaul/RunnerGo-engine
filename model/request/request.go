@@ -6,7 +6,6 @@ import (
 	"kp-runner/model"
 	"strconv"
 	"sync"
-	"time"
 )
 
 // Form 支持协议
@@ -83,7 +82,7 @@ type Request struct {
 	Body                 string            `json:"body"`
 	Parameterizes        map[string]string `json:"parameterizes"`        // 接口中定义的变量
 	Assertions           []Assertion       `json:"assertions"`           // 验证的方法(断言)
-	Timeout              time.Duration     `json:"timeout"`              // 请求超时时间
+	Timeout              int               `json:"timeout"`              // 请求超时时间
 	ErrorThreshold       float64           `json:"errorThreshold"`       // 错误率阈值
 	CustomRequestTime    uint8             `json:"customRequestTime"`    // 自定义响应时间线
 	RequestTimeThreshold uint8             `json:"requestTimeThreshold"` // 响应时间阈值

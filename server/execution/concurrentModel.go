@@ -20,11 +20,13 @@ func ExecutionConcurrentModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGr
 	timeUp := plan.ConfigTask.TestModel.ConcurrentTest.TimeUp
 	testType := plan.ConfigTask.TestModel.ConcurrentTest.Type
 	// go model.SendKafkaMsg(kafkaProducer, ch)
-	fmt.Println("requests: ", requests)
 	switch testType {
 	case task.DurationType:
 		duration := plan.ConfigTask.TestModel.ConcurrentTest.Duration
 		for startTime+duration > time.Now().Unix() {
+			fmt.Println("startTime", startTime)
+			fmt.Println("duration", duration)
+			fmt.Println("startTime+duration", time.Now().Unix())
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				go func(requests []request.Request) {
@@ -37,6 +39,7 @@ func ExecutionConcurrentModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGr
 					time.Sleep(1000)
 				}
 			}
+			time.Sleep(1 * time.Second)
 
 		}
 

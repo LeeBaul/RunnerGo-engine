@@ -1,7 +1,6 @@
 package golink
 
 import (
-	"fmt"
 	"kp-runner/model"
 	"kp-runner/model/plan"
 	request2 "kp-runner/model/request"
@@ -20,7 +19,6 @@ func Send(ch chan<- *model.TestResultDataMsg, plan plan.Plan, wg *sync.WaitGroup
 		ReportId:   plan.ReportId,
 		ReportName: plan.ReportName,
 	}
-	fmt.Println("requestResults", requestResults)
 	switch request.Form {
 	case request2.FormTypeHTTP:
 		isSucceed, errCode, requestTime, sendBytes, contentLength := httpSend(request)

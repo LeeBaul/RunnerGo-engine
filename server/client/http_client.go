@@ -19,7 +19,7 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body []byte, headers map[string]string, timeout time.Duration) (resp *fasthttp.Response, requestTime uint64, sendBytes int, err error) {
+func HTTPRequest(method, url string, body []byte, headers map[string]string, timeout int) (resp *fasthttp.Response, requestTime uint64, sendBytes int, err error) {
 
 	client := fastClient(timeout)
 	req := fasthttp.AcquireRequest()
@@ -29,13 +29,12 @@ func HTTPRequest(method, url string, body []byte, headers map[string]string, tim
 		str, _ := json.Marshal(headers)
 		req.Header.SetContentEncodingBytes(str)
 	}
-	fmt.Println(111111111111)
 	switch method {
 	case "POST":
 		req.SetRequestURI(url)
 		req.SetBody(body)
-	default:
-		req.SetRequestURI(url + "?" + string(body))
+	case "GET":
+		req.SetRequestURI(url)
 	}
 	sendBytes = req.Header.ContentLength()
 	resp = fasthttp.AcquireResponse()
@@ -44,8 +43,8 @@ func HTTPRequest(method, url string, body []byte, headers map[string]string, tim
 	if err = client.Do(req, resp); err != nil {
 		log.Logger.Error("请求错误", err)
 	}
-	fmt.Println("req: ", string(req.Body()))
-	fmt.Println("resp: ", string(resp.Body()))
+	fmt.Println("req:", req)
+	fmt.Println("resp:", resp)
 	requestTime = tools.TimeDifference(startTime)
 
 	return
@@ -53,15 +52,15 @@ func HTTPRequest(method, url string, body []byte, headers map[string]string, tim
 }
 
 // 获取fasthttp客户端
-func fastClient(timeOut time.Duration) *fasthttp.Client {
+func fastClient(timeOut int) *fasthttp.Client {
 	return &fasthttp.Client{
 		Name:                     config.Config["httpClientName"].(string),
 		NoDefaultUserAgentHeader: config.Config["httpNoDefaultUserAgentHeader"].(bool),
 		TLSConfig:                &tls.Config{InsecureSkipVerify: true},
-		MaxConnsPerHost:          config.Config["httpClientMaxConnsPerHost"].(int),
-		MaxIdleConnDuration:      config.Config["httpClientMaxIdleConnDuration"].(time.Duration),
-		ReadTimeout:              timeOut,
-		WriteTimeout:             config.Config["httpClientWriteTimeout"].(time.Duration),
-		MaxConnWaitTimeout:       config.Config["httpClientMaxConnWaitTimeout"].(time.Duration),
+		MaxConnsPerHost:          int(config.Config["httpClientMaxConnsPerHost"].(int64)),
+		MaxIdleConnDuration:      time.Duration(config.Config["httpClientMaxIdleConnDuration"].(int64)) * time.Millisecond,
+		ReadTimeout:              time.Duration(int64(timeOut)) * time.Millisecond,
+		WriteTimeout:             time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
+		MaxConnWaitTimeout:       time.Duration(config.Config["httpClientMaxConnWaitTimeout"].(int64)) * time.Millisecond,
 	}
 }

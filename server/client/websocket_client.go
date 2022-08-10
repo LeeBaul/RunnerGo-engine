@@ -14,7 +14,7 @@ type WebsocketClient struct {
 	Timeout int
 }
 
-func WebSocketRequest(url string, body []byte, headers map[string][]string, timeout time.Duration) (resp []byte, requestTime uint64, sendBytes int, err error) {
+func WebSocketRequest(url string, body []byte, headers map[string][]string, timeout int) (resp []byte, requestTime uint64, sendBytes int, err error) {
 	websocketClient := NewWsClientManager(url, timeout)
 	log.Logger.Info("connecting to ", url)
 	if websocketClient.IsAlive == false {
@@ -54,12 +54,12 @@ func WebSocketRequest(url string, body []byte, headers map[string][]string, time
 }
 
 // NewWsClientManager 构造函数
-func NewWsClientManager(url string, timeout time.Duration) *WebsocketClient {
+func NewWsClientManager(url string, timeout int) *WebsocketClient {
 	var conn *websocket.Conn
 	return &WebsocketClient{
 		Addr:    &url,
 		Conn:    conn,
 		IsAlive: false,
-		Timeout: int(timeout),
+		Timeout: timeout,
 	}
 }
