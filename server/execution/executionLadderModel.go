@@ -4,14 +4,13 @@ import (
 	"github.com/Shopify/sarama"
 	"kp-runner/log"
 	"kp-runner/model"
-	"kp-runner/model/plan"
 	"kp-runner/server/golink"
 	"sync"
 	"time"
 )
 
 // ExecutionLadderModel 阶梯模式
-func ExecutionLadderModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan plan.Plan, ch chan *model.TestResultDataMsg) {
+func ExecutionLadderModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan model.Plan, ch chan *model.TestResultDataMsg) {
 
 	//go model.SendKafkaMsg(kafkaProducer, ch)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中

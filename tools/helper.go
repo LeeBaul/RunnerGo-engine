@@ -4,6 +4,8 @@ package tools
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -29,4 +31,37 @@ func InArrayStr(str string, arr []string) (inArray bool) {
 func ToString(args map[string]interface{}) string {
 	str, _ := json.Marshal(args)
 	return string(str)
+}
+
+var SymbolList = []string{"`", "?", "~", "\\", "&", "*", "^", "%", "$", "￥", "#", "@", "!", "=", "+", "-", "_", "(", ")", "<", ">", ",", "."}
+var PreFix = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
+// VariablesMatch 变量匹配, 如 name = {{name}}
+func VariablesMatch(str string) (value string) {
+	if strings.Contains(str, "{{") && strings.Contains(str, "}}") && strings.Index(str, "}}") > strings.Index(str, "{{") {
+		value = FindDestStr(str, "{{(.*?)}}")
+		for _, v := range PreFix {
+			if strings.HasPrefix(value, v) {
+				return str
+			}
+		}
+		for _, v := range SymbolList {
+			if strings.Contains(value, v) {
+				return str
+			}
+		}
+		return value
+	}
+	return str
+}
+
+// FindDestStr 匹配规则
+func FindDestStr(str string, rex string) string {
+	compileRegex := regexp.MustCompile(rex)
+	matchArr := compileRegex.FindStringSubmatch(str)
+
+	if len(matchArr) > 0 {
+		return matchArr[len(matchArr)-1]
+	}
+	return ""
 }

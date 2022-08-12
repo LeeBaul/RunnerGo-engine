@@ -25,6 +25,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/Shopify/sarama v1.35.0 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
+	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect

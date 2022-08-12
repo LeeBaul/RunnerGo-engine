@@ -4,8 +4,6 @@ package server
 import (
 	"kp-runner/config"
 	"kp-runner/model"
-	"kp-runner/model/plan"
-	"kp-runner/model/task"
 	"kp-runner/server/execution"
 	"sync"
 )
@@ -27,7 +25,7 @@ func init() {
 }
 
 // Execution 执行计划
-func Execution(plan plan.Plan) {
+func Execution(plan model.Plan) {
 	// 设置kafka消费者
 	kafkaProducer := model.NewKafkaProducer([]string{config.Config["kafkaAddress"].(string)})
 	wg := &sync.WaitGroup{}
@@ -36,19 +34,19 @@ func Execution(plan plan.Plan) {
 	go model.SendKafkaMsg(kafkaProducer, ch)
 	defer close(ch)
 	switch plan.ConfigTask.TestModel.Type {
-	case task.ConcurrentModel:
+	case model.ConcurrentModel:
 		execution.ExecutionConcurrentModel(
 			kafkaProducer,
 			wg,
 			ch,
 			plan)
-	case task.ErrorRateModel:
+	case model.ErrorRateModel:
 		execution.ExecutionErrorRateModel(
 			kafkaProducer,
 			wg,
 			plan,
 			ch)
-	case task.LadderModel:
+	case model.LadderModel:
 		execution.ExecutionLadderModel(kafkaProducer,
 			wg,
 			plan,
@@ -57,7 +55,7 @@ func Execution(plan plan.Plan) {
 		//	execution.ExecutionTpsModel()
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
-	case task.RTModel:
+	case model.RTModel:
 		execution.ExecutionRTModel(kafkaProducer,
 			wg,
 			plan,

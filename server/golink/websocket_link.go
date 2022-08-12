@@ -4,11 +4,10 @@ package golink
 import (
 	"fmt"
 	"kp-runner/model"
-	request2 "kp-runner/model/request"
 	"kp-runner/server/client"
 )
 
-func webSocketSend(request request2.Request) (bool, int, uint64, int, int64) {
+func webSocketSend(request model.Request) (bool, int, uint64, int, int64) {
 	var (
 		// startTime = time.Now()
 		isSucceed     = true

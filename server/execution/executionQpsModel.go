@@ -1,8 +1,10 @@
 package execution
 
-import "kp-runner/model/task"
+import (
+	"kp-runner/model"
+)
 
 // 每秒请求数模式
-func executionQpsModel(testModel task.TestModel) {
+func executionQpsModel(testModel model.TestModel) {
 
 }

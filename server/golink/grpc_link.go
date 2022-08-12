@@ -3,7 +3,6 @@ package golink
 
 import (
 	"context"
-	"kp-runner/model/request"
 	"kp-runner/tools"
 	"sync"
 	"time"
@@ -16,7 +15,7 @@ import (
 
 // Grpc grpc 接口请求
 func Grpc(chanID uint64, ch chan<- *model.TestResultDataMsg, totalNumber uint64, wg *sync.WaitGroup,
-	request *request.Request, ws *client.GrpcSocket) {
+	request *model.Request, ws *client.GrpcSocket) {
 	defer func() {
 		wg.Done()
 	}()
@@ -30,7 +29,7 @@ func Grpc(chanID uint64, ch chan<- *model.TestResultDataMsg, totalNumber uint64,
 }
 
 // grpcRequest 请求
-func grpcRequest(chanID uint64, ch chan<- *model.TestResultDataMsg, i uint64, request *request.Request,
+func grpcRequest(chanID uint64, ch chan<- *model.TestResultDataMsg, i uint64, request *model.Request,
 	ws *client.GrpcSocket) {
 	var (
 		startTime = time.Now().UnixMilli()

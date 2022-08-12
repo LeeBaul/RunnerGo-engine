@@ -48,15 +48,15 @@ func init() {
 
 	global.ConsulClient = consul.NewRegistry(registry.Addrs(config.Config["consulAddress"].(string)))
 	//3. 初始化routers
-	zap.S().Debug("初始化routers")
+	log.Logger.Debug("初始化routers")
 	GinRouter = initialize.Routers()
 
 	//4. 初始化kafka
-	zap.S().Info("初始化kafka")
+	log.Logger.Debug("初始化kafka")
 
 	//4. 语言转换
 	if err := initialize.InitTrans("zh"); err != nil {
-		zap.S().Debug(err)
+		log.Logger.Error(err)
 	}
 
 }
@@ -64,7 +64,7 @@ func init() {
 func main() {
 
 	//5. 注册服务
-	zap.S().Debug("注册服务")
+	log.Logger.Debug("注册服务")
 	controllerService := web.NewService(
 		web.Name(config.Config["serverName"].(string)),
 		web.Version(config.Config["serverVersion"].(string)),
@@ -81,6 +81,6 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	zap.S().Info("注销成功")
+	log.Logger.Info("注销成功")
 
 }

@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"kp-runner/global"
-	"kp-runner/model/plan"
+	"kp-runner/model"
 	"kp-runner/server"
 	"net/http"
 )
 
 func Run(c *gin.Context) {
-	var planInstance plan.Plan
+	var planInstance model.Plan
 	err := c.ShouldBindJSON(&planInstance)
 	fmt.Println("planInstance", planInstance)
 	if err != nil {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
 	}
-	go func(plan.Plan) {
+	go func(model.Plan) {
 		server.Execution(planInstance)
 		if err != nil {
 			global.ReturnMsg(c, http.StatusBadRequest, "计划执行失败", err.Error())

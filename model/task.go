@@ -1,4 +1,4 @@
-package task
+package model
 
 const (
 	ConcurrentModel = iota // 并发数模式

@@ -1,4 +1,4 @@
-package variable
+package model
 
 // Variable 全局
 type Variable struct {

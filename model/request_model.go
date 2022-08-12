@@ -9,18 +9,6 @@ import (
 	"strings"
 )
 
-// 返回 code 码
-const (
-	// NoError 没有错误
-	NoError = 10000
-	// AssertError 断言错误
-	AssertError = 10001
-	// RequestError 请求错误
-	RequestError = 10002
-	// ServiceError 服务错误
-	ServiceError = 10003
-)
-
 // getHeaderValue 获取 header
 func getHeaderValue(v string, headers map[string]string) {
 	index := strings.Index(v, ":")
@@ -40,13 +28,13 @@ func getHeaderValue(v string, headers map[string]string) {
 
 // TestResultDataMsg 测试结果数据结构
 type TestResultDataMsg struct {
-	ReportId      int
+	ReportId      string
 	ReportName    string
-	PlanId        int    // 任务ID
+	PlanId        string // 任务ID
 	PlanName      string //
-	SceneId       int    // 场景
+	SceneId       string // 场景
 	SceneName     string
-	ApiId         int    // 接口ID
+	ApiId         string // 接口ID
 	ApiName       string // 接口名称
 	RequestTime   uint64 // 请求响应时间
 	ErrorType     int    // 错误类型：1. 请求错误；2. 断言错误

@@ -6,7 +6,6 @@ import (
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
-	"kp-runner/model/plan"
 	"kp-runner/server/client"
 	"kp-runner/server/golink"
 	"sync"
@@ -35,7 +34,7 @@ func GetErrorRate(esClient *elastic.Client, errorRateData *ErrorRateData) {
 }
 
 // ExecutionErrorRateModel 错误率模式
-func ExecutionErrorRateModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan plan.Plan, ch chan *model.TestResultDataMsg) {
+func ExecutionErrorRateModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan model.Plan, ch chan *model.TestResultDataMsg) {
 	//go model.SendKafkaMsg(kafkaProducer, ch)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	errorRateData := new(ErrorRateData)
