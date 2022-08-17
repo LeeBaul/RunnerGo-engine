@@ -30,7 +30,7 @@ func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) 
 }
 
 // ExecutionRTModel 响应时间模式
-func ExecutionRTModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan model.Plan, ch chan *model.TestResultDataMsg) {
+func ExecutionRTModel(kafkaProducer sarama.SyncProducer, plan *model.Plan, ch chan *model.ResultDataMsg) {
 	//go model.SendKafkaMsg(kafkaProducer, ch)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
@@ -49,31 +49,35 @@ func ExecutionRTModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, pla
 	lengthDuration := plan.ConfigTask.TestModel.RTTest.LengthDuration
 	stableDuration := plan.ConfigTask.TestModel.RTTest.StableDuration
 	timeUp := plan.ConfigTask.TestModel.RTTest.TimeUp
-	requests := plan.Scene.Requests
+	eventList := plan.Scene.EventList
 	concurrent := startConcurrent
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+int64(lengthDuration) > time.Now().Unix() {
+	for startTime+lengthDuration > time.Now().Unix() {
+		var currenWg = &sync.WaitGroup{}
 		for i := int64(0); i < concurrent; i++ {
-			wg.Add(1)
+			currenWg.Add(1)
 			go func() {
-				for _, request := range requests {
-					golink.Send(ch, plan, wg, request)
+				if plan.Variable.VariableMap == nil {
+					plan.Variable.VariableMap = new(sync.Map)
 				}
+				globalVariable := plan.Variable.VariableMap
+				golink.Dispose(eventList, ch, plan, globalVariable)
+				currenWg.Done()
 			}()
-
+			currenWg.Done()
 			// 如果设置了启动并发时长
 			if timeUp != 0 && (startConcurrent/timeUp)%i == 0 && i != 0 {
 				time.Sleep(1 * time.Second)
 			}
 		}
-
+		currenWg.Wait()
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+int64(lengthDuration) >= time.Now().Unix() {
 			goto end
 		}
 		// 如果当前并发数小于最大并发数，
 		if concurrent <= maxConcurrent {
 			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+int64(lengthDuration) >= time.Now().Unix() {
+			if startTime+lengthDuration >= time.Now().Unix() {
 				startTime = time.Now().Unix()
 				//preConcurrent = concurrent
 				if concurrent+length <= maxConcurrent {

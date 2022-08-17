@@ -14,7 +14,7 @@ type WebsocketClient struct {
 	Timeout int
 }
 
-func WebSocketRequest(url string, body []byte, headers map[string][]string, timeout int) (resp []byte, requestTime uint64, sendBytes int, err error) {
+func WebSocketRequest(url string, body string, headers map[string][]string, timeout int) (resp []byte, requestTime uint64, sendBytes int, err error) {
 	websocketClient := NewWsClientManager(url, timeout)
 	log.Logger.Info("connecting to ", url)
 	if websocketClient.IsAlive == false {
@@ -27,7 +27,8 @@ func WebSocketRequest(url string, body []byte, headers map[string][]string, time
 				continue
 			}
 			websocketClient.IsAlive = true
-			err = websocketClient.Conn.WriteMessage(websocket.TextMessage, body)
+			bodyBytes := []byte(body)
+			err = websocketClient.Conn.WriteMessage(websocket.TextMessage, bodyBytes)
 			sendBytes = len(body)
 			if err != nil {
 				requestTime = tools.TimeDifference(startTime)

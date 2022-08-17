@@ -8,6 +8,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/client"
 	"kp-runner/server/golink"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -34,7 +35,7 @@ func GetErrorRate(esClient *elastic.Client, errorRateData *ErrorRateData) {
 }
 
 // ExecutionErrorRateModel 错误率模式
-func ExecutionErrorRateModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, plan model.Plan, ch chan *model.TestResultDataMsg) {
+func ExecutionErrorRateModel(kafkaProducer sarama.SyncProducer, plan *model.Plan, ch chan *model.TestResultDataMsg) {
 	//go model.SendKafkaMsg(kafkaProducer, ch)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	errorRateData := new(ErrorRateData)
@@ -54,22 +55,41 @@ func ExecutionErrorRateModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGro
 	lengthDuration := plan.ConfigTask.TestModel.ErrorRatTest.LengthDuration
 	stableDuration := plan.ConfigTask.TestModel.ErrorRatTest.StableDuration
 	timeUp := plan.ConfigTask.TestModel.ErrorRatTest.TimeUp
-	requests := plan.Scene.Requests
+	eventList := plan.Scene.EventList
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+int64(lengthDuration) > time.Now().Unix() {
+	for startTime+lengthDuration > time.Now().Unix() {
+		var currenWg = &sync.WaitGroup{}
 		for i := int64(0); i < concurrent; i++ {
-			wg.Add(1)
-			go func() {
-				for _, request := range requests {
-					golink.Send(ch, plan, wg, request)
-				}
-			}()
+			currenWg.Add(1)
+			go func(eventList []model.Event) {
+				globalVariable := plan.Variable.VariableMap
+				for _, event := range eventList {
+					switch event.EventType {
+					case model.RequestType:
+						golink.Send(ch, plan, event.Request, globalVariable)
+					case model.CollectionType:
+						switch event.Controller.ControllerType {
+						case model.IfControllerType:
+							if v, ok := globalVariable.Load(event.Controller.IfController.Key); ok {
+								event.Controller.IfController.PerForm(v.(string))
+							}
+						case model.CollectionType:
+							// 集合点, 待开发
+						case model.WaitControllerType:
+							timeWait, _ := strconv.Atoi(event.Controller.WaitController.WaitTime)
+							time.Sleep(time.Duration(timeWait) * time.Millisecond)
+						}
+					}
 
+				}
+			}(eventList)
+			currenWg.Done()
 			// 如果设置了启动并发时长
 			if timeUp != 0 && (startConcurrent/timeUp)%i == 0 && i != 0 {
 				time.Sleep(1 * time.Second)
 			}
 		}
+		currenWg.Wait()
 
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+int64(lengthDuration) >= time.Now().Unix() {
 			goto end

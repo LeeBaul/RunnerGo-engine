@@ -2,11 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"kp-runner/config"
 	"kp-runner/log"
-	"strconv"
 )
 
 /*
@@ -14,7 +12,7 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *TestResultDataMsg) {
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *ResultDataMsg) {
 	defer kafkaProducer.Close()
 	for {
 		if testResultDataMsg, ok := <-ch; ok {
@@ -25,9 +23,8 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *TestResultDataMsg)
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = config.Config["Topic"].(string)
-			DataMsg.Key = sarama.StringEncoder(strconv.Itoa(testResultDataMsg.PlanId) + "-" + strconv.Itoa(testResultDataMsg.SceneId))
+			DataMsg.Key = sarama.StringEncoder(testResultDataMsg.PlanId + "-" + testResultDataMsg.SceneId)
 			DataMsg.Value = sarama.StringEncoder(msg)
-			fmt.Println("msg", msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
 				log.Logger.Error("向kafka发送消息失败", err)

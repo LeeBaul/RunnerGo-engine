@@ -14,7 +14,7 @@ import (
 )
 
 // Grpc grpc 接口请求
-func Grpc(chanID uint64, ch chan<- *model.TestResultDataMsg, totalNumber uint64, wg *sync.WaitGroup,
+func Grpc(chanID uint64, ch chan<- *model.ResultDataMsg, totalNumber uint64, wg *sync.WaitGroup,
 	request *model.Request, ws *client.GrpcSocket) {
 	defer func() {
 		wg.Done()
@@ -29,7 +29,7 @@ func Grpc(chanID uint64, ch chan<- *model.TestResultDataMsg, totalNumber uint64,
 }
 
 // grpcRequest 请求
-func grpcRequest(chanID uint64, ch chan<- *model.TestResultDataMsg, i uint64, request *model.Request,
+func grpcRequest(chanID uint64, ch chan<- *model.ResultDataMsg, i uint64, request *model.Request,
 	ws *client.GrpcSocket) {
 	var (
 		startTime = time.Now().UnixMilli()
@@ -63,7 +63,7 @@ func grpcRequest(chanID uint64, ch chan<- *model.TestResultDataMsg, i uint64, re
 		}
 	}
 	requestTime := tools.TimeDifference(startTime)
-	requestResults := &model.TestResultDataMsg{
+	requestResults := &model.ResultDataMsg{
 		RequestTime: requestTime,
 		IsSucceed:   isSucceed,
 		ErrorType:   errCode,

@@ -65,3 +65,10 @@ func FindDestStr(str string, rex string) string {
 	}
 	return ""
 }
+
+// FindAllDestStr 匹配所有的
+func FindAllDestStr(str, rex string) (result [][]string) {
+	compileRegex := regexp.MustCompile(rex)
+	result = compileRegex.FindAllStringSubmatch(str, -1)
+	return
+}

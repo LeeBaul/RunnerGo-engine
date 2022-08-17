@@ -7,7 +7,7 @@ import (
 	"kp-runner/server/client"
 )
 
-func webSocketSend(request model.Request) (bool, int, uint64, int, int64) {
+func webSocketSend(request *model.Request) (bool, int, uint64, int, int64) {
 	var (
 		// startTime = time.Now()
 		isSucceed     = true
@@ -18,7 +18,7 @@ func webSocketSend(request model.Request) (bool, int, uint64, int, int64) {
 	for key, value := range request.Headers {
 		headers[key] = []string{value}
 	}
-	resp, requestTime, sendBytes, err := client.WebSocketRequest(request.URL, request.GetBody(), headers, request.Timeout)
+	resp, requestTime, sendBytes, err := client.WebSocketRequest(request.URL, request.Body, headers, request.Timeout)
 
 	if err != nil {
 		isSucceed = false

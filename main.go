@@ -8,7 +8,7 @@ import (
 	"go-micro.dev/v4/registry"
 	"go-micro.dev/v4/web"
 	"go.uber.org/zap"
-	config "kp-runner/config"
+	"kp-runner/config"
 	"kp-runner/global"
 	"kp-runner/initialize"
 	"kp-runner/log"

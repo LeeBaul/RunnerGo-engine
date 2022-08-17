@@ -1,32 +1,33 @@
 package model
 
 import (
-	"fmt"
-	"github.com/valyala/fasthttp"
 	"kp-runner/tools"
+	"strings"
 	"sync"
 )
 
 // Request 请求数据
 type Request struct {
-	ApiId                string              `json:"apiId"`
-	ApiName              string              `json:"apiName"`
-	URL                  string              `json:"url"`
-	Form                 string              `json:"form"`    // http/webSocket/tcp/rpc
-	Method               string              `json:"method"`  // 方法 GET/POST/PUT
-	Headers              map[string]string   `json:"headers"` // Headers
-	Body                 string              `json:"body"`
-	Parameterizes        map[string]string   `json:"parameterizes"`        // 接口中定义的变量
-	Assertions           []Assertion         `json:"assertions"`           // 验证的方法(断言)
-	Timeout              int                 `json:"timeout"`              // 请求超时时间
-	ErrorThreshold       float64             `json:"errorThreshold"`       // 错误率阈值
-	CustomRequestTime    uint8               `json:"customRequestTime"`    // 自定义响应时间线
-	RequestTimeThreshold uint8               `json:"requestTimeThreshold"` // 响应时间阈值
-	Regulars             []RegularExpression `json:"regulars"`
-	Debug                bool                `json:"debug"`      // 是否开启Debug模式
-	Connection           int                 `json:"connection"` // 0:websocket长连接
-	Weight               int8                `json:"weight"`     // 权重，并发分配的比例
-	Tag                  bool                `json:"tag"`        // Tps模式下，该标签代表以该接口为准
+	ApiId                string               `json:"apiId"`
+	ApiName              string               `json:"apiName"`
+	URL                  string               `json:"url"`
+	Form                 string               `json:"form"`    // http/webSocket/tcp/rpc
+	Method               string               `json:"method"`  // 方法 GET/POST/PUT
+	Headers              map[string]string    `json:"headers"` // Headers
+	Body                 string               `json:"body"`
+	Requests             []*Request           `json:"requests"`
+	Controllers          []*Controller        `json:"controllers"`
+	Parameterizes        map[string]string    `json:"parameterizes"`        // 接口中定义的变量
+	Assertions           []*Assertion         `json:"assertions"`           // 验证的方法(断言)
+	Timeout              int                  `json:"timeout"`              // 请求超时时间
+	ErrorThreshold       float64              `json:"errorThreshold"`       // 错误率阈值
+	CustomRequestTime    uint8                `json:"customRequestTime"`    // 自定义响应时间线
+	RequestTimeThreshold uint8                `json:"requestTimeThreshold"` // 响应时间阈值
+	Regulars             []*RegularExpression `json:"regulars"`             // 正则表达式
+	Debug                bool                 `json:"debug"`                // 是否开启Debug模式
+	Connection           int                  `json:"connection"`           // 0:websocket长连接
+	Weight               int8                 `json:"weight"`               // 权重，并发分配的比例
+	Tag                  bool                 `json:"tag"`                  // Tps模式下，该标签代表以该接口为准
 }
 
 type RegularExpression struct {
@@ -35,70 +36,85 @@ type RegularExpression struct {
 }
 
 // Extract 提取response 中的值
-func (re RegularExpression) Extract(str string, parameters map[string]string) {
+func (re RegularExpression) Extract(str string, parameters *sync.Map) {
 	name := tools.VariablesMatch(re.VariableName)
 	if value := tools.FindDestStr(str, re.Expression); value != "" {
-		parameters[name] = value
+		parameters.Store(name, value)
 	}
 }
 
-// 校验函数
-var (
-	// verifyMapHTTP http 校验函数
-	verifyMapHTTP = make(map[string]VerifyHTTP)
-	// verifyMapHTTPMutex http 并发锁
-	verifyMapHTTPMutex sync.RWMutex
-	// verifyMapWebSocket webSocket 校验函数
-	verifyMapWebSocket = make(map[string]VerifyWebSocket)
-	// verifyMapWebSocketMutex webSocket 并发锁
-	verifyMapWebSocketMutex sync.RWMutex
-)
+func (r *Request) ReplaceUrlParameterizes() {
 
-// RegisterVerifyHTTP 注册 http 校验函数
-func RegisterVerifyHTTP(verify string, verifyFunc VerifyHTTP) {
-	verifyMapHTTPMutex.Lock()
-	defer verifyMapHTTPMutex.Unlock()
-	key := fmt.Sprintf("%s.%s", FormTypeHTTP, verify)
-	verifyMapHTTP[key] = verifyFunc
+	urls := tools.FindAllDestStr(r.URL, "{{(.*?)}}")
+	if urls != nil {
+		for _, v := range urls {
+			if value, ok := r.Parameterizes[v[1]]; ok {
+				r.URL = strings.Replace(r.URL, v[0], value, -1)
+			}
+		}
+	}
 }
 
-// RegisterVerifyWebSocket 注册 webSocket 校验函数
-func RegisterVerifyWebSocket(verify string, verifyFunc VerifyWebSocket) {
-	verifyMapWebSocketMutex.Lock()
-	defer verifyMapWebSocketMutex.Unlock()
-	key := fmt.Sprintf("%s.%s", FormTypeWebSocket, verify)
-	verifyMapWebSocket[key] = verifyFunc
+func (r *Request) ReplaceHeaderParameterizes() {
+	for k, v := range r.Headers {
+
+		// 查找header的key中是否存在变量{{****}}
+		keys := tools.FindAllDestStr(k, "{{(.*?)}}")
+		if keys != nil {
+			delete(r.Headers, k)
+			for _, realKey := range keys {
+				if value, ok := r.Parameterizes[realKey[1]]; ok {
+					k = strings.Replace(k, realKey[0], value, -1)
+				}
+			}
+			r.Headers[k] = v
+		}
+
+		values := tools.FindAllDestStr(v, "{{(.*?)}}")
+		if values != nil {
+			for _, realValue := range values {
+				if value, ok := r.Parameterizes[realValue[1]]; ok {
+					v = strings.Replace(v, realValue[0], value, -1)
+				}
+			}
+			r.Headers[k] = v
+		}
+	}
 }
 
-// VerifyHTTP http 验证
-type VerifyHTTP func(request *Request, response *fasthttp.Response) (code int, isSucceed bool)
+func (r *Request) ReplaceParameterizes(globalVariable *sync.Map) {
+	for k, v := range r.Parameterizes {
+		// 查找header的key中是否存在变量{{****}}
+		keys := tools.FindAllDestStr(k, "{{(.*?)}}")
+		if keys != nil {
+			delete(r.Parameterizes, k)
+			for _, realKey := range keys {
+				if value, ok := globalVariable.Load(realKey[1]); ok {
+					k = strings.Replace(k, realKey[0], value.(string), -1)
+				}
+			}
+			r.Parameterizes[k] = v
+		}
 
-// VerifyWebSocket webSocket 验证
-type VerifyWebSocket func(request *Request, seq string, msg []byte) (code int, isSucceed bool)
+		values := tools.FindAllDestStr(v, "{{(.*?)}}")
+		if values != nil {
+			for _, realValue := range values {
+				if value, ok := globalVariable.Load(realValue[1]); ok {
+					v = strings.Replace(v, realValue[0], value.(string), -1)
+				}
+			}
+			r.Parameterizes[k] = v
+		}
+	}
+}
 
-//// getVerifyKey 获取校验 key
-//func (r *Request) getVerifyKey() (key string) {
-//	return fmt.Sprintf("%s.%s", r.Form, r.Verify)
-//}
-//
-//// GetVerifyHTTP 获取数据校验方法
-//func (r *Request) GetVerifyHTTP() VerifyHTTP {
-//	verify, ok := verifyMapHTTP[r.getVerifyKey()]
-//	if !ok {
-//		panic("GetVerifyHTTP 验证方法不存在:" + r.Verify)
-//	}
-//	return verify
-//}
-//
-//// GetVerifyWebSocket 获取数据校验方法
-//func (r *Request) GetVerifyWebSocket() VerifyWebSocket {
-//	verify, ok := verifyMapWebSocket[r.getVerifyKey()]
-//	if !ok {
-//		panic("GetVerifyWebSocket 验证方法不存在:" + r.Verify)
-//	}
-//	return verify
-//}
-
-func (r *Request) GetBody() (body []byte) {
-	return []byte(r.Body)
+func (r *Request) ReplaceBodyParameterizes() {
+	bodys := tools.FindAllDestStr(r.Body, "{{(.*?)}}")
+	if bodys != nil {
+		for _, v := range bodys {
+			if value, ok := r.Parameterizes[v[1]]; ok {
+				r.Body = strings.Replace(r.Body, v[0], value, -1)
+			}
+		}
+	}
 }

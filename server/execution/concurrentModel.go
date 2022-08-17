@@ -9,68 +9,59 @@ import (
 )
 
 // ExecutionConcurrentModel 并发模式
-func ExecutionConcurrentModel(kafkaProducer sarama.SyncProducer, wg *sync.WaitGroup, ch chan *model.TestResultDataMsg, plan model.Plan) {
-	startTime := time.Now().Unix()
+func ExecutionConcurrentModel(kafkaProducer sarama.SyncProducer, ch chan *model.ResultDataMsg, plan *model.Plan) {
+	startTime := time.Now().UnixMilli()
 	concurrent := plan.ConfigTask.TestModel.ConcurrentTest.Concurrent
 	eventList := plan.Scene.EventList
-	timeUp := plan.ConfigTask.TestModel.ConcurrentTest.TimeUp
 	testType := plan.ConfigTask.TestModel.ConcurrentTest.Type
 	// go model.SendKafkaMsg(kafkaProducer, ch)
-
+	if plan.Scene.Configuration.ParameterizedFile.Path != "" {
+		p := plan.Scene.Configuration.ParameterizedFile
+		p.VariableNames.Mu = sync.Mutex{}
+		p.ReadFile()
+	}
 	switch testType {
 	case model.DurationType:
-		duration := plan.ConfigTask.TestModel.ConcurrentTest.Duration
-		currentTime := time.Now().Unix()
+		duration := plan.ConfigTask.TestModel.ConcurrentTest.Duration * 1000
+		currentTime := time.Now().UnixMilli()
 		for startTime+duration > currentTime {
+			var currenWg = &sync.WaitGroup{}
 			for i := int64(0); i < concurrent; i++ {
-				wg.Add(1)
-				go func(eventList []model.Event) {
-					globalVariable := plan.Variable.VariableMap
-					for _, event := range eventList {
-						switch event.EventType {
-						case model.RequestType:
-							golink.Send(ch, plan, wg, event.Request, globalVariable)
-						case model.CollectionType:
-							switch event.Controller.ControllerType {
-							case model.IfControllerType:
-								if v, ok := globalVariable[event.Controller.IfController.Key]; ok {
-									event.Controller.IfController.PerForm(v)
-								}
-							case model.CollectionType:
-
-							}
-						}
-
+				currenWg.Add(1)
+				go func() {
+					if plan.Variable.VariableMap == nil {
+						plan.Variable.VariableMap = new(sync.Map)
 					}
-				}(eventList)
-
-				if timeUp != 0 && (concurrent/timeUp)%i == 0 && i != 0 {
-					time.Sleep(1000)
-				}
+					globalVariable := plan.Variable.VariableMap
+					golink.Dispose(eventList, ch, plan, globalVariable)
+					currenWg.Done()
+				}()
 			}
-			if time.Now().Unix()-currentTime < 1 {
-				time.Sleep(1 * time.Second)
+			currenWg.Wait()
+			if time.Now().UnixMilli()-currentTime < 1000 {
+				sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
+				time.Sleep(sleepTime)
 			}
-			currentTime = time.Now().Unix()
-
+			currentTime = time.Now().UnixMilli()
 		}
 
 	case model.RoundsType:
 		rounds := plan.ConfigTask.TestModel.ConcurrentTest.Rounds
 		for i := int64(0); i < rounds; i++ {
+			currentTime := time.Now().UnixMilli()
+			var currenWg = &sync.WaitGroup{}
 			for j := int64(0); j < concurrent; j++ {
-				wg.Add(1)
+				currenWg.Add(1)
 				go func() {
 					globalVariable := plan.Variable.VariableMap
-					for _, event := range eventList {
-						golink.Send(ch, plan, wg, event.Request, globalVariable)
-					}
+					golink.Dispose(eventList, ch, plan, globalVariable)
+					currenWg.Done()
 				}()
-
-				if timeUp != 0 && (concurrent/timeUp)%i == 0 && i != 0 {
-					time.Sleep(1000)
-				}
-
+			}
+			currenWg.Wait()
+			if time.Now().UnixMilli()-currentTime < 1000 {
+				sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
+				time.Sleep(sleepTime)
 			}
 		}
 

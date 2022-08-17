@@ -13,17 +13,18 @@ func Run(c *gin.Context) {
 	var planInstance model.Plan
 	err := c.ShouldBindJSON(&planInstance)
 	fmt.Println("planInstance", planInstance)
+
 	if err != nil {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
 	}
-	go func(model.Plan) {
+	go func(planInstance *model.Plan) {
 		server.Execution(planInstance)
 		if err != nil {
 			global.ReturnMsg(c, http.StatusBadRequest, "计划执行失败", err.Error())
 			return
 		}
-	}(planInstance)
+	}(&planInstance)
 
 	global.ReturnMsg(c, http.StatusOK, "开始执行计划", nil)
 

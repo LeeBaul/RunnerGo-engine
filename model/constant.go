@@ -37,10 +37,13 @@ const (
 
 // 事件类型
 const (
+	RequestType    = "request"    // 接口请求
+	ControllerType = "controller" // 控制器
+
 	IfControllerType   = "if"         // if控制器
 	WaitControllerType = "wait"       // 等待控制器
 	CollectionType     = "collection" // 集合点控制器
-	RequestType        = "api"        // 接口请求
+
 )
 
 // 逻辑运算符
