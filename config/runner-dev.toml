@@ -44,9 +44,10 @@ address = "172.17.101.191:9200"
 
 
 [redis]
-host="172.17.101.191"
+addr="172.17.101.191:6398"
 password="apipost"
-port=6398
+DB=0
+size=100
 
 
 

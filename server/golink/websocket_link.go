@@ -2,7 +2,6 @@
 package golink
 
 import (
-	"fmt"
 	"kp-runner/model"
 	"kp-runner/server/client"
 )
@@ -27,6 +26,5 @@ func webSocketSend(request *model.Request) (bool, int, uint64, int, int64) {
 		// 接收到的字节长度
 		contentLength = int64(len(resp))
 	}
-	fmt.Println("resp", string(resp))
 	return isSucceed, errCode, requestTime, sendBytes, contentLength
 }

@@ -12,14 +12,14 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *ResultDataMsg) {
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *SceneTestResultDataMsg) {
 	defer kafkaProducer.Close()
 	for {
 		if testResultDataMsg, ok := <-ch; ok {
 			msg, err := json.Marshal(testResultDataMsg)
 			if err != nil {
 				log.Logger.Error("json转换失败", err)
-				return
+				break
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = config.Config["Topic"].(string)
@@ -28,7 +28,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *ResultDataMsg) {
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
 				log.Logger.Error("向kafka发送消息失败", err)
-				return
+				break
 			}
 		} else {
 			break

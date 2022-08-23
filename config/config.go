@@ -41,5 +41,11 @@ func InitConfig() {
 
 	// es
 	Config["esHost"] = viper.Get("es.host")
+
+	// redis
+	Config["redisAddr"] = viper.Get("redis.Addr")
+	Config["redisPassword"] = viper.Get("redis.password")
+	Config["redisDB"] = viper.Get("redis.DB")
+	Config["redisSize"] = viper.Get("redis.size")
 	zap.S().Info(Config)
 }

@@ -1,8 +1,6 @@
-// Package main go 实现的压测工具
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-micro/plugins/v4/registry/consul"
 	"go-micro.dev/v4/registry"
@@ -12,25 +10,11 @@ import (
 	"kp-runner/global"
 	"kp-runner/initialize"
 	"kp-runner/log"
+	"kp-runner/model"
 	"os"
 	"os/signal"
 	"syscall"
 )
-
-// array 自定义数组参数
-type array []string
-
-// String string
-func (a *array) String() string {
-	return fmt.Sprint(*a)
-}
-
-// Set set
-func (a *array) Set(s string) error {
-	*a = append(*a, s)
-
-	return nil
-}
 
 var (
 	GinRouter *gin.Engine
@@ -46,26 +30,30 @@ func init() {
 	zap.S().Debug("初始化配置文件")
 	config.InitConfig()
 
+	//3. 初始化redis客户端
+	if err := model.InitRedisClient(
+		config.Config["redisAddr"].(string),
+		config.Config["redisPassword"].(string),
+		config.Config["redisDB"].(int64),
+		config.Config["redisSize"].(int64),
+	); err != nil {
+		log.Logger.Error("redis连接失败:", err)
+		return
+	}
+
 	global.ConsulClient = consul.NewRegistry(registry.Addrs(config.Config["consulAddress"].(string)))
 	//3. 初始化routers
 	log.Logger.Debug("初始化routers")
 	GinRouter = initialize.Routers()
-
-	//4. 初始化kafka
-	log.Logger.Debug("初始化kafka")
 
 	//4. 语言转换
 	if err := initialize.InitTrans("zh"); err != nil {
 		log.Logger.Error(err)
 	}
 
-}
-
-func main() {
-
 	//5. 注册服务
 	log.Logger.Debug("注册服务")
-	controllerService := web.NewService(
+	kpRunnerService := web.NewService(
 		web.Name(config.Config["serverName"].(string)),
 		web.Version(config.Config["serverVersion"].(string)),
 		web.Registry(global.ConsulClient),
@@ -73,9 +61,13 @@ func main() {
 		web.Handler(GinRouter),
 	)
 
-	if err := controllerService.Run(); err != nil {
+	if err := kpRunnerService.Run(); err != nil {
+		log.Logger.Error("kpRunnerService启动失败：", err)
 		return
 	}
+}
+
+func main() {
 
 	/// 接收终止信号
 	quit := make(chan os.Signal)

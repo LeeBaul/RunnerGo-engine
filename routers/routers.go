@@ -7,8 +7,8 @@ import (
 
 func InitRouter(Router *gin.RouterGroup) {
 	{
-		Router.POST("/run", api.Run)
-		Router.GET("/stop", api.Stop)
-		Router.POST("/pause", api.Pause)
+		Router.POST("/run_plan", api.RunPlan)
+		Router.GET("/run_api", api.RunApi)
+		Router.POST("/run_scene", api.RunScene)
 	}
 }

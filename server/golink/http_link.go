@@ -9,12 +9,12 @@ import (
 )
 
 // httpSend 发送http请求
-func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint64, int, int64, string) {
+func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint64, uint, uint, string) {
 	var (
 		// startTime = time.Now()
 		isSucceed     = true
 		errCode       = model.NoError
-		contentLength = int64(0)
+		contentLength = uint(0)
 		errMsg        = ""
 	)
 
@@ -50,7 +50,8 @@ func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint
 			}
 		}
 		// 接收到的字节长度
-		contentLength = int64(resp.Header.ContentLength())
+		contentLength = uint(resp.Header.ContentLength())
+
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg
 }

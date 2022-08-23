@@ -15,15 +15,31 @@ const (
 )
 
 const (
-	CommonTask = iota
-	TimingTask
-	CICDTask
+	CommonTaskType = iota
+	TimingTaskType
+	CICDTaskType
 )
 
 // ConfigTask 任务配置
 type ConfigTask struct {
 	TaskType  int8      `json:"taskType"` // 任务类型：0. 普通任务； 1. 定时任务； 2. cicd任务
+	Task      Task      `json:"task"`
 	TestModel TestModel `json:"testModel"`
+}
+
+// Task 任务
+type Task struct {
+	TimingTask TimingTask `json:"timingTask"`
+	CICDTask   CICDTask   `json:"CICDTask"`
+}
+
+// TimingTask 定时任务
+type TimingTask struct {
+	Spec string `json:"spec"`
+}
+
+// CICDTask cicd任务
+type CICDTask struct {
 }
 
 // TestModel 压测模型
