@@ -63,14 +63,10 @@ func (p *ParameterizedFile) ReadFile() {
 func (p *ParameterizedFile) UseVar(key string) (value string) {
 	if values, ok := p.VariableNames.VarMapList[key]; ok {
 		if p.VariableNames.Index >= len(p.VariableNames.VarMapList[key]) {
-			//p.VariableNames.Mu.Lock()
 			p.VariableNames.Index = 0
-			//p.VariableNames.Mu.Unlock()
 		}
 		value = values[p.VariableNames.Index]
-		//p.VariableNames.Mu.Lock()
 		p.VariableNames.Index++
-		//p.VariableNames.Mu.Unlock()
 	}
 	return
 }

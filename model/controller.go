@@ -21,7 +21,7 @@ type IfController struct {
 	Logic      string        `json:"logic"` // 逻辑运算符
 	Value      string        `json:"value"` // key对应的值
 	Requests   []*Request    `json:"requests"`
-	Controller []*Controller `json:"controller"`
+	Controller []*Controller `json:"controllers"`
 }
 
 func (ic *IfController) PerForm(value string) {
@@ -77,7 +77,7 @@ func (ic *IfController) PerForm(value string) {
 type WaitController struct {
 	Name       string        `json:"name"`
 	WaitTime   string        `json:"waitTime"` // 等待时长，ms
-	Controller []*Controller `json:"controller"`
+	Controller []*Controller `json:"controllers"`
 }
 
 // CollectionController 集合点控制器

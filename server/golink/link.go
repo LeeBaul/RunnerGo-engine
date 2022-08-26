@@ -1,33 +1,33 @@
 package golink
 
 import (
-	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/model"
 	"strconv"
 	"sync"
 	"time"
 )
 
-func Dispose(i, concurrent int64, eventList []model.Event, ch chan *model.ResultDataMsg, plan *model.Plan, globalVariable *sync.Map) {
+// DisposeScene 对场景进行处理
+func DisposeScene(eventList []model.Event, ch chan *model.ResultDataMsg, plan *model.Plan, globalVariable *sync.Map, wg *sync.WaitGroup, requestCollection, responseCollection *mongo.Collection, options ...int64) {
 
-	fmt.Println("11111111111111111111111111111111111")
 	for _, event := range eventList {
 		switch event.EventType {
 		case model.RequestType:
-			DisposeRequest(i, concurrent, ch, plan, event.Request, globalVariable)
+			DisposeRequest(ch, plan, event.Request, globalVariable, wg, requestCollection, responseCollection, options[0], options[1])
 		case model.ControllerType:
-			DisposeController(i, concurrent, event.Controller, globalVariable)
+			DisposeController(event.Controller, globalVariable, requestCollection, responseCollection, options[0], options[1])
 		}
 	}
 }
 
-// DisposeRequest 处理请求
-func DisposeRequest(i, concurrent int64, ch chan<- *model.ResultDataMsg, plan *model.Plan,
-	request *model.Request, globalVariable *sync.Map) {
+// DisposeRequest 开始对请求进行处理
+func DisposeRequest(ch chan<- *model.ResultDataMsg, plan *model.Plan,
+	request *model.Request, globalVariable *sync.Map, wg *sync.WaitGroup, requestCollection, responseCollection *mongo.Collection, options ...int64) {
 
-	if request.Weight != 100 {
-		proportion := concurrent / int64(100-request.Weight)
-		if i%proportion == 0 {
+	if request.Weight != 100 && request.Weight != 0 {
+		proportion := options[1] / int64(100-request.Weight)
+		if options[0]%proportion == 0 {
 			return
 		}
 
@@ -73,51 +73,55 @@ func DisposeRequest(i, concurrent int64, ch chan<- *model.ResultDataMsg, plan *m
 	request.ReplaceHeaderParameterizes()
 	request.ReplaceUrlParameterizes()
 
+	var (
+		isSucceed     = false
+		errCode       = 0
+		requestTime   = uint64(0)
+		sendBytes     = uint(0)
+		contentLength = uint(0)
+		errMsg        = ""
+	)
 	switch request.Form {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg := httpSend(request, globalVariable)
-		requestResults.ApiName = request.ApiName
-		requestResults.RequestTime = requestTime
-		requestResults.ErrorType = errCode
-		requestResults.IsSucceed = isSucceed
-		requestResults.SendBytes = uint64(sendBytes)
-		requestResults.ReceivedBytes = uint64(contentLength)
-		requestResults.ErrorMsg = errMsg
-		ch <- requestResults
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = httpSend(request, globalVariable, requestCollection, responseCollection)
 	case model.FormTypeWebSocket:
-		isSucceed, errCode, requestTime, sendBytes, contentLength := webSocketSend(request)
-		requestResults.ApiName = request.ApiName
-		requestResults.RequestTime = requestTime
-		requestResults.ErrorType = errCode
-		requestResults.IsSucceed = isSucceed
-		requestResults.SendBytes = uint64(sendBytes)
-		requestResults.ReceivedBytes = uint64(contentLength)
-		ch <- requestResults
+		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(request)
 	case model.FormTypeGRPC:
 		//isSucceed, errCode, requestTime, sendBytes, contentLength := rpcSend(request)
-		//requestResults.ApiName = request.ApiName
-		//requestResults.RequestTime = requestTime
-		//requestResults.ErrorType = errCode
-		//requestResults.IsSucceed = isSucceed
-		//requestResults.SendBytes = int64(sendBytes)
-		//requestResults.ReceivedBytes = contentLength
-		//ch <- requestResults
+	default:
+		return
 
 	}
+	requestResults.ApiName = request.ApiName
+	requestResults.RequestTime = requestTime
+	requestResults.ErrorType = errCode
+	requestResults.IsSucceed = isSucceed
+	requestResults.SendBytes = uint64(sendBytes)
+	requestResults.ReceivedBytes = uint64(contentLength)
+	requestResults.ErrorMsg = errMsg
+	ch <- requestResults
 	if request.Requests != nil && request.Requests[0] != nil {
 		for _, requestIndividual := range request.Requests {
-			DisposeRequest(i, concurrent, ch, plan, requestIndividual, globalVariable)
+			wg.Add(1)
+			go func(requestIndividual *model.Request) {
+				DisposeRequest(ch, plan, requestIndividual, globalVariable, wg, requestCollection, responseCollection, options[0], options[1])
+				wg.Done()
+			}(requestIndividual)
 		}
 	}
 	if request.Controllers != nil && request.Controllers[0] != nil {
 		for _, controllerIndividual := range request.Controllers {
-			DisposeController(i, concurrent, controllerIndividual, globalVariable)
-		}
+			wg.Add(1)
+			go func(controllerIndividual *model.Controller) {
+				DisposeController(controllerIndividual, globalVariable, requestCollection, responseCollection, options[0], options[1])
+			}(controllerIndividual)
 
+		}
 	}
 }
 
-func DisposeController(i, concurrent int64, controller *model.Controller, globalVariable *sync.Map) {
+// DisposeController 处理控制器
+func DisposeController(controller *model.Controller, globalVariable *sync.Map, requestCollection, responseCollection *mongo.Collection, options ...int64) {
 	switch controller.ControllerType {
 	case model.IfControllerType:
 		if v, ok := globalVariable.Load(controller.IfController.Key); ok {

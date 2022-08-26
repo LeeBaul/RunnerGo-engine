@@ -4,8 +4,10 @@ package client
 import (
 	"crypto/tls"
 	"github.com/valyala/fasthttp"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
 	"kp-runner/log"
+	"kp-runner/model"
 	"kp-runner/tools"
 	"time"
 )
@@ -17,7 +19,7 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body string, headers map[string]string, timeout int) (resp *fasthttp.Response, requestTime uint64, sendBytes uint, err error) {
+func HTTPRequest(method, url string, body string, headers map[string]string, timeout int, debug bool, requestCollection *mongo.Collection) (resp *fasthttp.Response, requestTime uint64, sendBytes uint, err error) {
 
 	client := fastClient(timeout)
 	req := fasthttp.AcquireRequest()
@@ -31,6 +33,7 @@ func HTTPRequest(method, url string, body string, headers map[string]string, tim
 	}
 
 	req.SetRequestURI(url)
+
 	req.SetBodyString(body)
 
 	resp = fasthttp.AcquireResponse()
@@ -41,6 +44,9 @@ func HTTPRequest(method, url string, body string, headers map[string]string, tim
 	}
 	requestTime = tools.TimeDifference(startTime)
 	sendBytes = uint(req.Header.ContentLength())
+	if debug == true {
+		model.Insert(requestCollection, req.String())
+	}
 	return
 }
 

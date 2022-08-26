@@ -2,6 +2,7 @@ package execution
 
 import (
 	"github.com/olivere/elastic"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -29,7 +30,7 @@ func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) 
 }
 
 // ExecutionRTModel 响应时间模式
-func ExecutionRTModel(statusCh chan bool, plan *model.Plan, ch chan *model.ResultDataMsg) {
+func ExecutionRTModel(statusCh chan bool, plan *model.Plan, ch chan *model.ResultDataMsg, wg *sync.WaitGroup, requestCollection, responseCollection *mongo.Collection) {
 	defer close(ch)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
@@ -52,31 +53,26 @@ func ExecutionRTModel(statusCh chan bool, plan *model.Plan, ch chan *model.Resul
 	concurrent := startConcurrent
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+lengthDuration > time.Now().Unix() {
-		select {
-		case status := <-statusCh:
-			if status == false {
-				log.Logger.Info("计划", plan.PlanName, "结束")
-				return
-			}
+		_, status := model.QueryPlanStatus(plan.PlanID + ":" + plan.Scene.SceneId + ":" + "status")
+		if status == "false" {
+			return
 		}
-		var currenWg = &sync.WaitGroup{}
+
 		for i := int64(0); i < concurrent; i++ {
-			currenWg.Add(1)
+			wg.Add(1)
 			go func(i, concurrent int64) {
-				if plan.Variable.VariableMap == nil {
-					plan.Variable.VariableMap = new(sync.Map)
+				if plan.Variable == nil {
+					plan.Variable = new(sync.Map)
 				}
-				globalVariable := plan.Variable.VariableMap
-				golink.Dispose(i, concurrent, eventList, ch, plan, globalVariable)
-				currenWg.Done()
+				globalVariable := plan.Variable
+				golink.DisposeScene(eventList, ch, plan, globalVariable, wg, requestCollection, responseCollection, i, concurrent)
+				wg.Done()
 			}(i, concurrent)
-			currenWg.Done()
 			// 如果设置了启动并发时长
 			if timeUp != 0 && (startConcurrent/timeUp)%i == 0 && i != 0 {
 				time.Sleep(1 * time.Second)
 			}
 		}
-		currenWg.Wait()
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+int64(lengthDuration) >= time.Now().Unix() {
 			log.Logger.Info("计划", plan.PlanName, "结束")
 			return

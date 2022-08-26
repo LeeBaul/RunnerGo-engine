@@ -14,6 +14,6 @@ type Scene struct {
 
 type Configuration struct {
 	ParameterizedFile *ParameterizedFile `json:"parameterizedFile"`
-	Variable          *Variable          `json:"variable"`
+	Variable          *sync.Map          `json:"variable"`
 	Mu                sync.Mutex         `json:"mu"`
 }

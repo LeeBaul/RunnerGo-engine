@@ -55,7 +55,7 @@ type TestModel struct {
 
 // ConcurrentTest 并发模式 0
 type ConcurrentTest struct {
-	Type       int8  `json:"type"`       // 0:DurationType; 1:RoundsType
+	Type       int64 `json:"type"`       // 0:DurationType; 1:RoundsType
 	Concurrent int64 `json:"concurrent"` // 并发数
 	Duration   int64 `json:"duration"`   // 持续时长
 	Rounds     int64 `json:"rounds"`     // 轮次

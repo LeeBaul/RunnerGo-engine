@@ -8,11 +8,17 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
 	"golang.org/x/net/context"
+	"kp-runner/log"
+	gonet "net"
 	"time"
 )
 
+var (
+	heartbeat = new(HeartBeat)
+	LocalIp   = ""
+)
+
 func CheckHeartBeat(ctx context.Context) *HeartBeat {
-	heartbeat := new(HeartBeat)
 	heartbeat.name = GetHostName()
 	heartbeat.cpu = GetCpuUsed()
 	heartbeat.mem = GetMemUsed()
@@ -23,6 +29,7 @@ func CheckHeartBeat(ctx context.Context) *HeartBeat {
 }
 
 type HeartBeat struct {
+	ip      string
 	name    string
 	cpu     float64
 	cpuLoad *load.AvgStat
@@ -88,4 +95,22 @@ func GetNetwork(networkName string) []uint64 {
 		}
 	}
 	return network
+}
+
+func InitLocalIp() {
+	// 获取所有网卡
+	address, err := gonet.InterfaceAddrs()
+	if err != nil {
+		log.Logger.Error("获取本机ip失败:", err)
+	}
+	// 遍历
+	for _, addr := range address {
+		// 取网络地址得网卡信息
+		if ipNet, ok := addr.(*gonet.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				LocalIp = ipNet.IP.String()
+			}
+		}
+	}
+
 }

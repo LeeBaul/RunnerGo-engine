@@ -3,15 +3,15 @@ package golink
 
 import (
 	"github.com/valyala/fasthttp"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/model"
 	"kp-runner/server/client"
 	"sync"
 )
 
 // httpSend 发送http请求
-func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint64, uint, uint, string) {
+func httpSend(request *model.Request, globalVariable *sync.Map, requestCollection, responseCollection *mongo.Collection) (bool, int, uint64, uint, uint, string) {
 	var (
-		// startTime = time.Now()
 		isSucceed     = true
 		errCode       = model.NoError
 		contentLength = uint(0)
@@ -19,7 +19,7 @@ func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint
 	)
 
 	resp, requestTime, sendBytes, err := client.HTTPRequest(request.Method, request.URL, request.Body,
-		request.Headers, request.Timeout)
+		request.Headers, request.Timeout, request.Debug, requestCollection)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	if request.Regulars != nil {
 		for _, regular := range request.Regulars {
@@ -51,7 +51,10 @@ func httpSend(request *model.Request, globalVariable *sync.Map) (bool, int, uint
 		}
 		// 接收到的字节长度
 		contentLength = uint(resp.Header.ContentLength())
-
+	}
+	// 开启debug模式后，将请求响应信息写入到mongodb中
+	if request.Debug == false {
+		model.Insert(responseCollection, resp.String())
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg
 }

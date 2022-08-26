@@ -1,0 +1,270 @@
+syntax = "proto3";
+option go_package = "./;pb";
+package pb;
+
+import "any.proto";
+
+service GrpcService {
+  rpc RunPlan (GrpcPlan) returns (GrpcResponse){}
+}
+
+message GrpcPlan {
+  string                              planId      = 1;
+  string                              planName    = 2;
+  string                              reportId    = 3;
+  string                              reportName  = 4;
+  ConfigTask                          configTask  = 5;
+  map<string, google.protobuf.Any>    variable    = 6;
+  Scene                               scene       = 7;
+}
+// grpc请求响应
+message GrpcResponse {
+  int64                code = 1;
+  string               msg  = 2;
+  google.protobuf.Any  data = 3;
+}
+
+
+message ConfigTask {
+  int64      taskType   = 1;   // 0：普通任务；1：定时任务； 2：cicd任务
+  Task       task       = 2;
+  TestModel  testModel  = 3;
+}
+
+// 任务
+message Task {
+  optional   TimingTask timingTask = 1;
+  optional   CICDTask   cICDTask   = 2;
+}
+
+
+
+// 定时任务
+message TimingTask {
+  string     spec   = 1;
+}
+
+// cicd任务
+message CICDTask {
+
+}
+
+// TestModel 压测模型
+message TestModel {
+  int64          type           = 1;                       // 0:ConcurrentModel; 1:ErrorRateModel; 2:LadderModel; 3:TpsModel; 4:QpsModel; 5:RTModel
+  optional   ConcurrentTest concurrentTest = 2;
+  optional   ErrorRatTest   errorRatTest   = 3;
+  optional   LadderTest     ladderTest     = 4;
+  optional   TpsTest        tpsTest        = 5;
+  optional   QpsTest        qpsTest        = 6;
+  optional   RTTest         rtTest         = 7;
+}
+
+// ConcurrentTest 并发模式 0
+message  ConcurrentTest {
+  string     type       = 1;       // 0:DurationType; 1:RoundsType
+  int64      concurrent = 2;       // 并发数
+  int64      Duration   = 3;       // 持续时长
+  int64      Rounds     = 4;       // 轮次
+  int64      TimeUp     = 5;       // 启动并发数时长
+}
+
+// ErrorRatTest 错误率模式 1
+message ErrorRatTest {
+  double  threshold        = 1;      // 阈值
+  int64   startConcurrent  = 2;      // 起始并发数
+  int64   length           = 3;      // 步长
+  int64   lengthDuration   = 4;      // 步长持续时间
+  int64   maxConcurrent    = 5;      // 最大并发数
+  int64   stableDuration   = 6;      // 稳定持续时长
+  int64   timeUp           = 7;      // 启动并发数时长
+}
+
+// LadderTest 阶梯模式 2
+message LadderTest  {
+  int64   startConcurrent  = 1;  // 起始并发数
+  int64   length           = 2;  // 步长
+  int64   lengthDuration   = 3;  // 步长持续时间
+  int64   maxConcurrent    = 4;  // 最大并发数
+  int64   stableDuration   = 5;  // 稳定持续时长
+  int64   timeUp           = 6;          // 启动并发数时长
+}
+
+//	TpsTest 每秒事务数模式 3
+message 	TpsTest {
+  double   threshold        = 1;      // 阈值
+  int64    startConcurrent  = 2;      // 起始并发数
+  int64    length           = 3;      // 步长
+  int64    lengthDuration   = 4;      // 步长持续时间
+  int64    maxConcurrent    = 5;      // 最大并发数
+  int64    stableDuration   = 6;      // 稳定持续时长
+  int64    timeUp           = 7;      // 启动并发数时长
+}
+
+//	QpsTest 每秒请求数模式 4
+message  QpsTest {
+  double    threshold       = 1;       // 阈值
+  int64     startConcurrent = 2;       // 起始并发数
+  int64     length          = 3;       // 步长
+  int64     lengthDuration  = 4;       // 步长持续时间
+  int64     maxConcurrent   = 5;       // 最大并发数
+  int64     stableDuration  = 6;       // 稳定持续时长
+  int64     timeUp          = 7;       // 启动并发数时长
+}
+
+//	RTTest 响应时间模式 5
+message RTTest {
+  uint64    Standard        = 1;        // 0:平均响应时间；1. 90%rt; 2. 95%rt; 3. 99%rt; 4. 自定义
+  int64     Threshold       = 2;        // 阈值
+  int64     StartConcurrent = 3;        // 起始并发数
+  int64     Length          = 4;        // 步长
+  int64     LengthDuration  = 5;        // 步长持续时间
+  int64     MaxConcurrent   = 6;        // 最大并发数
+  int64     StableDuration  = 7;        // 稳定持续时长
+  int64     TimeUp          = 8;        // 启动并发数时长
+}
+
+
+
+message Scene {
+  string         SceneId          = 1;      // 场景Id
+  string         SceneName        = 2;      // 场景名称
+  repeated   Event          eventList        = 3;      // 事件列表
+  optional   Configuration  configuration    = 4;      // 场景配置
+}
+
+
+// 配置环境变量
+message Configuration {
+  optional  ParameterizedFile                  parameterizedFile = 1;
+  map<string, google.protobuf.Any>   variable          = 2;
+
+}
+
+message Event {
+  string      eventType  = 1;     //   事件类型 "request" "controller"
+  optional   Request     request    = 2;     //   请求类型
+  optional   Controller  controller = 3;     //   控制器
+}
+
+// ParameterizedFile 参数化文件
+message ParameterizedFile {
+  string           path          = 1; // 文件地址
+  VariableNames    variableNames = 2; // 存储变量及数据的map
+}
+
+message VariableNames {
+  map<string, StringRepeated>        varMapList = 1;
+  int64       index                             = 2;
+}
+
+
+message StringRepeated {
+  repeated     string    varList  = 1;
+}
+
+
+
+
+// Request 请求数据
+message Request {
+  string                            apiId                = 1;
+  string                            apiName              = 2;
+  string                            url                  = 3;
+  string                            form                 = 4;               // http/webSocket/tcp/rpc
+  string                            method               = 5;               // 方法 GET/POST/PUT
+  map<string, string>               headers              = 6;               // Headers
+  string                            body                 = 7;
+  map<string, string>               auth                 = 8;
+  repeated    Request                           requests             = 9;
+  repeated    Controller                        controllers          = 10;
+  map<string, google.protobuf.Any>  parameterizes        = 11;        // 接口中定义的变量
+  repeated    Assertion                         Assertions           = 12;
+  int64                             timeout              = 13;              // 请求超时时间
+  float                             errorThreshold       = 14;      // 错误率阈值
+  int64                             customRequestTime    = 15;    // 自定义响应时间线
+  int64                             requestTimeThreshold = 16; // 响应时间阈值
+  repeated    RegularExpression                 regulars             = 17;             // 正则表达式
+  int64                             debug                = 18;                // 是否开启Debug模式
+  int64                             connection           = 19;           // 0:websocket长连接
+  int64                             weight               = 20;               // 权重，并发分配的比例
+  bool                              tag                  = 21;                  // Tps模式下，该标签代表以该接口为准
+}
+
+
+
+message RegularExpression {
+  string    variableName = 1; // 变量
+  string    expression   = 2;   // 表达式
+}
+
+
+
+// Controller 控制器
+message Controller {
+  string               ControllerType         = 1;                // wait， if， collection
+  optional  IfController         ifController           = 2;
+  optional  WaitController       waitController         = 3;
+  optional  CollectionController collectionController   = 4;
+}
+
+// IfController if控制器
+message IfController {
+  string         Type         = 1;
+  string         Name         = 2;
+  string         Key          = 3;   // key，值某个变量
+  string         Logic        = 4;   // 逻辑运算符
+  string         Value        = 5;   // key对应的值
+  repeated   Request        requests     = 6;
+  repeated   Controller    controllers   = 7;
+}
+
+
+// WaitController 等待控制器；思考时间
+message WaitController {
+  string       name         = 1;
+  string       waitTime     = 2;      // 等待时长，ms
+  repeated  Controller   controllers  = 3;
+}
+
+// CollectionController 集合点控制器
+message  CollectionController {
+  string    name     = 1;
+  int64     waitTime = 2; // 等待多长时间，如果还没完成，则不在等待， ms
+}
+
+
+
+
+// Assertion 断言
+message  Assertion {
+  int64            type             = 1;     //  0:Text; 1:Regular; 2:Json; 3:XPath
+  optional  AssertionText    assertionText    = 2;
+  optional  AssertionRegular assertionRegular = 3;
+  optional  AssertionJson    assertionJson    = 4;
+  optional  AssertionXPath   assertionXPath   = 5;
+}
+
+// AssertionText 文本断言 0
+message AssertionText {
+  int64  assertionTarget = 1; // 0: ResponseCode; 1:ResponseHeaders; 2:ResponseData
+  string condition       = 2;       // Includes、UNIncludes、Equal、UNEqual、GreaterThan、GreaterThanOrEqual、LessThan、LessThanOrEqual、Includes、UNIncludes、NULL、NotNULL、OriginatingFrom、EndIn
+  string key             = 3;
+  string value           = 4;
+}
+
+// AssertionRegular 正则断言 1
+message AssertionRegular {
+  int64    AssertionTarget = 1;      // 2:ResponseData
+  string   Expression      = 2;      // 正则表达式
+}
+
+// AssertionJson json断言 2
+message AssertionJson {
+  string    expression = 1;  // json表达式
+  string    condition  = 2;  // Contain、NotContain、Equal、NotEqual
+}
+
+// AssertionXPath xpath断言 3
+message AssertionXPath {
+}

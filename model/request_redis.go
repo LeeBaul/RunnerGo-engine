@@ -22,20 +22,12 @@ func InitRedisClient(addr, password string, db, size int64) (err error) {
 	return err
 }
 
-func QueryPlanStatus(key string, ch chan bool) {
-	defer close(ch)
-	ticker := time.NewTicker(timeDuration)
-	for {
-		select {
-		case <-ticker.C:
-			value, _ := RDB.Get(key).Result()
-			if value == "false" {
-				ch <- false
-				ticker.Stop()
-				return
-			}
-		}
+func QueryPlanStatus(key string) (err error, value string) {
+	value, err = RDB.Get(key).Result()
+	if err != nil {
+		return
 	}
+	return
 }
 
 // QueryTimingTaskStatus 查询定时任务状态
@@ -49,5 +41,6 @@ func QueryTimingTaskStatus(key string) bool {
 				return false
 			}
 		}
+		time.Sleep(timeDuration)
 	}
 }

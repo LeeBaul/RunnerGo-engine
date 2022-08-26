@@ -8,17 +8,17 @@ import (
 
 // Request 请求数据
 type Request struct {
-	ApiId         string            `json:"apiId"`
-	ApiName       string            `json:"apiName"`
-	URL           string            `json:"url"`
-	Form          string            `json:"form"`    // http/webSocket/tcp/rpc
-	Method        string            `json:"method"`  // 方法 GET/POST/PUT
-	Headers       map[string]string `json:"headers"` // Headers
-	Body          string            `json:"body"`
-	Requests      []*Request        `json:"requests"`
-	Controllers   []*Controller     `json:"controllers"`
-	Parameterizes *sync.Map         `json:"parameterizes"`
-	//	Parameterizes        map[string]string    `json:"parameterizes"`        // 接口中定义的变量
+	ApiId                string               `json:"apiId"`
+	ApiName              string               `json:"apiName"`
+	URL                  string               `json:"url"`
+	Form                 string               `json:"form"`    // http/webSocket/tcp/rpc
+	Method               string               `json:"method"`  // 方法 GET/POST/PUT
+	Headers              map[string]string    `json:"headers"` // Headers
+	Body                 string               `json:"body"`
+	Auth                 map[string]string    `json:"auth"`
+	Requests             []*Request           `json:"requests"`
+	Controllers          []*Controller        `json:"controllers"`
+	Parameterizes        *sync.Map            `json:"parameterizes"`        // 接口中定义的变量
 	Assertions           []*Assertion         `json:"assertions"`           // 验证的方法(断言)
 	Timeout              int                  `json:"timeout"`              // 请求超时时间
 	ErrorThreshold       float64              `json:"errorThreshold"`       // 错误率阈值

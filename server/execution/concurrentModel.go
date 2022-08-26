@@ -1,7 +1,7 @@
 package execution
 
 import (
-	"kp-runner/log"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"sync"
@@ -9,8 +9,9 @@ import (
 )
 
 // ExecutionConcurrentModel 并发模式
-func ExecutionConcurrentModel(statusCh chan bool, ch chan *model.ResultDataMsg, plan *model.Plan) {
+func ExecutionConcurrentModel(ch chan *model.ResultDataMsg, plan *model.Plan, wg *sync.WaitGroup, requestCollection, responseCollection *mongo.Collection) {
 	defer close(ch)
+	defer wg.Wait()
 	startTime := time.Now().UnixMilli()
 	concurrent := plan.ConfigTask.TestModel.ConcurrentTest.Concurrent
 	eventList := plan.Scene.EventList
@@ -25,66 +26,55 @@ func ExecutionConcurrentModel(statusCh chan bool, ch chan *model.ResultDataMsg, 
 		duration := plan.ConfigTask.TestModel.ConcurrentTest.Duration * 1000
 		currentTime := time.Now().UnixMilli()
 		for startTime+duration > currentTime {
-			select {
-			case status := <-statusCh:
-				if status == false {
-					log.Logger.Info("计划", plan.PlanName, "结束")
-					return
-				}
-			default:
-				var currenWg = &sync.WaitGroup{}
-				for i := int64(0); i < concurrent; i++ {
-					currenWg.Add(1)
-					go func(i, concurrent int64) {
-						if plan.Variable.VariableMap == nil {
-							plan.Variable.VariableMap = new(sync.Map)
-						}
-						globalVariable := plan.Variable.VariableMap
-						golink.Dispose(i, concurrent, eventList, ch, plan, globalVariable)
-						currenWg.Done()
-					}(i, concurrent)
-				}
-				currenWg.Wait()
-
-				if time.Now().UnixMilli()-currentTime < 1000 {
-					sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
-					time.Sleep(sleepTime)
-				}
-				currentTime = time.Now().UnixMilli()
+			_, status := model.QueryPlanStatus(plan.PlanID + ":" + plan.Scene.SceneId + ":" + "status")
+			if status == "false" {
+				return
 			}
 
+			startCurrentTime := time.Now().UnixMilli()
+			for i := int64(0); i < concurrent; i++ {
+				wg.Add(1)
+				go func(i, concurrent int64) {
+					if plan.Variable == nil {
+						plan.Variable = new(sync.Map)
+					}
+					globalVariable := plan.Variable
+					golink.DisposeScene(eventList, ch, plan, globalVariable, wg, requestCollection, responseCollection, i, concurrent)
+					wg.Done()
+				}(i, concurrent)
+			}
+
+			// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
+			if time.Now().UnixMilli()-startCurrentTime < 1000 {
+				sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
+				time.Sleep(sleepTime)
+			}
+			currentTime = time.Now().UnixMilli()
 		}
-		log.Logger.Info("计划", plan.PlanName, "结束")
 
 	case model.RoundsType:
 		rounds := plan.ConfigTask.TestModel.ConcurrentTest.Rounds
 		for i := int64(0); i < rounds; i++ {
-			select {
-			case status := <-statusCh:
-				if status == false {
-					log.Logger.Info("计划", plan.PlanName, "结束")
-					return
-				}
-			default:
-				currentTime := time.Now().UnixMilli()
-				var currenWg = &sync.WaitGroup{}
-				for j := int64(0); j < concurrent; j++ {
-					currenWg.Add(1)
-					go func(i, concurrent int64) {
-						globalVariable := plan.Variable.VariableMap
-						golink.Dispose(i, concurrent, eventList, ch, plan, globalVariable)
-						currenWg.Done()
-					}(i, concurrent)
-				}
-				currenWg.Wait()
-				if time.Now().UnixMilli()-currentTime < 1000 {
-					sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
-					time.Sleep(sleepTime)
-				}
+			_, status := model.QueryPlanStatus(plan.PlanID + ":" + plan.Scene.SceneId + ":" + "status")
+			if status == "false" {
+				return
+			}
+			currentTime := time.Now().UnixMilli()
+			for j := int64(0); j < concurrent; j++ {
+				wg.Add(1)
+				go func(i, concurrent int64) {
+					globalVariable := plan.Variable
+					golink.DisposeScene(eventList, ch, plan, globalVariable, wg, requestCollection, responseCollection, i, concurrent)
+					wg.Done()
+				}(i, concurrent)
+			}
+
+			if time.Now().UnixMilli()-currentTime < 1000 {
+				sleepTime := time.Duration(time.Now().UnixMilli()-currentTime) * time.Millisecond
+				time.Sleep(sleepTime)
 			}
 
 		}
-		log.Logger.Info("计划", plan.PlanName, "结束")
 	}
 
 }

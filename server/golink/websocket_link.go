@@ -6,12 +6,12 @@ import (
 	"kp-runner/server/client"
 )
 
-func webSocketSend(request *model.Request) (bool, int, uint64, int, int64) {
+func webSocketSend(request *model.Request) (bool, int, uint64, uint, uint) {
 	var (
 		// startTime = time.Now()
 		isSucceed     = true
 		errCode       = model.NoError
-		contentLength = int64(0)
+		contentLength = uint(0)
 	)
 	headers := map[string][]string{}
 	for key, value := range request.Headers {
@@ -24,7 +24,7 @@ func webSocketSend(request *model.Request) (bool, int, uint64, int, int64) {
 		errCode = model.RequestError // 请求错误
 	} else {
 		// 接收到的字节长度
-		contentLength = int64(len(resp))
+		contentLength = uint(len(resp))
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength
 }

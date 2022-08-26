@@ -32,7 +32,19 @@ func RunPlan(c *gin.Context) {
 }
 
 func RunScene(c *gin.Context) {
-
+	//var workerInstance model.Worker
+	//err := c.ShouldBindJSON(&workerInstance)
+	//
+	//if err != nil {
+	//	global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
+	//	return
+	//}
+	//
+	//log.Logger.Info("运行场景", workerInstance)
+	//
+	//golink.DisposeScene(workerInstance.Scene.EventList)
+	//
+	//global.ReturnMsg(c, http.StatusOK, "开始执行计划", nil)
 }
 
 func RunApi(c *gin.Context) {

@@ -2,12 +2,15 @@
 package server
 
 import (
+	"context"
 	"github.com/robfig/cron/v3"
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/execution"
+	"kp-runner/server/heartbeat"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -54,35 +57,58 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 func ExecutionPlan(plan *model.Plan) {
 
 	// 设置kafka消费者
-	kafkaProducer := model.NewKafkaProducer([]string{config.Config["kafkaAddress"].(string)})
+	kafkaProducer, err := model.NewKafkaProducer([]string{config.Config["kafkaAddress"].(string)})
+	if err != nil {
+		log.Logger.Error("kafka连接失败", err)
+		return
+	}
 	// 设置接收数据缓存
 	ch := make(chan *model.ResultDataMsg, 10000)
 	// 任务状态channel，
 	statusCh := make(chan bool, 1)
 	// 查询计划状态
 
-	sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 1)
-	go model.QueryPlanStatus(plan.PlanID+":"+plan.Scene.SceneId+":status", statusCh)
+	sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
+	var wg = &sync.WaitGroup{}
 
 	// 计算测试结果
 	go ReceivingResults(ch, sceneTestResultDataMsgCh)
+	// 向kafka发送消息
 	go model.SendKafkaMsg(kafkaProducer, sceneTestResultDataMsgCh)
+	mongoClient, err := model.NewMongoClient(
+		config.Config["mongoUser"].(string),
+		config.Config["mongoPassword"].(string),
+		config.Config["mongoHost"].(string))
+	if err != nil {
+		log.Logger.Error("连接mongo错误：", err)
+		return
+	}
+	defer mongoClient.Disconnect(context.TODO())
+
+	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+	responseCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoResponseTable"].(string), mongoClient)
 	switch plan.ConfigTask.TestModel.Type {
 	case model.ConcurrentModel:
 		execution.ExecutionConcurrentModel(
-			statusCh,
 			ch,
-			plan)
+			plan,
+			wg,
+			requestCollection,
+			responseCollection)
 	case model.ErrorRateModel:
 		execution.ExecutionErrorRateModel(
-			statusCh,
 			plan,
-			ch)
+			ch,
+			wg,
+			requestCollection,
+			responseCollection)
 	case model.LadderModel:
 		execution.ExecutionLadderModel(
-			statusCh,
 			plan,
-			ch)
+			ch,
+			wg,
+			requestCollection,
+			responseCollection)
 		//case task.TpsModel:
 		//	execution.ExecutionTpsModel()
 		//case task.QpsModel:
@@ -91,10 +117,16 @@ func ExecutionPlan(plan *model.Plan) {
 		execution.ExecutionRTModel(
 			statusCh,
 			plan,
-			ch)
+			ch,
+			wg,
+			requestCollection,
+			responseCollection)
 	default:
 		close(ch)
+
 	}
+
+	log.Logger.Info("计划", plan.PlanName, "结束")
 }
 
 // ReceivingResults 计算并发送测试结果
@@ -103,6 +135,7 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 		sceneTestResultDataMsg = new(model.SceneTestResultDataMsg)
 		requestTimeMap         = make(map[string]model.RequestTimeList)
 	)
+	sceneTestResultDataMsg.MachineIp = heartbeat.LocalIp
 	// 关闭通道
 	defer close(sceneTestResultDataMsgCh)
 
