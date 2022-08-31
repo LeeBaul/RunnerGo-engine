@@ -1,0 +1,5 @@
+[onlie]
+39.103.202.18   ansible_ssh_user=apipost023 ansible_ssh_port=2345  ansible_become_user=root   ansible_become=true
+[test]
+172.17.64.2  ansible_ssh_user=apipost023 ansible_ssh_port=2345  ansible_become_user=root   ansible_become=true
+172.17.64.3  ansible_ssh_user=apipost023 ansible_ssh_port=2345  ansible_become_user=root   ansible_become=true
