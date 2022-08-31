@@ -8,6 +8,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/execution"
+	"kp-runner/server/golink"
 	"kp-runner/server/heartbeat"
 	"sort"
 	"sync"
@@ -46,11 +47,15 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 	}
 	c.Start()
 
-	status := model.QueryTimingTaskStatus(plan.PlanID + ":" + plan.Scene.SceneId + ":" + "timing")
+	status := model.QueryTimingTaskStatus(plan.PlanId + ":" + plan.Scene.SceneId + ":" + "timing")
 	if status == false {
 		c.Remove(id)
 	}
 
+}
+
+func ExecutionDebugRequest(request model.Request, globalVariable *sync.Map, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg) {
+	golink.DisposeRequest(nil, "", "", "", "", "", "", nil, request, globalVariable, nil, requestResults, debugMsg, nil)
 }
 
 // ExecutionPlan 执行计划
@@ -64,10 +69,6 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 	// 设置接收数据缓存
 	ch := make(chan *model.ResultDataMsg, 10000)
-	// 任务状态channel，
-	statusCh := make(chan bool, 1)
-	// 查询计划状态
-
 	sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
 	var wg = &sync.WaitGroup{}
 
@@ -78,49 +79,136 @@ func ExecutionPlan(plan *model.Plan) {
 	mongoClient, err := model.NewMongoClient(
 		config.Config["mongoUser"].(string),
 		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string))
+		config.Config["mongoHost"].(string),
+		config.Config["mongoDB"].(string))
 	if err != nil {
+		close(ch)
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
 	defer mongoClient.Disconnect(context.TODO())
-
 	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
-	responseCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoResponseTable"].(string), mongoClient)
+	if plan.Scene.Configuration.ParameterizedFile.Path != "" {
+		var mu = sync.Mutex{}
+		plan.Scene.Configuration.ParameterizedFile.VariableNames.Mu = mu
+		p := plan.Scene.Configuration.ParameterizedFile
+		p.ReadFile()
+	}
+
+	configuration := plan.Scene.Configuration
+
+	globalVariable := plan.Variable
+	eventList := plan.Scene.EventList
 	switch plan.ConfigTask.TestModel.Type {
 	case model.ConcurrentModel:
+		concurrent := plan.ConfigTask.TestModel.ConcurrentTest.Concurrent
+		testType := plan.ConfigTask.TestModel.ConcurrentTest.Type
+		roundOrTime := int64(0)
+		switch testType {
+		case model.DurationType:
+			roundOrTime = plan.ConfigTask.TestModel.ConcurrentTest.Duration
+		case model.RoundsType:
+			roundOrTime = plan.ConfigTask.TestModel.ConcurrentTest.Rounds
+		}
 		execution.ExecutionConcurrentModel(
+			eventList,
 			ch,
-			plan,
+			concurrent,
+			testType,
+			roundOrTime,
+			plan.PlanId,
+			plan.PlanName,
+			plan.Scene.SceneId,
+			plan.Scene.SceneName,
+			plan.ReportId,
+			plan.ReportName,
+			configuration,
+			globalVariable,
 			wg,
-			requestCollection,
-			responseCollection)
+			requestCollection)
+
 	case model.ErrorRateModel:
+		startConcurrent := plan.ConfigTask.TestModel.ErrorRatTest.StartConcurrent
+		length := plan.ConfigTask.TestModel.ErrorRatTest.Length
+		maxConcurrent := plan.ConfigTask.TestModel.ErrorRatTest.MaxConcurrent
+		lengthDuration := plan.ConfigTask.TestModel.ErrorRatTest.LengthDuration
+		stableDuration := plan.ConfigTask.TestModel.ErrorRatTest.StableDuration
+		timeUp := plan.ConfigTask.TestModel.ErrorRatTest.TimeUp
 		execution.ExecutionErrorRateModel(
-			plan,
+			eventList,
 			ch,
+			plan.PlanId,
+			plan.PlanName,
+			plan.Scene.SceneId,
+			plan.Scene.SceneName,
+			plan.ReportId,
+			plan.ReportName,
+			startConcurrent,
+			length,
+			maxConcurrent,
+			lengthDuration,
+			stableDuration,
+			timeUp,
+			configuration,
+			globalVariable,
 			wg,
-			requestCollection,
-			responseCollection)
+			requestCollection)
 	case model.LadderModel:
+		startConcurrent := plan.ConfigTask.TestModel.LadderTest.StartConcurrent
+		length := plan.ConfigTask.TestModel.LadderTest.Length
+		maxConcurrent := plan.ConfigTask.TestModel.LadderTest.MaxConcurrent
+		lengthDuration := plan.ConfigTask.TestModel.LadderTest.LengthDuration
+		stableDuration := plan.ConfigTask.TestModel.LadderTest.StableDuration
+		timeUp := plan.ConfigTask.TestModel.LadderTest.TimeUp
 		execution.ExecutionLadderModel(
-			plan,
+			eventList,
 			ch,
+			plan.PlanId,
+			plan.PlanName,
+			plan.Scene.SceneId,
+			plan.Scene.SceneName,
+			plan.ReportId,
+			plan.ReportName,
+			startConcurrent,
+			length,
+			maxConcurrent,
+			lengthDuration,
+			stableDuration,
+			timeUp,
+			configuration,
 			wg,
-			requestCollection,
-			responseCollection)
+			globalVariable,
+			requestCollection)
 		//case task.TpsModel:
 		//	execution.ExecutionTpsModel()
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
+		startConcurrent := plan.ConfigTask.TestModel.RTTest.StartConcurrent
+		length := plan.ConfigTask.TestModel.RTTest.Length
+		maxConcurrent := plan.ConfigTask.TestModel.RTTest.MaxConcurrent
+		lengthDuration := plan.ConfigTask.TestModel.RTTest.LengthDuration
+		stableDuration := plan.ConfigTask.TestModel.RTTest.StableDuration
+		timeUp := plan.ConfigTask.TestModel.RTTest.TimeUp
 		execution.ExecutionRTModel(
-			statusCh,
-			plan,
+			eventList,
 			ch,
 			wg,
-			requestCollection,
-			responseCollection)
+			plan.PlanId,
+			plan.PlanName,
+			plan.Scene.SceneId,
+			plan.Scene.SceneName,
+			plan.ReportId,
+			plan.ReportName,
+			startConcurrent,
+			length,
+			maxConcurrent,
+			lengthDuration,
+			stableDuration,
+			timeUp,
+			configuration,
+			globalVariable,
+			requestCollection)
 	default:
 		close(ch)
 
@@ -234,7 +322,7 @@ end:
 }
 
 // 根据响应时间线，计算该线的值
-func timeLineCalculate(line int, requestTimeList model.RequestTimeList) (requestTime uint64) {
+func timeLineCalculate(line int64, requestTimeList model.RequestTimeList) (requestTime uint64) {
 	if line > 0 && line < 100 {
 		proportion := float64(line) / 100
 		value := proportion * float64(len(requestTimeList))

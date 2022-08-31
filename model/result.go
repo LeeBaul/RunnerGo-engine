@@ -42,7 +42,7 @@ type ApiTestResultDataMsg struct {
 	MaxRequestTime             uint64 `json:"maxRequestTime"`
 	MinRequestTime             uint64 `json:"minRequestTime"` // 毫秒
 	CustomRequestTimeLine      uint64 `json:"customRequestTimeLine"`
-	CustomRequestTimeLineValue int    `json:"customRequestTimeLineValue"`
+	CustomRequestTimeLineValue int64  `json:"customRequestTimeLineValue"`
 	NinetyRequestTimeLine      uint64 `json:"ninetyRequestTimeLine"`
 	NinetyFiveRequestTimeLine  uint64 `json:"ninetyFiveRequestTimeLine"`
 	NinetyNineRequestTimeLine  uint64 `json:"ninetyNineRequestTimeLine"`
@@ -61,9 +61,9 @@ type ResultDataMsg struct {
 	ApiId                 string  // 接口ID
 	ApiName               string  // 接口名称
 	RequestTime           uint64  // 请求响应时间
-	CustomRequestTimeLine int     // 自定义响应时间线
-	ErrorThreshold        float64 // 自定义错误率
-	ErrorType             int     // 错误类型：1. 请求错误；2. 断言错误
+	CustomRequestTimeLine int64   // 自定义响应时间线
+	ErrorThreshold        float32 // 自定义错误率
+	ErrorType             int64   // 错误类型：1. 请求错误；2. 断言错误
 	IsSucceed             bool    // 请求是否有错：true / false   为了计数
 	ErrorMsg              string  // 错误信息
 	SendBytes             uint64  // 发送字节数

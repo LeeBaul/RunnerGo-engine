@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"kp-runner/log"
 	gonet "net"
+	"strings"
 	"time"
 )
 
@@ -98,19 +99,13 @@ func GetNetwork(networkName string) []uint64 {
 }
 
 func InitLocalIp() {
-	// 获取所有网卡
-	address, err := gonet.InterfaceAddrs()
-	if err != nil {
-		log.Logger.Error("获取本机ip失败:", err)
-	}
-	// 遍历
-	for _, addr := range address {
-		// 取网络地址得网卡信息
-		if ipNet, ok := addr.(*gonet.IPNet); ok && !ipNet.IP.IsLoopback() {
-			if ipNet.IP.To4() != nil {
-				LocalIp = ipNet.IP.String()
-			}
-		}
-	}
 
+	conn, err := gonet.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		log.Logger.Error("udp服务：", err)
+		return
+	}
+	localAddr := conn.LocalAddr().(*gonet.UDPAddr)
+	LocalIp = strings.Split(localAddr.String(), ":")[0]
+	log.Logger.Info("本机ip：", LocalIp)
 }

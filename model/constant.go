@@ -11,13 +11,13 @@ const (
 // 返回 code 码
 const (
 	// NoError 没有错误
-	NoError = 10000
+	NoError = int64(10000)
 	// AssertError 断言错误
-	AssertError = 10001
+	AssertError = int64(10001)
 	// RequestError 请求错误
-	RequestError = 10002
+	RequestError = int64(10002)
 	// ServiceError 服务错误
-	ServiceError = 10003
+	ServiceError = int64(10003)
 )
 
 // 断言类型

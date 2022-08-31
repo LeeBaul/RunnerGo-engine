@@ -1,23 +1,17 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-micro/plugins/v4/registry/consul"
 	"go-micro.dev/v4/registry"
 	"go-micro.dev/v4/web"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"kp-runner/config"
 	"kp-runner/global"
 	"kp-runner/initialize"
 	"kp-runner/log"
 	"kp-runner/model"
-	pb "kp-runner/model/proto/pb"
 	"kp-runner/server/heartbeat"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,33 +20,6 @@ import (
 var (
 	GinRouter *gin.Engine
 )
-
-type GrpcServer struct {
-	pb.UnimplementedGrpcServiceServer
-}
-
-func (gs *GrpcServer) RunPlan(ctx context.Context, request *pb.GrpcPlan) (response *pb.GrpcResponse, err error) {
-
-	fmt.Println(request)
-	return
-}
-
-func InitGrpcService() {
-	g := grpc.NewServer()
-	reflection.Register(g)
-	server := GrpcServer{}
-	pb.RegisterGrpcServiceServer(g, server.UnimplementedGrpcServiceServer)
-	listen, err := net.Listen("tcp", heartbeat.LocalIp+":9000")
-	if err != nil {
-		log.Logger.Error("grpc服务监听失败:", err)
-		return
-	}
-	err = g.Serve(listen)
-	if err != nil {
-		log.Logger.Error("grpc服务启动失败:", err)
-		return
-	}
-}
 
 func init() {
 
@@ -87,6 +54,12 @@ func init() {
 		log.Logger.Error(err)
 	}
 
+	//go func() {
+	//	log.Logger.Debug("注册grpc服务")
+	//	api.InitGrpcService(config.Config["GrpcPort"].(string))
+	//	fmt.Println("000000000000000000000000000")
+	//}()
+
 	// 注册服务
 	log.Logger.Debug("注册服务")
 	kpRunnerService := web.NewService(
@@ -101,11 +74,11 @@ func init() {
 		log.Logger.Error("kpRunnerService启动失败：", err)
 		return
 	}
+
 }
 
 func main() {
 
-	InitGrpcService()
 	/// 接收终止信号
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

@@ -51,12 +51,14 @@ size=100
 
 
 [mongo]
-user="test"
-password="MyGlDiiKMtOL07EO"
+user="kunpeng"
+password="kYjJpU8BYvb4EJ9x"
 host="dds-8vb14448e6c8d6241844-pub.mongodb.zhangbei.rds.aliyuncs.com:3717"
-db="kp-runner"
-table1="request"
-table2="response"
+DB="kunpeng"
+requestTable="request"
+responseTable="response"
 
 
 
+[grpc]
+port="9000"

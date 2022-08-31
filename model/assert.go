@@ -41,7 +41,7 @@ type AssertionXPath struct {
 }
 
 // VerifyAssertionText 验证断言 文本断言
-func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Response) (code int, ok bool, msg string) {
+func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Response) (code int64, ok bool, msg string) {
 	switch assertionText.AssertionTarget {
 	case ResponseCode:
 		value, err := strconv.Atoi(assertionText.Value)
@@ -78,4 +78,10 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 		}
 	}
 	return
+}
+
+type AssertionMsg struct {
+	Code      int64  `json:"code" bson:"code"`
+	IsSucceed bool   `json:"isSucceed" bson:"isSucceed"`
+	Msg       string `json:"msg" bson:"msg"`
 }

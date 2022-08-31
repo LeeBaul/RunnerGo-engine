@@ -8,8 +8,11 @@ import (
 	"kp-runner/log"
 )
 
-func NewMongoClient(user, password, host string) (mongoClient *mongo.Client, err error) {
-	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s", user, password, host))
+func NewMongoClient(user, password, host, db string) (mongoClient *mongo.Client, err error) {
+	//clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s/%s", user, password, host, db))
+	conf := fmt.Sprintf("mongodb://%s:%s@%s/%s", user, password, host, db)
+
+	clientOptions := options.Client().ApplyURI(conf)
 	mongoClient, err = mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		return
@@ -20,6 +23,7 @@ func NewMongoClient(user, password, host string) (mongoClient *mongo.Client, err
 		return
 	}
 
+	log.Logger.Info("mongo数据库建连成功")
 	return
 }
 

@@ -10,8 +10,8 @@ const (
 )
 
 const (
-	DurationType = iota // 按时长执行
-	RoundsType          // 按轮次执行
+	DurationType = int64(iota) // 按时长执行
+	RoundsType                 // 按轮次执行
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 
 // ConfigTask 任务配置
 type ConfigTask struct {
-	TaskType  int8      `json:"taskType"` // 任务类型：0. 普通任务； 1. 定时任务； 2. cicd任务
+	TaskType  int64     `json:"taskType"` // 任务类型：0. 普通任务； 1. 定时任务； 2. cicd任务
 	Task      Task      `json:"task"`
 	TestModel TestModel `json:"testModel"`
 }
@@ -64,13 +64,12 @@ type ConcurrentTest struct {
 
 // ErrorRatTest 错误率模式 1
 type ErrorRatTest struct {
-	Threshold       float64 `json:"threshold"`       // 阈值
-	StartConcurrent int64   `json:"startConcurrent"` // 起始并发数
-	Length          int64   `json:"length"`          // 步长
-	LengthDuration  int64   `json:"lengthDuration"`  // 步长持续时间
-	MaxConcurrent   int64   `json:"MaxConcurrent"`   // 最大并发数
-	StableDuration  int64   `json:"stableDuration"`  // 稳定持续时长
-	TimeUp          int64   `json:"timeUp"`          // 启动并发数时长
+	StartConcurrent int64 `json:"startConcurrent"` // 起始并发数
+	Length          int64 `json:"length"`          // 步长
+	LengthDuration  int64 `json:"lengthDuration"`  // 步长持续时间
+	MaxConcurrent   int64 `json:"MaxConcurrent"`   // 最大并发数
+	StableDuration  int64 `json:"stableDuration"`  // 稳定持续时长
+	TimeUp          int64 `json:"timeUp"`          // 启动并发数时长
 }
 
 // LadderTest 阶梯模式 2
@@ -85,7 +84,7 @@ type LadderTest struct {
 
 //	TpsTest 每秒事务数模式 3
 type TpsTest struct {
-	Threshold       float64 `json:"threshold"`       // 阈值
+	Threshold       float32 `json:"threshold"`       // 阈值
 	StartConcurrent int64   `json:"startConcurrent"` // 起始并发数
 	Length          int64   `json:"length"`          // 步长
 	LengthDuration  int64   `json:"lengthDuration"`  // 步长持续时间
@@ -96,19 +95,16 @@ type TpsTest struct {
 
 //	QpsTest 每秒请求数模式 4
 type QpsTest struct {
-	Threshold       float64 `json:"threshold"`       // 阈值
-	StartConcurrent int64   `json:"startConcurrent"` // 起始并发数
-	Length          int64   `json:"length"`          // 步长
-	LengthDuration  int64   `json:"lengthDuration"`  // 步长持续时间
-	MaxConcurrent   int64   `json:"MaxConcurrent"`   // 最大并发数
-	StableDuration  int64   `json:"stableDuration"`  // 稳定持续时长
-	TimeUp          int64   `json:"timeUp"`          // 启动并发数时长
+	StartConcurrent int64 `json:"startConcurrent"` // 起始并发数
+	Length          int64 `json:"length"`          // 步长
+	LengthDuration  int64 `json:"lengthDuration"`  // 步长持续时间
+	MaxConcurrent   int64 `json:"MaxConcurrent"`   // 最大并发数
+	StableDuration  int64 `json:"stableDuration"`  // 稳定持续时长
+	TimeUp          int64 `json:"timeUp"`          // 启动并发数时长
 }
 
 //	RTTest 响应时间模式 5
 type RTTest struct {
-	Standard        int   `json:"standard"`        // 0:平均响应时间；1. 90%rt; 2. 95%rt; 3. 99%rt; 4. 自定义
-	Threshold       int   `json:"threshold"`       // 阈值
 	StartConcurrent int64 `json:"startConcurrent"` // 起始并发数
 	Length          int64 `json:"length"`          // 步长
 	LengthDuration  int64 `json:"lengthDuration"`  // 步长持续时间

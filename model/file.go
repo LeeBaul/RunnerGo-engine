@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"kp-runner/log"
+	"kp-runner/model/proto/pb"
 	"os"
 	"strings"
 	"sync"
@@ -66,6 +67,56 @@ func (p *ParameterizedFile) UseVar(key string) (value string) {
 			p.VariableNames.Index = 0
 		}
 		value = values[p.VariableNames.Index]
+		p.VariableNames.Index++
+	}
+	return
+}
+
+// FileToParameter 将参数化文件写入内存变量中
+func FileToParameter(p *pb.ParameterizedFile) {
+	fs, err := os.Open(p.Path)
+	defer fs.Close()
+	if err != nil {
+		log.Logger.Error("打开参数化文件失败：", err)
+		return
+	}
+	buf := bufio.NewReader(fs)
+	i := 0
+	p.VariableNames.VarMapList = make(map[string]*pb.StringRepeated)
+
+	var keys []string
+	for {
+		line, err := buf.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+
+		line = strings.TrimSpace(line)
+
+		if i == 0 {
+			keys = strings.Split(line, ",")
+			for _, v := range keys {
+				p.VariableNames.VarMapList[v] = &pb.StringRepeated{}
+			}
+		} else {
+			var value = strings.Split(line, ",")
+
+			for j := 0; j < len(keys); j++ {
+				p.VariableNames.VarMapList[keys[j]].VarList = append(p.VariableNames.VarMapList[keys[j]].VarList, value[j])
+			}
+		}
+		i++
+	}
+	p.VariableNames.Index = 0
+}
+
+// UseParameter 使用数据
+func UseParameter(p *pb.ParameterizedFile, key string) (value string) {
+	if values, ok := p.VariableNames.VarMapList[key]; ok {
+		if p.VariableNames.Index >= int64(len(p.VariableNames.VarMapList[key].VarList)) {
+			p.VariableNames.Index = 0
+		}
+		value = values.VarList[p.VariableNames.Index]
 		p.VariableNames.Index++
 	}
 	return

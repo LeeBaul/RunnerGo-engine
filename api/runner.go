@@ -10,7 +10,7 @@ import (
 )
 
 func RunPlan(c *gin.Context) {
-	var planInstance model.Plan
+	var planInstance = model.Plan{}
 	err := c.ShouldBindJSON(&planInstance)
 
 	if err != nil {
@@ -21,10 +21,6 @@ func RunPlan(c *gin.Context) {
 	log.Logger.Info("开始执行计划", planInstance)
 	go func(planInstance *model.Plan) {
 		server.DisposeTask(planInstance)
-		if err != nil {
-			global.ReturnMsg(c, http.StatusBadRequest, "计划执行失败", err.Error())
-			return
-		}
 	}(&planInstance)
 
 	global.ReturnMsg(c, http.StatusOK, "开始执行计划", nil)
@@ -48,5 +44,15 @@ func RunScene(c *gin.Context) {
 }
 
 func RunApi(c *gin.Context) {
+	var request = model.Request{}
+	err := c.ShouldBindJSON(&request)
 
+	if err != nil {
+		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
+		return
+	}
+	requestResults := new(model.ResultDataMsg)
+	debugMsg := new(model.DebugMsg)
+	server.ExecutionDebugRequest(request, nil, requestResults, debugMsg)
+	global.ReturnMsg(c, http.StatusOK, "调试接口", debugMsg)
 }

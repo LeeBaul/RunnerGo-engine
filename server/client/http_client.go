@@ -4,10 +4,8 @@ package client
 import (
 	"crypto/tls"
 	"github.com/valyala/fasthttp"
-	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
 	"kp-runner/log"
-	"kp-runner/model"
 	"kp-runner/tools"
 	"time"
 )
@@ -19,11 +17,11 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body string, headers map[string]string, timeout int, debug bool, requestCollection *mongo.Collection) (resp *fasthttp.Response, requestTime uint64, sendBytes uint, err error) {
+func HTTPRequest(method, url string, body string, headers map[string]string, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error) {
 
 	client := fastClient(timeout)
-	req := fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
+	req = fasthttp.AcquireRequest()
+
 	req.Header.SetMethod(method)
 	if headers != nil {
 		for k, v := range headers {
@@ -44,21 +42,18 @@ func HTTPRequest(method, url string, body string, headers map[string]string, tim
 	}
 	requestTime = tools.TimeDifference(startTime)
 	sendBytes = uint(req.Header.ContentLength())
-	if debug == true {
-		model.Insert(requestCollection, req.String())
-	}
 	return
 }
 
 // 获取fasthttp客户端
-func fastClient(timeOut int) *fasthttp.Client {
+func fastClient(timeOut int64) *fasthttp.Client {
 	fc := &fasthttp.Client{
 		Name:                     config.Config["httpClientName"].(string),
 		NoDefaultUserAgentHeader: config.Config["httpNoDefaultUserAgentHeader"].(bool),
 		TLSConfig:                &tls.Config{InsecureSkipVerify: true},
 		MaxConnsPerHost:          int(config.Config["httpClientMaxConnsPerHost"].(int64)),
 		MaxIdleConnDuration:      time.Duration(config.Config["httpClientMaxIdleConnDuration"].(int64)) * time.Millisecond,
-		ReadTimeout:              time.Duration(int64(timeOut)) * time.Millisecond,
+		ReadTimeout:              time.Duration(timeOut) * time.Millisecond,
 		WriteTimeout:             time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
 		MaxConnWaitTimeout:       time.Duration(config.Config["httpClientMaxConnWaitTimeout"].(int64)) * time.Millisecond,
 	}

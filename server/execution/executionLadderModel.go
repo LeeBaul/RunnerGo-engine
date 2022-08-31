@@ -10,45 +10,31 @@ import (
 )
 
 // ExecutionLadderModel 阶梯模式
-func ExecutionLadderModel(plan *model.Plan, ch chan *model.ResultDataMsg, wg *sync.WaitGroup, requestCollection, responseCollection *mongo.Collection) {
+func ExecutionLadderModel(eventList []model.Event, ch chan *model.ResultDataMsg,
+	planId, planName, sceneId, sceneName, reportId, reportName string,
+	startConcurrent, length, maxConcurrent, lengthDuration, stableDuration, timeUp int64,
+	configuration *model.Configuration, wg *sync.WaitGroup, globalVariable *sync.Map, requestCollection *mongo.Collection) {
 
 	defer close(ch)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	startTime := time.Now().Unix()
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent
-	startConcurrent := plan.ConfigTask.TestModel.LadderTest.StartConcurrent
-	length := plan.ConfigTask.TestModel.LadderTest.Length
-	maxConcurrent := plan.ConfigTask.TestModel.LadderTest.MaxConcurrent
-	lengthDuration := plan.ConfigTask.TestModel.LadderTest.LengthDuration
-	stableDuration := plan.ConfigTask.TestModel.LadderTest.StableDuration
-	timeUp := plan.ConfigTask.TestModel.LadderTest.TimeUp
-	concurrent := startConcurrent
-	eventList := plan.Scene.EventList
 
-	if plan.Scene.Configuration.ParameterizedFile.Path != "" {
-		var mu = sync.Mutex{}
-		plan.Scene.Configuration.ParameterizedFile.VariableNames.Mu = mu
-		p := plan.Scene.Configuration.ParameterizedFile
-		p.ReadFile()
-	}
+	concurrent := startConcurrent
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+lengthDuration > time.Now().Unix() {
 		// 查询任务是否结束
-		_, status := model.QueryPlanStatus(plan.PlanID + ":" + plan.Scene.SceneId + ":" + "status")
+		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 		if status == "false" {
-			log.Logger.Info("计划", plan.PlanName, "结束")
+			log.Logger.Info("计划", planName, "结束")
 			return
 		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
-				if plan.Variable == nil {
-					plan.Variable = new(sync.Map)
-				}
-				globalVariable := plan.Variable
-				golink.DisposeScene(eventList, ch, plan, globalVariable, wg, requestCollection, responseCollection, i, concurrent)
+				golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent, wg)
 
@@ -58,7 +44,7 @@ func ExecutionLadderModel(plan *model.Plan, ch chan *model.ResultDataMsg, wg *sy
 			}
 		}
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().Unix() {
-			log.Logger.Info("计划", plan.PlanName, "结束")
+			log.Logger.Info("计划", planName, "结束")
 			return
 		}
 		// 如果当前并发数小于最大并发数，

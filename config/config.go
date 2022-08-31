@@ -47,5 +47,16 @@ func InitConfig() {
 	Config["redisPassword"] = viper.Get("redis.password")
 	Config["redisDB"] = viper.Get("redis.DB")
 	Config["redisSize"] = viper.Get("redis.size")
+
+	// grpc
+	Config["GrpcPort"] = viper.Get("grpc.port")
+
+	// mongodb
+	Config["mongoUser"] = viper.Get("mongo.user")
+	Config["mongoPassword"] = viper.Get("mongo.password")
+	Config["mongoHost"] = viper.Get("mongo.host")
+	Config["mongoDB"] = viper.Get("mongo.DB")
+	Config["mongoRequestTable"] = viper.Get("mongo.requestTable")
+	Config["mongoResponseTable"] = viper.Get("mongo.responseTable")
 	zap.S().Info(Config)
 }

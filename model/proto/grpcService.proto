@@ -62,7 +62,7 @@ message TestModel {
 
 // ConcurrentTest 并发模式 0
 message  ConcurrentTest {
-  string     type       = 1;       // 0:DurationType; 1:RoundsType
+  int64      type       = 1;       // 0:DurationType; 1:RoundsType
   int64      concurrent = 2;       // 并发数
   int64      Duration   = 3;       // 持续时长
   int64      Rounds     = 4;       // 轮次
@@ -71,7 +71,7 @@ message  ConcurrentTest {
 
 // ErrorRatTest 错误率模式 1
 message ErrorRatTest {
-  double  threshold        = 1;      // 阈值
+  float   threshold        = 1;      // 阈值
   int64   startConcurrent  = 2;      // 起始并发数
   int64   length           = 3;      // 步长
   int64   lengthDuration   = 4;      // 步长持续时间
@@ -92,7 +92,7 @@ message LadderTest  {
 
 //	TpsTest 每秒事务数模式 3
 message 	TpsTest {
-  double   threshold        = 1;      // 阈值
+  float    threshold        = 1;      // 阈值
   int64    startConcurrent  = 2;      // 起始并发数
   int64    length           = 3;      // 步长
   int64    lengthDuration   = 4;      // 步长持续时间
@@ -103,7 +103,6 @@ message 	TpsTest {
 
 //	QpsTest 每秒请求数模式 4
 message  QpsTest {
-  double    threshold       = 1;       // 阈值
   int64     startConcurrent = 2;       // 起始并发数
   int64     length          = 3;       // 步长
   int64     lengthDuration  = 4;       // 步长持续时间
@@ -115,7 +114,6 @@ message  QpsTest {
 //	RTTest 响应时间模式 5
 message RTTest {
   uint64    Standard        = 1;        // 0:平均响应时间；1. 90%rt; 2. 95%rt; 3. 99%rt; 4. 自定义
-  int64     Threshold       = 2;        // 阈值
   int64     StartConcurrent = 3;        // 起始并发数
   int64     Length          = 4;        // 步长
   int64     LengthDuration  = 5;        // 步长持续时间
@@ -185,7 +183,7 @@ message Request {
   int64                             customRequestTime    = 15;    // 自定义响应时间线
   int64                             requestTimeThreshold = 16; // 响应时间阈值
   repeated    RegularExpression                 regulars             = 17;             // 正则表达式
-  int64                             debug                = 18;                // 是否开启Debug模式
+  bool                              debug                = 18;                // 是否开启Debug模式
   int64                             connection           = 19;           // 0:websocket长连接
   int64                             weight               = 20;               // 权重，并发分配的比例
   bool                              tag                  = 21;                  // Tps模式下，该标签代表以该接口为准

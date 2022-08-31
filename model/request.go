@@ -1,6 +1,7 @@
 package model
 
 import (
+	"kp-runner/model/proto/pb"
 	"kp-runner/tools"
 	"strings"
 	"sync"
@@ -16,18 +17,18 @@ type Request struct {
 	Headers              map[string]string    `json:"headers"` // Headers
 	Body                 string               `json:"body"`
 	Auth                 map[string]string    `json:"auth"`
-	Requests             []*Request           `json:"requests"`
+	Requests             []Request            `json:"requests" bson:"requests"`
 	Controllers          []*Controller        `json:"controllers"`
 	Parameterizes        *sync.Map            `json:"parameterizes"`        // 接口中定义的变量
 	Assertions           []*Assertion         `json:"assertions"`           // 验证的方法(断言)
-	Timeout              int                  `json:"timeout"`              // 请求超时时间
-	ErrorThreshold       float64              `json:"errorThreshold"`       // 错误率阈值
-	CustomRequestTime    int                  `json:"customRequestTime"`    // 自定义响应时间线
-	RequestTimeThreshold int                  `json:"requestTimeThreshold"` // 响应时间阈值
+	Timeout              int64                `json:"timeout"`              // 请求超时时间
+	ErrorThreshold       float32              `json:"errorThreshold"`       // 错误率阈值
+	CustomRequestTime    int64                `json:"customRequestTime"`    // 自定义响应时间线
+	RequestTimeThreshold int64                `json:"requestTimeThreshold"` // 响应时间阈值
 	Regulars             []*RegularExpression `json:"regulars"`             // 正则表达式
 	Debug                bool                 `json:"debug"`                // 是否开启Debug模式
-	Connection           int                  `json:"connection"`           // 0:websocket长连接
-	Weight               int8                 `json:"weight"`               // 权重，并发分配的比例
+	Connection           int64                `json:"connection"`           // 0:websocket长连接
+	Weight               int64                `json:"weight"`               // 权重，并发分配的比例
 	Tag                  bool                 `json:"tag"`                  // Tps模式下，该标签代表以该接口为准
 }
 
@@ -44,7 +45,7 @@ func (re RegularExpression) Extract(str string, parameters *sync.Map) {
 	}
 }
 
-func (r *Request) ReplaceUrlParameterizes() {
+func (r Request) ReplaceUrlParameterizes() {
 
 	urls := tools.FindAllDestStr(r.URL, "{{(.*?)}}")
 	if urls != nil {
@@ -56,7 +57,7 @@ func (r *Request) ReplaceUrlParameterizes() {
 	}
 }
 
-func (r *Request) ReplaceHeaderParameterizes() {
+func (r Request) ReplaceHeaderParameterizes() {
 	for k, v := range r.Headers {
 
 		// 查找header的key中是否存在变量{{****}}
@@ -83,7 +84,7 @@ func (r *Request) ReplaceHeaderParameterizes() {
 	}
 }
 
-func (r *Request) ReplaceParameterizes(globalVariable *sync.Map) {
+func (r Request) ReplaceParameterizes(globalVariable *sync.Map) {
 	r.Parameterizes.Range(func(k, v any) bool {
 		// 查找header的key中是否存在变量{{****}}
 		keys := tools.FindAllDestStr(k.(string), "{{(.*?)}}")
@@ -108,6 +109,32 @@ func (r *Request) ReplaceParameterizes(globalVariable *sync.Map) {
 		}
 		return true
 	})
+}
+
+func GrpcReplaceParameterizes(r *pb.Request, globalVariable *sync.Map) {
+	for k, v := range r.Parameterizes {
+		// 查找header的key中是否存在变量{{****}}
+		keys := tools.FindAllDestStr(k, "{{(.*?)}}")
+		if keys != nil {
+			delete(r.Parameterizes, k)
+			for _, realKey := range keys {
+				if value, ok := globalVariable.Load(realKey[1]); ok {
+					k = strings.Replace(k, realKey[0], value.(string), -1)
+				}
+			}
+			r.Parameterizes[k] = v
+		}
+
+		values := tools.FindAllDestStr(v.String(), "{{(.*?)}}")
+		if values != nil {
+			for _, realValue := range values {
+				if value, ok := globalVariable.Load(realValue[1]); ok {
+					v.Value = []byte(strings.Replace(v.String(), realValue[0], value.(string), -1))
+				}
+			}
+			r.Parameterizes[k] = v
+		}
+	}
 }
 
 func (r *Request) ReplaceBodyParameterizes() {
