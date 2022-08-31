@@ -20,8 +20,6 @@ username = ""
 database = ""
 password = ""
 
-[consul]
-address = "127.0.0.1:8500" # 注册服务地址
 
 
 [httpClient]
@@ -29,6 +27,7 @@ name = "kp-runner"
 noDefaultUserAgentHeader = true
 maxConnsPerHost = 10000
 maxIdleConnDuration = 5000
+readTimeout = 5000
 writeTimeout = 5000
 maxConnWaitTimeout = 30000
 

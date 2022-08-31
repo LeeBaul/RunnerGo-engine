@@ -22,7 +22,6 @@ func InitConfig() {
 	Config["serverName"] = viper.Get("server.name")
 	Config["serverAddress"] = viper.Get("server.address")
 	Config["serverVersion"] = viper.Get("server.version")
-	Config["consulAddress"] = viper.Get("consul.address")
 
 	// 读取mysql信息
 	Config["mysql"] = viper.Get("mysql")
@@ -32,6 +31,7 @@ func InitConfig() {
 	Config["httpNoDefaultUserAgentHeader"] = viper.Get("httpClient.noDefaultUserAgentHeader")
 	Config["httpClientMaxConnsPerHost"] = viper.Get("httpClient.maxConnsPerHost")
 	Config["httpClientMaxIdleConnDuration"] = viper.Get("httpClient.maxIdleConnDuration")
+	Config["httpClientReadTimeout"] = viper.Get("httpClient.writeTimeout")
 	Config["httpClientWriteTimeout"] = viper.Get("httpClient.writeTimeout")
 	Config["httpClientMaxConnWaitTimeout"] = viper.Get("httpClient.maxConnWaitTimeout")
 

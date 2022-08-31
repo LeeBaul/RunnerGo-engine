@@ -20,23 +20,22 @@ username = ""
 database = ""
 password = ""
 
-[consul]
-address = "127.0.0.1:8500" # 注册服务地址
 
 
 [httpClient]
 name = "kp-runner"
 noDefaultUserAgentHeader = true
-maxConnsPerHost = 5000
+maxConnsPerHost = 10000
 maxIdleConnDuration = 5000
+readTimeout = 5000
 writeTimeout = 5000
-maxConnWaitTimeout = 3000
+maxConnWaitTimeout = 30000
 
 [pool]
 MaxPool = 5000
 
 [kafka]
-address = "127.0.0.1:9092"
+address = "172.17.101.188:9092"
 topic = "StressTestData"
 
 [es]
@@ -44,9 +43,21 @@ address = "172.17.101.191:9200"
 
 
 [redis]
-host="172.17.101.191"
+addr="172.17.101.191:6398"
 password="apipost"
-port=6398
+DB=0
+size=100
+
+
+[mongo]
+user="kunpeng"
+password="kYjJpU8BYvb4EJ9x"
+host="dds-8vb14448e6c8d6241844-pub.mongodb.zhangbei.rds.aliyuncs.com:3717"
+DB="kunpeng"
+requestTable="request"
+responseTable="response"
 
 
 
+[grpc]
+port="9000"

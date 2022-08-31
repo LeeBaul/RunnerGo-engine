@@ -1,27 +1,26 @@
 package main
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/go-micro/plugins/v4/registry/consul"
-	"go-micro.dev/v4/registry"
-	"go-micro.dev/v4/web"
 	"go.uber.org/zap"
 	"kp-runner/config"
-	"kp-runner/global"
 	"kp-runner/initialize"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/heartbeat"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var (
 	GinRouter *gin.Engine
 )
 
-func init() {
+func initService() {
 
 	// 初始化logger
 	zap.S().Debug("初始化logger")
@@ -44,7 +43,6 @@ func init() {
 		return
 	}
 
-	global.ConsulClient = consul.NewRegistry(registry.Addrs(config.Config["consulAddress"].(string)))
 	//3. 初始化routers
 	log.Logger.Debug("初始化routers")
 	GinRouter = initialize.Routers()
@@ -62,26 +60,35 @@ func init() {
 
 	// 注册服务
 	log.Logger.Debug("注册服务")
-	kpRunnerService := web.NewService(
-		web.Name(config.Config["serverName"].(string)),
-		web.Version(config.Config["serverVersion"].(string)),
-		web.Registry(global.ConsulClient),
-		web.Address(config.Config["serverAddress"].(string)),
-		web.Handler(GinRouter),
-	)
-
-	if err := kpRunnerService.Run(); err != nil {
-		log.Logger.Error("kpRunnerService启动失败：", err)
-		return
+	kpRunnerService := &http.Server{
+		Addr:           config.Config["serverAddress"].(string),
+		Handler:        GinRouter,
+		ReadTimeout:    time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
+		WriteTimeout:   time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
+		MaxHeaderBytes: 1 << 20,
 	}
 
-}
-
-func main() {
+	go func() {
+		if err := kpRunnerService.ListenAndServe(); err != nil {
+			log.Logger.Error("kpRunnerService启动失败：", err)
+			return
+		}
+	}()
 
 	/// 接收终止信号
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Logger.Info("注销成功")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := kpRunnerService.Shutdown(ctx); err != nil {
+		log.Logger.Info("注销成功")
+	}
+}
+
+func main() {
+	initService()
 }
