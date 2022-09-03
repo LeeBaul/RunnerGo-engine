@@ -46,7 +46,6 @@ address = "172.17.101.191:9200"
 addr="172.17.101.191:6398"
 password="apipost"
 DB=0
-size=100
 
 
 [mongo]

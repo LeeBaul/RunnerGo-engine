@@ -46,7 +46,7 @@ type CICDTask struct {
 type TestModel struct {
 	Type           int8           `json:"type"` // 0:ConcurrentModel; 1:ErrorRateModel; 2:LadderModel; 3:TpsModel; 4:QpsModel; 5:RTModel
 	ConcurrentTest ConcurrentTest `json:"concurrentTest"`
-	ErrorRatTest   ErrorRatTest   `json:"errorRatTest"`
+	ErrorRateTest  ErrorRateTest  `json:"errorRatTest"`
 	LadderTest     LadderTest     `json:"ladderTest"`
 	TpsTest        TpsTest        `json:"tpsTest"`
 	QpsTest        QpsTest        `json:"qpsTest"`
@@ -62,8 +62,8 @@ type ConcurrentTest struct {
 	TimeUp     int64 `json:"timeUp"`     // 启动并发数时长
 }
 
-// ErrorRatTest 错误率模式 1
-type ErrorRatTest struct {
+// ErrorRateTest 错误率模式 1
+type ErrorRateTest struct {
 	StartConcurrent int64 `json:"startConcurrent"` // 起始并发数
 	Length          int64 `json:"length"`          // 步长
 	LengthDuration  int64 `json:"lengthDuration"`  // 步长持续时间

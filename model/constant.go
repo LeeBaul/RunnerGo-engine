@@ -62,3 +62,20 @@ const (
 	OriginatingFrom = "以...开始"
 	EndIn           = "以...结束"
 )
+
+// 数据类型
+const (
+	StringType    = "String"
+	TextType      = "Text"
+	ObjectType    = "Object"
+	ArrayType     = "Array"
+	IntegerType   = "Integer"
+	NumberType    = "Number"
+	FloatType     = "Float"
+	DoubleType    = "Double"
+	FileType      = "File"
+	DateType      = "Date"
+	DateTimeType  = "DateTime"
+	TimeStampType = "TimeStampType"
+	BooleanType   = "boolean"
+)

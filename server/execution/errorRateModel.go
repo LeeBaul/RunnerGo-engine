@@ -33,11 +33,18 @@ func GetErrorRate(key string, errorRateData *ErrorRateData) {
 }
 
 // ExecutionErrorRateModel 错误率模式
-func ExecutionErrorRateModel(eventList []model.Event, ch chan *model.ResultDataMsg,
+func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
 	planId, planName, sceneId, sceneName, reportId, reportName string,
-	startConcurrent, length, maxConcurrent, lengthDuration, stableDuration, timeUp int64,
-	configuration *model.Configuration, globalVariable *sync.Map, wg *sync.WaitGroup, requestCollection *mongo.Collection) {
-	defer close(ch)
+	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
+	defer close(resultDataMsgCh)
+
+	startConcurrent := errorRateTest.StartConcurrent
+	length := errorRateTest.Length
+	maxConcurrent := errorRateTest.MaxConcurrent
+	lengthDuration := errorRateTest.LengthDuration
+	stableDuration := errorRateTest.StableDuration
+	timeUp := errorRateTest.TimeUp
+
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	errorRateData := new(ErrorRateData)
 	startTime := time.Now().Unix()
@@ -66,7 +73,8 @@ func ExecutionErrorRateModel(eventList []model.Event, ch chan *model.ResultDataM
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64) {
-				golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
+				gid := GetGid()
+				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长

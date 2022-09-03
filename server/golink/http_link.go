@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(request model.Request, globalVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -19,8 +19,8 @@ func HttpSend(request model.Request, globalVariable *sync.Map, requestCollection
 		errMsg        = ""
 	)
 
-	resp, req, requestTime, sendBytes, err := client.HTTPRequest(request.Method, request.URL, request.Body,
-		request.Headers, request.Timeout)
+	resp, req, requestTime, sendBytes, err := client.HTTPRequest(request.Method, request.URL, request.Body, request.Query,
+		request.Header, request.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
 	if request.Regulars != nil {
@@ -28,10 +28,9 @@ func HttpSend(request model.Request, globalVariable *sync.Map, requestCollection
 			regular.Extract(string(resp.Body()), globalVariable)
 		}
 	}
-
 	if err != nil {
 		isSucceed = false
-		errCode = int64(model.RequestError) // 请求错误
+		errCode = model.RequestError // 请求错误
 		errMsg = err.Error()
 	} else {
 		// 断言验证
@@ -75,7 +74,9 @@ func HttpSend(request model.Request, globalVariable *sync.Map, requestCollection
 		if debugMsg == nil {
 			debugMsg = &model.DebugMsg{}
 		}
-
+		debugMsg.EventId = eventId
+		debugMsg.ApiId = request.ApiId
+		debugMsg.ApiName = request.ApiName
 		debugMsg.Request = make(map[string]string)
 		debugMsg.Request["header"] = req.Header.String()
 		debugMsg.Request["body"] = string(req.Body())

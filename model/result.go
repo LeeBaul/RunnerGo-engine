@@ -13,15 +13,15 @@ import (
 // SceneTestResultDataMsg 场景的测试结果
 
 type SceneTestResultDataMsg struct {
-	MachineIp   string `json:"machineIp"`
-	MachineName string
-	ReportId    string                           `json:"reportId"`
-	ReportName  string                           `json:"reportName"`
-	PlanId      string                           `json:"planId"`   // 任务ID
-	PlanName    string                           `json:"planName"` //
-	SceneId     string                           `json:"sceneId"`  // 场景
-	SceneName   string                           `json:"sceneName"`
-	Results     map[string]*ApiTestResultDataMsg `json:"results"`
+	MachineIp   string                           `json:"machineIp" bson:"machineIp"`
+	MachineName string                           `json:"machineName" bson:"machineName"`
+	ReportId    string                           `json:"reportId" bson:"reportId"`
+	ReportName  string                           `json:"reportName" bson:"reportName"`
+	PlanId      string                           `json:"planId" bson:"planId"`     // 任务ID
+	PlanName    string                           `json:"planName" bson:"planName"` //
+	SceneId     string                           `json:"sceneId" bson:"sceneId"`   // 场景
+	SceneName   string                           `json:"sceneName" bson:"sceneName"`
+	Results     map[string]*ApiTestResultDataMsg `json:"results" bson:"results"`
 }
 
 // ApiTestResultDataMsg 接口测试数据经过计算后的测试结果
@@ -54,6 +54,7 @@ type ApiTestResultDataMsg struct {
 type ResultDataMsg struct {
 	ReportId              string
 	ReportName            string
+	EventId               string
 	PlanId                string // 任务ID
 	PlanName              string //
 	SceneId               string // 场景

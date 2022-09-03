@@ -4,11 +4,11 @@ package server
 import (
 	"context"
 	"github.com/robfig/cron/v3"
+	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/execution"
-	"kp-runner/server/golink"
 	"kp-runner/server/heartbeat"
 	"sort"
 	"sync"
@@ -17,7 +17,10 @@ import (
 
 // DisposeTask 处理任务
 func DisposeTask(plan *model.Plan) {
-	switch plan.ConfigTask.TaskType {
+	if plan.ConfigTask != nil && plan.Scene.EnablePlanConfiguration == true {
+		plan.Scene.ConfigTask = plan.ConfigTask
+	}
+	switch plan.Scene.ConfigTask.TaskType {
 	case model.CommonTaskType:
 		ExecutionPlan(plan)
 	case model.TimingTaskType:
@@ -47,6 +50,7 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 	}
 	c.Start()
 
+	// 查询定时任务状态，如果redis中的状态变为停止，则关闭定时任务
 	status := model.QueryTimingTaskStatus(plan.PlanId + ":" + plan.Scene.SceneId + ":" + "timing")
 	if status == false {
 		c.Remove(id)
@@ -54,19 +58,42 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 
 }
 
-func ExecutionDebugRequest(request model.Request, globalVariable *sync.Map, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg) {
-	golink.DisposeRequest(nil, "", "", "", "", "", "", nil, request, globalVariable, nil, requestResults, debugMsg, nil)
-}
+// ExecutionDebugRequest 接口调试
+//func ExecutionDebugRequest(request model.Request, globalVariable *sync.Map, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg) {
+//	golink.DisposeRequest(nil, "", "", "", "", "", "", nil, request, globalVariable, nil, requestResults, debugMsg, nil)
+//}
 
 // ExecutionPlan 执行计划
 func ExecutionPlan(plan *model.Plan) {
 
-	// 设置kafka消费者
+	// 如果场景为空或者场景中的事件为空，直接结束该方法
+	if plan.Scene == nil || plan.Scene.EventList == nil {
+		log.Logger.Error("计划的场景不能为空: ", plan)
+		return
+	}
+
+	// 设置kafka消费者，目的是像kafka中发送测试结果
 	kafkaProducer, err := model.NewKafkaProducer([]string{config.Config["kafkaAddress"].(string)})
 	if err != nil {
 		log.Logger.Error("kafka连接失败", err)
 		return
 	}
+
+	// 新建mongo客户端连接，用于发送debug数据
+	mongoClient, err := model.NewMongoClient(
+		config.Config["mongoUser"].(string),
+		config.Config["mongoPassword"].(string),
+		config.Config["mongoHost"].(string),
+		config.Config["mongoDB"].(string))
+	if err != nil {
+		log.Logger.Error("连接mongo错误：", err)
+		return
+	}
+	defer mongoClient.Disconnect(context.TODO())
+
+	// 场景channel,用于各个event之间的通信
+	//sceneCh := make(chan *model.Plan)
+
 	// 设置接收数据缓存
 	ch := make(chan *model.ResultDataMsg, 10000)
 	sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
@@ -76,145 +103,124 @@ func ExecutionPlan(plan *model.Plan) {
 	go ReceivingResults(ch, sceneTestResultDataMsgCh)
 	// 向kafka发送消息
 	go model.SendKafkaMsg(kafkaProducer, sceneTestResultDataMsgCh)
-	mongoClient, err := model.NewMongoClient(
-		config.Config["mongoUser"].(string),
-		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string),
-		config.Config["mongoDB"].(string))
-	if err != nil {
-		close(ch)
-		log.Logger.Error("连接mongo错误：", err)
+
+	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+
+	planId := plan.PlanId
+	planName := plan.PlanName
+	reportId := plan.ReportId
+	reportName := plan.ReportName
+	scene := plan.Scene
+
+	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
+	if scene.EnablePlanConfiguration == true {
+		scene.ConfigTask = plan.ConfigTask
+	}
+	if scene.ConfigTask == nil {
+		log.Logger.Error("任务配置不能为空", plan)
 		return
 	}
-	defer mongoClient.Disconnect(context.TODO())
-	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
-	if plan.Scene.Configuration.ParameterizedFile.Path != "" {
+	// 循环读全局变量，如果场景变量不存在则将添加到场景变量中，如果有参数化数据则，将其替换
+	if plan.Variable != nil {
+		if scene.Configuration.Variable == nil {
+			scene.Configuration.Variable = new(sync.Map)
+		}
+		plan.Variable.Range(func(key, value any) bool {
+			if _, ok := scene.Configuration.Variable.Load(key); !ok {
+				scene.Configuration.Variable.Store(key, value)
+			}
+			return true
+		})
+	}
+
+	// 分解任务
+	TaskDecomposition(planId, planName, reportId, reportName, scene, wg, ch, scene.Configuration.Variable, requestCollection)
+}
+
+// TaskDecomposition 分解任务
+func TaskDecomposition(planId, planName, reportId, reportName string, scene *model.Scene, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, sceneVariable *sync.Map, mongoCollection *mongo.Collection) {
+
+	if scene.Configuration.ParameterizedFile != nil {
 		var mu = sync.Mutex{}
-		plan.Scene.Configuration.ParameterizedFile.VariableNames.Mu = mu
-		p := plan.Scene.Configuration.ParameterizedFile
+		p := scene.Configuration.ParameterizedFile
+		p.VariableNames.Mu = mu
 		p.ReadFile()
 	}
 
-	configuration := plan.Scene.Configuration
-
-	globalVariable := plan.Variable
-	eventList := plan.Scene.EventList
-	switch plan.ConfigTask.TestModel.Type {
+	configTask := scene.ConfigTask
+	configuration := scene.Configuration
+	eventList := scene.EventList
+	sceneId := scene.SceneId
+	sceneName := scene.SceneName
+	switch configTask.TestModel.Type {
 	case model.ConcurrentModel:
-		concurrent := plan.ConfigTask.TestModel.ConcurrentTest.Concurrent
-		testType := plan.ConfigTask.TestModel.ConcurrentTest.Type
-		roundOrTime := int64(0)
-		switch testType {
-		case model.DurationType:
-			roundOrTime = plan.ConfigTask.TestModel.ConcurrentTest.Duration
-		case model.RoundsType:
-			roundOrTime = plan.ConfigTask.TestModel.ConcurrentTest.Rounds
-		}
 		execution.ExecutionConcurrentModel(
+			configTask.TestModel.ConcurrentTest,
+			resultDataMsgCh,
 			eventList,
-			ch,
-			concurrent,
-			testType,
-			roundOrTime,
-			plan.PlanId,
-			plan.PlanName,
-			plan.Scene.SceneId,
-			plan.Scene.SceneName,
-			plan.ReportId,
-			plan.ReportName,
+			planId,
+			planName,
+			reportId,
+			reportName,
+			sceneId,
+			sceneName,
 			configuration,
-			globalVariable,
 			wg,
-			requestCollection)
+			sceneVariable,
+			mongoCollection)
 
 	case model.ErrorRateModel:
-		startConcurrent := plan.ConfigTask.TestModel.ErrorRatTest.StartConcurrent
-		length := plan.ConfigTask.TestModel.ErrorRatTest.Length
-		maxConcurrent := plan.ConfigTask.TestModel.ErrorRatTest.MaxConcurrent
-		lengthDuration := plan.ConfigTask.TestModel.ErrorRatTest.LengthDuration
-		stableDuration := plan.ConfigTask.TestModel.ErrorRatTest.StableDuration
-		timeUp := plan.ConfigTask.TestModel.ErrorRatTest.TimeUp
 		execution.ExecutionErrorRateModel(
+			configTask.TestModel.ErrorRateTest,
 			eventList,
-			ch,
-			plan.PlanId,
-			plan.PlanName,
-			plan.Scene.SceneId,
-			plan.Scene.SceneName,
-			plan.ReportId,
-			plan.ReportName,
-			startConcurrent,
-			length,
-			maxConcurrent,
-			lengthDuration,
-			stableDuration,
-			timeUp,
+			resultDataMsgCh,
+			planId,
+			planName,
+			sceneId,
+			sceneName,
+			reportId,
+			reportName,
 			configuration,
-			globalVariable,
 			wg,
-			requestCollection)
+			sceneVariable,
+			mongoCollection)
 	case model.LadderModel:
-		startConcurrent := plan.ConfigTask.TestModel.LadderTest.StartConcurrent
-		length := plan.ConfigTask.TestModel.LadderTest.Length
-		maxConcurrent := plan.ConfigTask.TestModel.LadderTest.MaxConcurrent
-		lengthDuration := plan.ConfigTask.TestModel.LadderTest.LengthDuration
-		stableDuration := plan.ConfigTask.TestModel.LadderTest.StableDuration
-		timeUp := plan.ConfigTask.TestModel.LadderTest.TimeUp
 		execution.ExecutionLadderModel(
+			configTask.TestModel.LadderTest,
 			eventList,
-			ch,
-			plan.PlanId,
-			plan.PlanName,
-			plan.Scene.SceneId,
-			plan.Scene.SceneName,
-			plan.ReportId,
-			plan.ReportName,
-			startConcurrent,
-			length,
-			maxConcurrent,
-			lengthDuration,
-			stableDuration,
-			timeUp,
+			resultDataMsgCh,
+			planId,
+			planName,
+			sceneId,
+			sceneName,
+			reportId,
+			reportName,
 			configuration,
 			wg,
-			globalVariable,
-			requestCollection)
-		//case task.TpsModel:
-		//	execution.ExecutionTpsModel()
+			sceneVariable,
+			mongoCollection)
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
-		startConcurrent := plan.ConfigTask.TestModel.RTTest.StartConcurrent
-		length := plan.ConfigTask.TestModel.RTTest.Length
-		maxConcurrent := plan.ConfigTask.TestModel.RTTest.MaxConcurrent
-		lengthDuration := plan.ConfigTask.TestModel.RTTest.LengthDuration
-		stableDuration := plan.ConfigTask.TestModel.RTTest.StableDuration
-		timeUp := plan.ConfigTask.TestModel.RTTest.TimeUp
 		execution.ExecutionRTModel(
+			configTask.TestModel.RTTest,
 			eventList,
-			ch,
-			wg,
-			plan.PlanId,
-			plan.PlanName,
-			plan.Scene.SceneId,
-			plan.Scene.SceneName,
-			plan.ReportId,
-			plan.ReportName,
-			startConcurrent,
-			length,
-			maxConcurrent,
-			lengthDuration,
-			stableDuration,
-			timeUp,
+			resultDataMsgCh,
+			planId,
+			planName,
+			sceneId,
+			sceneName,
+			reportId,
+			reportName,
 			configuration,
-			globalVariable,
-			requestCollection)
+			wg,
+			sceneVariable,
+			mongoCollection)
 	default:
-		close(ch)
+		close(resultDataMsgCh)
 
 	}
-
-	log.Logger.Info("计划", plan.PlanName, "结束")
+	log.Logger.Info("计划", planName, "结束")
 }
 
 // ReceivingResults 计算并发送测试结果

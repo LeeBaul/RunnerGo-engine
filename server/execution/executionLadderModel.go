@@ -10,12 +10,20 @@ import (
 )
 
 // ExecutionLadderModel 阶梯模式
-func ExecutionLadderModel(eventList []model.Event, ch chan *model.ResultDataMsg,
+func ExecutionLadderModel(ladderTest model.LadderTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
 	planId, planName, sceneId, sceneName, reportId, reportName string,
-	startConcurrent, length, maxConcurrent, lengthDuration, stableDuration, timeUp int64,
-	configuration *model.Configuration, wg *sync.WaitGroup, globalVariable *sync.Map, requestCollection *mongo.Collection) {
 
-	defer close(ch)
+	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
+
+	defer close(resultDataMsgCh)
+
+	startConcurrent := ladderTest.StartConcurrent
+	length := ladderTest.Length
+	maxConcurrent := ladderTest.MaxConcurrent
+	lengthDuration := ladderTest.LengthDuration
+	stableDuration := ladderTest.StableDuration
+	timeUp := ladderTest.TimeUp
+
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	startTime := time.Now().Unix()
 	// preConcurrent 是为了回退,此功能后续开发
@@ -34,7 +42,8 @@ func ExecutionLadderModel(eventList []model.Event, ch chan *model.ResultDataMsg,
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
-				golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
+				gid := GetGid()
+				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent, wg)
 

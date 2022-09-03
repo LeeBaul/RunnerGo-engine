@@ -14,8 +14,8 @@ func webSocketSend(request model.Request) (bool, int64, uint64, uint, uint) {
 		contentLength = uint(0)
 	)
 	headers := map[string][]string{}
-	for key, value := range request.Headers {
-		headers[key] = []string{value}
+	for _, header := range request.Header {
+		headers[header.Name] = []string{header.Value.(string)}
 	}
 	resp, requestTime, sendBytes, err := client.WebSocketRequest(request.URL, request.Body, headers, int(request.Timeout))
 

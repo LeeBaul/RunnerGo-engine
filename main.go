@@ -33,11 +33,11 @@ func initService() {
 	// 获取本机地址
 	heartbeat.InitLocalIp()
 	// 初始化redis客户端
+	log.Logger.Debug("初始化redis客户端")
 	if err := model.InitRedisClient(
 		config.Config["redisAddr"].(string),
 		config.Config["redisPassword"].(string),
 		config.Config["redisDB"].(int64),
-		config.Config["redisSize"].(int64),
 	); err != nil {
 		log.Logger.Error("redis连接失败:", err)
 		return
@@ -70,7 +70,7 @@ func initService() {
 
 	go func() {
 		if err := kpRunnerService.ListenAndServe(); err != nil {
-			log.Logger.Error("kpRunnerService启动失败：", err)
+			log.Logger.Error("kpRunnerService:", err)
 			return
 		}
 	}()

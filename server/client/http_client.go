@@ -6,7 +6,9 @@ import (
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
 	"kp-runner/log"
+	"kp-runner/model"
 	"kp-runner/tools"
+	"strings"
 	"time"
 )
 
@@ -17,19 +19,36 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body string, headers map[string]string, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error) {
+func HTTPRequest(method, url string, body string, query, header []model.VarForm, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error) {
 
 	client := fastClient(timeout)
 	req = fasthttp.AcquireRequest()
 
 	req.Header.SetMethod(method)
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
+	if header != nil {
+		for _, v := range header {
+			if v.Enable == true {
+				if strings.EqualFold(v.Name, "content-type") {
+					req.Header.SetContentType(v.Value.(string))
+				}
+				if strings.EqualFold(v.Name, "host") {
+					req.Header.SetHost(v.Value.(string))
+				}
+				req.Header.Set(v.Name, v.Value.(string))
+			}
 		}
 
 	}
 
+	if method == "GET" {
+		if query != nil {
+			for _, v := range query {
+				if v.Enable == true {
+					url += "?" + v.Value.(string)
+				}
+			}
+		}
+	}
 	req.SetRequestURI(url)
 
 	req.SetBodyString(body)
@@ -42,6 +61,7 @@ func HTTPRequest(method, url string, body string, headers map[string]string, tim
 	}
 	requestTime = tools.TimeDifference(startTime)
 	sendBytes = uint(req.Header.ContentLength())
+	log.Logger.Info("req", string(req.Body()))
 	return
 }
 

@@ -1,33 +1,33 @@
 package execution
 
 import (
+	"bytes"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
+	"runtime"
 	"sync"
 	"time"
 )
 
 // ExecutionConcurrentModel 并发模式
-func ExecutionConcurrentModel(eventList []model.Event,
-	ch chan *model.ResultDataMsg,
-	concurrent, testType, roundOrTime int64,
-	planId, planName, sceneId, sceneName, reportId, reportName string,
-	configuration *model.Configuration,
-	globalVariable *sync.Map,
-	wg *sync.WaitGroup,
-	requestCollection *mongo.Collection) {
+func ExecutionConcurrentModel(
+	concurrentTest model.ConcurrentTest,
+	ch chan *model.ResultDataMsg, eventList []model.Event,
+	planId, planName, reportId, reportName, sceneId, sceneName string,
+	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
 
 	defer close(ch)
 	defer wg.Wait()
 	startTime := time.Now().UnixMilli()
-
-	switch testType {
+	concurrent := concurrentTest.Concurrent
+	switch concurrentTest.Type {
 	case model.DurationType:
 		index := 0
-		duration := roundOrTime * 1000
+		duration := concurrentTest.Duration * 1000
 		currentTime := time.Now().UnixMilli()
+
 		for startTime+duration > currentTime {
 			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 			if status == "false" {
@@ -37,7 +37,8 @@ func ExecutionConcurrentModel(eventList []model.Event,
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				go func(i, concurrent int64) {
-					golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
+					gid := GetGid()
+					golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 				index++
@@ -54,7 +55,8 @@ func ExecutionConcurrentModel(eventList []model.Event,
 		log.Logger.Info(index)
 
 	case model.RoundsType:
-		for i := int64(0); i < roundOrTime; i++ {
+		rounds := concurrentTest.Rounds
+		for i := int64(0); i < rounds; i++ {
 			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 			if status == "false" {
 				return
@@ -63,7 +65,8 @@ func ExecutionConcurrentModel(eventList []model.Event,
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				go func(i, concurrent int64) {
-					golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
+					gid := GetGid()
+					golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 			}
@@ -78,4 +81,13 @@ func ExecutionConcurrentModel(eventList []model.Event,
 		}
 	}
 
+}
+
+func GetGid() (gid string) {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	gid = string(b)
+	return
 }

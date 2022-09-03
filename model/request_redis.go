@@ -10,16 +10,30 @@ var (
 	timeDuration = 3 * time.Second
 )
 
-func InitRedisClient(addr, password string, db, size int64) (err error) {
+type RedisClient struct {
+	Client *redis.Client
+}
+
+func InitRedisClient(addr, password string, db int64) (err error) {
 	RDB = redis.NewClient(
 		&redis.Options{
 			Addr:     addr,
 			Password: password,
 			DB:       int(db),
-			PoolSize: int(size),
 		})
 	_, err = RDB.Ping().Result()
 	return err
+}
+
+func InsertStatus(key, value string, expiration time.Duration) (err error) {
+	if expiration < 20*time.Second {
+		expiration = 20 * time.Second
+	}
+	err = RDB.Set(key, value, expiration).Err()
+	if err != nil {
+		return
+	}
+	return
 }
 
 func QueryPlanStatus(key string) (err error, value string) {

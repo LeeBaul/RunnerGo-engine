@@ -30,14 +30,21 @@ func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) 
 }
 
 // ExecutionRTModel 响应时间模式
-func ExecutionRTModel(eventList []model.Event, ch chan *model.ResultDataMsg, wg *sync.WaitGroup,
+func ExecutionRTModel(rtTest model.RTTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
 	planId, planName, sceneId, sceneName, reportId, reportName string,
-	startConcurrent, length, maxConcurrent, lengthDuration, stableDuration, timeUp int64,
 	configuration *model.Configuration,
-	globalVariable *sync.Map,
+	wg *sync.WaitGroup,
+	sceneVariable *sync.Map,
 	requestCollection *mongo.Collection) {
 
-	defer close(ch)
+	defer close(resultDataMsgCh)
+
+	startConcurrent := rtTest.StartConcurrent
+	length := rtTest.Length
+	maxConcurrent := rtTest.MaxConcurrent
+	lengthDuration := rtTest.LengthDuration
+	stableDuration := rtTest.StableDuration
+	timeUp := rtTest.TimeUp
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
@@ -69,7 +76,8 @@ func ExecutionRTModel(eventList []model.Event, ch chan *model.ResultDataMsg, wg 
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64) {
-				golink.DisposeScene(eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, globalVariable, wg, requestCollection, i, concurrent)
+				gid := GetGid()
+				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长

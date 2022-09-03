@@ -44,15 +44,15 @@ func RunScene(c *gin.Context) {
 }
 
 func RunApi(c *gin.Context) {
-	var request = model.Request{}
-	err := c.ShouldBindJSON(&request)
-
-	if err != nil {
-		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
-		return
-	}
-	requestResults := new(model.ResultDataMsg)
-	debugMsg := new(model.DebugMsg)
-	server.ExecutionDebugRequest(request, nil, requestResults, debugMsg)
-	global.ReturnMsg(c, http.StatusOK, "调试接口", debugMsg)
+	//var request = model.Request{}
+	//err := c.ShouldBindJSON(&request)
+	//
+	//if err != nil {
+	//	global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
+	//	return
+	//}
+	//requestResults := new(model.ResultDataMsg)
+	//debugMsg := new(model.DebugMsg)
+	//server.ExecutionDebugRequest(request, nil, requestResults, debugMsg)
+	//global.ReturnMsg(c, http.StatusOK, "调试接口", debugMsg)
 }
