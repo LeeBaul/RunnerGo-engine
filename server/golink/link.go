@@ -23,8 +23,8 @@ func DisposeScene(gid string, eventList []model.Event, resultDataMsgCh chan *mod
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
 				for _, request := range eventList {
 					if request.EventId == event.PreEventIdList[0] {
-						if request.Request.Weight != 100 && request.Request.Weight != 0 {
-							options[1] = int64(float64(options[1]) * (float64(request.Request.Weight) / 100))
+						if request.Api.Weight != 100 && request.Api.Weight != 0 {
+							options[1] = int64(float64(options[1]) * (float64(request.Api.Weight) / 100))
 						}
 
 					}
@@ -77,14 +77,14 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 	event model.Event, wg *sync.WaitGroup, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg, sceneVariable *sync.Map, requestCollection *mongo.Collection, options ...int64) {
 	defer wg.Done()
 
-	request := event.Request
+	api := event.Api
 
 	if event.PreEventIdList != nil {
 
 	}
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此几口的比例
-	if request.Weight < 100 && request.Weight > 0 {
-		if float64(options[0]) < float64(options[1])*(float64(100-request.Weight)/100) {
+	if api.Weight < 100 && api.Weight > 0 {
+		if float64(options[0]) < float64(options[1])*(float64(100-api.Weight)/100) {
 			return
 		}
 	}
@@ -99,22 +99,22 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		requestResults.SceneName = sceneName
 		requestResults.ReportId = reportId
 		requestResults.ReportName = reportName
-		requestResults.CustomRequestTimeLine = request.CustomRequestTime
-		requestResults.ErrorThreshold = request.ErrorThreshold
+		requestResults.CustomRequestTimeLine = api.CustomRequestTime
+		requestResults.ErrorThreshold = api.ErrorThreshold
 	}
-	requestResults.ApiId = request.ApiId
-	requestResults.ApiName = request.ApiName
+	requestResults.TargetId = api.TargetId
+	requestResults.Name = api.Name
 
 	// 将请求信息中所有用的变量添加到接口变量维护的map中
-	request.FindParameterizes()
+	api.FindParameterizes()
 
 	// 如果请求中使用的变量在场景设置的全局变量中存在存在，则将其赋值给变量
 	if configuration != nil {
-		request.ReplaceParameters(configuration)
+		api.ReplaceParameters(configuration)
 	}
 
 	// 请求中所有的变量替换未真正的值
-	request.ReplaceQueryParameterizes()
+	api.ReplaceQueryParameterizes()
 
 	var (
 		isSucceed     = false
@@ -124,18 +124,18 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		contentLength = uint(0)
 		errMsg        = ""
 	)
-	switch request.Form {
+	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event.EventId, request, sceneVariable, requestCollection, debugMsg)
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event.EventId, api, sceneVariable, requestCollection, debugMsg)
 	case model.FormTypeWebSocket:
-		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(request)
+		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
 	case model.FormTypeGRPC:
 		//isSucceed, errCode, requestTime, sendBytes, contentLength := rpcSend(request)
 	default:
 		return
 	}
 
-	requestResults.ApiName = request.ApiName
+	requestResults.Name = api.Name
 	requestResults.RequestTime = requestTime
 	requestResults.ErrorType = errCode
 	requestResults.IsSucceed = isSucceed

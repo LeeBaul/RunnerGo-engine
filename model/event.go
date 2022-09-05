@@ -5,7 +5,7 @@ type Event struct {
 	EventId         string      `json:"eventId" bson:"EventId"`
 	PreEventIdList  []string    `json:"preEventIdList" bson:"preEventIdList"`
 	NextEventIdList []string    `json:"nextEventIdList"   bson:"nextEventIdList"`
-	Request         Request     `json:"request" bson:"request"`
+	Api             Api         `json:"request" bson:"request"`
 	Controller      *Controller `json:"controller" bson:"controller"` // 控制器
 }
 

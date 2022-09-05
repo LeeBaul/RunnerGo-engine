@@ -229,7 +229,7 @@ func TaskDecomposition(planId, planName, reportId, reportName string, scene *mod
 func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResultDataMsgCh chan *model.SceneTestResultDataMsg) {
 	var (
 		sceneTestResultDataMsg = new(model.SceneTestResultDataMsg)
-		requestTimeMap         = make(map[string]model.RequestTimeList)
+		requestTimeMap         = make(map[interface{}]model.RequestTimeList)
 	)
 	sceneTestResultDataMsg.MachineIp = heartbeat.LocalIp
 	// 关闭通道
@@ -262,49 +262,48 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 				sceneTestResultDataMsg.ReportName = resultDataMsg.ReportName
 			}
 
-			requestTimeMap[resultDataMsg.ApiId] = append(requestTimeMap[resultDataMsg.ApiId], resultDataMsg.RequestTime)
+			requestTimeMap[resultDataMsg.TargetId] = append(requestTimeMap[resultDataMsg.TargetId], resultDataMsg.RequestTime)
 			// 将各个接口的响应时间进行排序
-			sort.Sort(requestTimeMap[resultDataMsg.ApiId])
+			sort.Sort(requestTimeMap[resultDataMsg.TargetId])
 			if sceneTestResultDataMsg.Results == nil {
-				sceneTestResultDataMsg.Results = make(map[string]*model.ApiTestResultDataMsg)
+				sceneTestResultDataMsg.Results = make(map[interface{}]*model.ApiTestResultDataMsg)
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId] == nil {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId] = new(model.ApiTestResultDataMsg)
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId] == nil {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId] = new(model.ApiTestResultDataMsg)
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].PlanId == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].PlanId = resultDataMsg.PlanId
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId = resultDataMsg.PlanId
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].PlanName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].PlanName = resultDataMsg.PlanName
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName = resultDataMsg.PlanName
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SceneId == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SceneId = resultDataMsg.SceneId
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId = resultDataMsg.SceneId
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SceneName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SceneName = resultDataMsg.SceneName
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneName == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneName = resultDataMsg.SceneName
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ReportId == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ReportId = resultDataMsg.ReportId
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportId == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportId = resultDataMsg.ReportId
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ReportName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ReportName = resultDataMsg.ReportName
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportName == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportName = resultDataMsg.ReportName
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ApiId == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ApiId = resultDataMsg.ApiId
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TargetId = resultDataMsg.TargetId
+
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].Name == "" {
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].Name = resultDataMsg.Name
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ApiName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ApiName = resultDataMsg.ApiName
-			}
-			sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ReceivedBytes += resultDataMsg.ReceivedBytes
-			sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SendBytes += resultDataMsg.SendBytes
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReceivedBytes += resultDataMsg.ReceivedBytes
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SendBytes += resultDataMsg.SendBytes
 			if resultDataMsg.IsSucceed {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].SuccessNum += 1
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SuccessNum += 1
 			} else {
-				sceneTestResultDataMsg.Results[resultDataMsg.ApiId].ErrorNum += 1
+				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ErrorNum += 1
 			}
-			sceneTestResultDataMsg.Results[resultDataMsg.ApiId].TotalRequestNum += 1
-			sceneTestResultDataMsg.Results[resultDataMsg.ApiId].TotalRequestTime += resultDataMsg.RequestTime
-			sceneTestResultDataMsg.Results[resultDataMsg.ApiId].CustomRequestTimeLineValue = resultDataMsg.CustomRequestTimeLine
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TotalRequestNum += 1
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TotalRequestTime += resultDataMsg.RequestTime
+			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].CustomRequestTimeLineValue = resultDataMsg.CustomRequestTimeLine
 
 		// 定时每秒发送一次场景的测试结果
 		case <-ticker.C:

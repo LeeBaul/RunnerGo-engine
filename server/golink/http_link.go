@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(eventId string, api model.Api, globalVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -19,12 +19,12 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 		errMsg        = ""
 	)
 
-	resp, req, requestTime, sendBytes, err := client.HTTPRequest(request.Method, request.URL, request.Body, request.Query,
-		request.Header, request.Auth, request.Timeout)
+	resp, req, requestTime, sendBytes, err := client.HTTPRequest(api.Method, api.URL, api.Body, api.Query,
+		api.Header, api.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
-	if request.Regulars != nil {
-		for _, regular := range request.Regulars {
+	if api.Regulars != nil {
+		for _, regular := range api.Regulars {
 			regular.Extract(string(resp.Body()), globalVariable)
 		}
 	}
@@ -34,7 +34,7 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 		errMsg = err.Error()
 	} else {
 		// 断言验证
-		if request.Assertions != nil {
+		if api.Assertions != nil {
 
 			var assertionMsgList []model.AssertionMsg
 			var assertionMsg = model.AssertionMsg{}
@@ -43,8 +43,8 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 				succeed = true
 				msg     = ""
 			)
-			for k, v := range request.Assertions {
-				switch request.Assertions[k].Type {
+			for k, v := range api.Assertions {
+				switch api.Assertions[k].Type {
 				case model.Text:
 					assert := v.AssertionText
 					code, succeed, msg = assert.VerifyAssertionText(resp)
@@ -70,13 +70,13 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 	}
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 
-	if request.Debug == true {
+	if api.Debug == true {
 		if debugMsg == nil {
 			debugMsg = &model.DebugMsg{}
 		}
 		debugMsg.EventId = eventId
-		debugMsg.ApiId = request.ApiId
-		debugMsg.ApiName = request.ApiName
+		debugMsg.ApiId = api.TargetId
+		debugMsg.ApiName = api.Name
 		debugMsg.Request = make(map[string]string)
 		debugMsg.Request["header"] = req.Header.String()
 		debugMsg.Request["body"] = string(req.Body())
@@ -86,7 +86,7 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 
 		msg := make(map[string]*model.DebugMsg)
 		msg["debug"] = debugMsg
-		log.Logger.Info(request.ApiId)
+		log.Logger.Info(api.TargetId)
 		if requestCollection != nil {
 			model.Insert(requestCollection, msg)
 		}

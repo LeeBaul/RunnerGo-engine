@@ -17,10 +17,10 @@ type Assertion struct {
 
 // AssertionText 文本断言 0
 type AssertionText struct {
-	AssertionTarget int8   `json:"AssertionTarget"` // 0: ResponseCode; 1:ResponseHeaders; 2:ResponseData
-	Condition       string `json:"condition"`       // Includes、UNIncludes、Equal、UNEqual、GreaterThan、GreaterThanOrEqual、LessThan、LessThanOrEqual、Includes、UNIncludes、NULL、NotNULL、OriginatingFrom、EndIn
-	Key             string `json:"key"`
-	Value           string `json:"value"`
+	ResponseType int8   `json:"response_type"` //  1:ResponseHeaders; 2:ResponseData; 3: ResponseCode;
+	Compare      string `json:"compare"`       // Includes、UNIncludes、Equal、UNEqual、GreaterThan、GreaterThanOrEqual、LessThan、LessThanOrEqual、Includes、UNIncludes、NULL、NotNULL、OriginatingFrom、EndIn
+	Var          string `json:"var"`
+	Val          string `json:"val"`
 }
 
 // AssertionRegular 正则断言 1
@@ -42,13 +42,13 @@ type AssertionXPath struct {
 
 // VerifyAssertionText 验证断言 文本断言
 func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Response) (code int64, ok bool, msg string) {
-	switch assertionText.AssertionTarget {
+	switch assertionText.ResponseType {
 	case ResponseCode:
-		value, err := strconv.Atoi(assertionText.Value)
+		value, err := strconv.Atoi(assertionText.Val)
 		if err != nil {
-			return AssertError, false, assertionText.Value + "不是int类型,转换失败"
+			return AssertError, false, assertionText.Val + "不是int类型,转换失败"
 		}
-		switch assertionText.Condition {
+		switch assertionText.Compare {
 		case Equal:
 			if value == response.StatusCode() {
 				return NoError, true, strconv.Itoa(response.StatusCode()) + "=" + strconv.Itoa(value) + "断言：成功"
@@ -63,17 +63,17 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			}
 		}
 	case ResponseHeaders:
-		switch assertionText.Condition {
+		switch assertionText.Compare {
 		case Includes:
 
 		}
 	case ResponseData:
-		switch assertionText.Condition {
+		switch assertionText.Compare {
 		case Includes:
-			if strings.Contains(response.String(), assertionText.Value) {
-				return NoError, true, "响应中包含：" + assertionText.Value + " 断言:成功"
+			if strings.Contains(response.String(), assertionText.Val) {
+				return NoError, true, "响应中包含：" + assertionText.Val + " 断言:成功"
 			} else {
-				return AssertError, false, "响应中不包含：" + assertionText.Value + " 断言:失败"
+				return AssertError, false, "响应中不包含：" + assertionText.Val + " 断言:失败"
 			}
 		}
 	}

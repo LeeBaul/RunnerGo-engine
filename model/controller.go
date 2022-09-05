@@ -20,7 +20,7 @@ type IfController struct {
 	Key        string        `json:"key"`   // key，值某个变量
 	Logic      string        `json:"logic"` // 逻辑运算符
 	Value      string        `json:"value"` // key对应的值
-	Requests   []*Request    `json:"requests"`
+	Requests   []*Api        `json:"requests"`
 	Controller []*Controller `json:"controllers"`
 }
 

@@ -2,9 +2,8 @@ package model
 
 // Form 支持协议类型
 const (
-	FormTypeHTTP      = "http"      // http协议
-	FormTypeHTTPS     = "https"     // https协议
-	FormTypeWebSocket = "webSocket" // webSocket协议
+	FormTypeHTTP      = "api"       // http协议
+	FormTypeWebSocket = "websocket" // webSocket协议
 	FormTypeGRPC      = "grpc"      // grpc协议
 )
 
@@ -78,4 +77,21 @@ const (
 	DateTimeType  = "DateTime"
 	TimeStampType = "TimeStampType"
 	BooleanType   = "boolean"
+)
+
+const (
+	KVType     = "kv"
+	BearerType = "bearer"
+	BasicType  = "basic"
+)
+
+const (
+	NoneMode      = "none"
+	FormMode      = "form-data"
+	UrlencodeMode = "x-www-form-urlencoded"
+	JsonMode      = "json"
+	XmlMode       = "xml"
+	JSMode        = "javascript"
+	PlainMode     = "plain"
+	HtmlMode      = "html"
 )

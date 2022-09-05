@@ -2,73 +2,109 @@ package model
 
 import (
 	"fmt"
-	"kp-runner/log"
 	"kp-runner/model/proto/pb"
 	"kp-runner/tools"
+	"strconv"
 	"strings"
 	"sync"
 )
 
-// Request 请求数据
-type Request struct {
-	ApiId      string     `json:"apiId" bson:"ApiId"`
-	ApiName    string     `json:"apiName" bson:"ApiName"`
-	URL        string     `json:"url" bson:"url"`
-	Form       string     `json:"form" bson:"form"`     // http/webSocket/tcp/rpc
-	Method     string     `json:"method" bson:"method"` // 方法 GET/POST/PUT
-	Header     []*VarForm `json:"header" bson:"header"` // Headers
-	Query      []*VarForm `json:"query" bson:"query"`
-	Body       string     `json:"body" bson:"body"`
-	Auth       []*VarForm `json:"auth" bson:"auth"`
-	Parameters *sync.Map  `json:"parameters" bson:"parameters"`
+// Api 请求数据
+type Api struct {
+	TargetId   int64     `json:"target_id" bson:"target_id"`
+	Name       string    `json:"name" bson:"name"`
+	TargetType string    `json:"targetType" bson:"targetType"` // api/webSocket/tcp/grpc
+	Method     string    `json:"method" bson:"method"`         // 方法 GET/POST/PUT
+	Request    Request   `json:"request" bson:"request"`
+	Parameters *sync.Map `json:"parameters" bson:"parameters"`
 	//Parameterizes      *sync.Map            `json:"parameterizes" bson:"parameterizes"`               // 接口中定义的变量
-	Assertions           []*Assertion         `json:"assertions" bson:"assertions"`                     // 验证的方法(断言)
+	Assertions           []*AssertionText     `json:"assertions" bson:"assertions"`                     // 验证的方法(断言)
 	Timeout              int64                `json:"timeout" bson:"timeout"`                           // 请求超时时间
 	ErrorThreshold       float32              `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
 	CustomRequestTime    int64                `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
 	RequestTimeThreshold int64                `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
-	Regulars             []*RegularExpression `json:"regulars" bson:"regulars"`                         // 正则表达式
+	Regex                []*RegularExpression `json:"regex" bson:"regex"`                               // 正则表达式
 	Debug                bool                 `json:"debug" bson:"debug"`                               // 是否开启Debug模式
 	Connection           int64                `json:"connection" bson:"connection"`                     // 0:websocket长连接
 	Weight               int64                `json:"weight" bson:"weight"`                             // 权重，并发分配的比例
 	Tag                  bool                 `json:"tag" bson:"tag"`                                   // Tps模式下，该标签代表以该接口为准
 }
 
+type Request struct {
+	URL    string  `json:"url" bson:"url"`
+	Header *Header `json:"header" bson:"header"` // Headers
+	Query  *Query  `json:"query" bson:"query"`
+	Body   *Body   `json:"body" bson:"body"`
+	Auth   *Auth   `json:"auth" bson:"auth"`
+	Cookie *Cookie `json:"cookie" bson:"cookie"`
+}
+
+type Body struct {
+	Mode      string     `json:"mode" bson:"mode"`
+	Raw       string     `json:"raw" bson:"raw"`
+	Parameter []*VarForm `json:"parameter" bson:"parameter"`
+}
+
+type Header struct {
+	Parameter []*VarForm `json:"parameter" bson:"parameter"`
+}
+
+type Query struct {
+	Parameter []*VarForm `json:"parameter" bson:"parameter"`
+}
+
+type Cookie struct {
+	Parameter []*VarForm
+}
+
 type RegularExpression struct {
-	VariableName string `json:"variableName"` // 变量
-	Expression   string `json:"expression"`   // 表达式
+	Var     string `json:"var"`     // 变量
+	Express string `json:"express"` // 表达式
+	Val     string `json:"val"`     // 值
 }
 
 // Extract 提取response 中的值
 func (re RegularExpression) Extract(str string, parameters *sync.Map) {
-	name := tools.VariablesMatch(re.VariableName)
-	if value := tools.FindDestStr(str, re.Expression); value != "" {
+	name := tools.VariablesMatch(re.Var)
+	if value := tools.FindDestStr(str, re.Express); value != "" {
+		re.Val = value
 		parameters.Store(name, value)
 	}
 }
 
 // VarForm 参数表
 type VarForm struct {
-	Enable    bool        `json:"enable" bson:"enable"`
-	Name      string      `json:"name" bson:"name"`
-	Value     interface{} `json:"value" bson:"value"`
-	ValueType string      `json:"valueType" bson:"valueType"`
+	IsChecked   int64       `json:"isChecked" bson:"isChecked"`
+	Type        string      `json:"type" bson:"type"`
+	Key         string      `json:"key" bson:"key"`
+	Value       interface{} `json:"value" bson:"value"`
+	NotNull     int64       `json:"not_null" bson:"not_null"`
+	Description string      `json:"description" bson:"description"`
+	FieldType   string      `json:"field_type" bson:"field_type"`
+}
+type KV struct {
+	Key   string `json:"key" bson:"key"`
+	Value string `json:"value" bson:"value"`
 }
 
-func ToString(varForm []*VarForm) (strs []string) {
-	if varForm != nil {
-		for _, v := range varForm {
-			str := fmt.Sprintf("enable:%s name:%s value:%s valueType: %s", v.Enable, v.Name, v.Value, v.ValueType)
-			strs = append(strs, str)
-		}
-	}
-	return
-
+type Bearer struct {
+	Key string `json:"key" bson:"key"`
 }
 
-// Conversion 将其他类型转换为string
-func (v VarForm) Conversion() {
-	switch v.ValueType {
+type Basic struct {
+	UserName string `json:"username" bson:"username"`
+	Password string `json:"password" bson:"password"`
+}
+type Auth struct {
+	Type   string `json:"type" bson:"type"`
+	KV     KV     `json:"kv" bson:"kv"`
+	Bearer Bearer `json:"bearer" bson:"bearer"`
+	Basic  Basic  `json:"basic" bson:"basic"`
+}
+
+// Conversion 将string转换为其他类型
+func (v *VarForm) Conversion() {
+	switch v.Type {
 	case StringType:
 		// 字符串类型不用转换
 	case TextType:
@@ -78,86 +114,164 @@ func (v VarForm) Conversion() {
 	case ArrayType:
 		// 数组不用转换
 	case IntegerType:
-		v.Value = fmt.Sprintf("%d", v.Value)
+		value, err := strconv.ParseInt(v.Value.(string), 10, 64)
+		if err == nil {
+			v.Value = value
+		}
 	case NumberType:
-		v.Value = fmt.Sprintf("%d", v.Value)
+		value, err := strconv.ParseInt(v.Value.(string), 10, 64)
+		if err == nil {
+			v.Value = value
+		}
 	case FloatType:
-		v.Value = fmt.Sprintf("%f", v.Value)
+		value, err := strconv.ParseFloat(v.Value.(string), 32)
+		if err == nil {
+			v.Value = value
+		}
 	case DoubleType:
-		v.Value = fmt.Sprintf("%f", v.Value)
+		value, err := strconv.ParseFloat(v.Value.(string), 64)
+		if err == nil {
+			v.Value = value
+		}
 	case FileType:
 	case DateType:
 	case DateTimeType:
 	case TimeStampType:
+
 	case BooleanType:
-
-	}
-}
-
-func (r *Request) ReplaceUrlParameterizes(global *sync.Map) {
-
-	urls := tools.FindAllDestStr(r.URL, "{{(.*?)}}")
-	if urls != nil {
-		for _, v := range urls {
-			if value, ok := global.Load(v[1]); ok {
-				r.URL = strings.Replace(r.URL, v[0], value.(string), -1)
-			}
+		if v.Value == "true" {
+			v.Value = true
 		}
-	}
-}
-
-// ReplaceBodyParameterizes 替换body中的变量
-func (r *Request) ReplaceBodyParameterizes() {
-	bodyParameters := tools.FindAllDestStr(r.Body, "{{(.*?)}}")
-	log.Logger.Error("body..................", bodyParameters)
-	log.Logger.Error("global...............", r.Parameters)
-	if bodyParameters != nil {
-		for _, v := range bodyParameters {
-			if value, ok := r.Parameters.Load(v[1]); ok {
-				r.Body = strings.Replace(r.Body, v[0], value.(string), -1)
-			}
+		if v.Value == "false" {
+			v.Value = false
 		}
 	}
 }
 
 // ReplaceQueryParameterizes 替换query中的变量
-func (r *Request) ReplaceQueryParameterizes() {
-	urls := tools.FindAllDestStr(r.URL, "{{(.*?)}}")
+func (r *Api) ReplaceQueryParameterizes() {
+	urls := tools.FindAllDestStr(r.Request.URL, "{{(.*?)}}")
 	if urls != nil {
 		for _, v := range urls {
 			if value, ok := r.Parameters.Load(v[1]); ok {
-				r.URL = strings.Replace(r.URL, v[0], value.(string), -1)
+				r.Request.URL = strings.Replace(r.Request.URL, v[0], value.(string), -1)
 			}
 		}
 	}
-	bodys := tools.FindAllDestStr(r.Body, "{{(.*?)}}")
-	if bodys != nil {
-		for _, v := range bodys {
-			if value, ok := r.Parameters.Load(v[1]); ok {
-				r.Body = strings.Replace(r.Body, v[0], value.(string), -1)
-			}
-		}
+	if r.Request.Body != nil {
+		r.ReplaceBodyVarForm()
 	}
-	if r.Query != nil {
-		r.Query = ReplaceVarForm(r, r.Query)
+	if r.Request.Query != nil {
+		r.ReplaceQueryVarForm()
 	}
-	if r.Header != nil {
-		r.Header = ReplaceVarForm(r, r.Header)
+	if r.Request.Header != nil {
+		r.ReplaceHeaderVarForm()
 	}
-	if r.Auth != nil {
-		r.Auth = ReplaceVarForm(r, r.Auth)
+	if r.Request.Auth != nil {
+		r.ReplaceAuthVarForm()
 	}
 
 }
 
-func ReplaceVarForm(r *Request, varFormList []*VarForm) []*VarForm {
-	if varFormList != nil {
-		for _, queryVarForm := range varFormList {
-			queryParameterizes := tools.FindAllDestStr(queryVarForm.Name, "{{(.*?)}}")
+func (r *Api) ReplaceCookieVarForm() {
+
+}
+func (r *Api) ReplaceBodyVarForm() {
+	if r.Request.Body == nil {
+		return
+	}
+	switch r.Request.Body.Mode {
+	case NoneMode:
+	case FormMode:
+		if r.Request.Body.Parameter != nil {
+			for _, parameter := range r.Request.Body.Parameter {
+				keys := tools.FindAllDestStr(parameter.Key, "{{(.*?)}}")
+				if keys != nil {
+					for _, v := range keys {
+						if value, ok := r.Parameters.Load(v[1]); ok {
+							parameter.Key = strings.Replace(parameter.Key, v[0], value.(string), -1)
+						}
+					}
+				}
+				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
+				if values != nil {
+					for _, v := range values {
+						if value, ok := r.Parameters.Load(v[1]); ok {
+							parameter.Value = strings.Replace(parameter.Value.(string), v[0], value.(string), -1)
+						}
+					}
+				}
+			}
+		}
+
+	case UrlencodeMode:
+		if r.Request.Body.Parameter != nil {
+			for _, parameter := range r.Request.Body.Parameter {
+				keys := tools.FindAllDestStr(parameter.Key, "{{(.*?)}}")
+				if keys != nil {
+					for _, v := range keys {
+						if value, ok := r.Parameters.Load(v[1]); ok {
+							parameter.Key = strings.Replace(parameter.Key, v[0], value.(string), -1)
+						}
+					}
+				}
+				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
+				if values != nil {
+					for _, v := range values {
+						if value, ok := r.Parameters.Load(v[1]); ok {
+							parameter.Value = strings.Replace(parameter.Value.(string), v[0], value.(string), -1)
+
+						}
+					}
+				}
+				parameter.Conversion()
+			}
+		}
+	default:
+		bosys := tools.FindAllDestStr(r.Request.Body.Raw, "{{(.*?)}}")
+		if bosys != nil {
+			for _, v := range bosys {
+				if value, ok := r.Parameters.Load(v[1]); ok {
+					r.Request.Body.Raw = strings.Replace(r.Request.Body.Raw, v[0], value.(string), -1)
+				}
+			}
+		}
+	}
+
+}
+
+func (r *Api) ReplaceHeaderVarForm() {
+	if r.Request.Header != nil && r.Request.Header.Parameter != nil {
+		for _, queryVarForm := range r.Request.Header.Parameter {
+			queryParameterizes := tools.FindAllDestStr(queryVarForm.Key, "{{(.*?)}}")
 			if queryParameterizes != nil {
 				for _, v := range queryParameterizes {
 					if value, ok := r.Parameters.Load(v[1]); ok {
-						queryVarForm.Name = strings.Replace(queryVarForm.Name, v[0], value.(string), -1)
+						queryVarForm.Key = strings.Replace(queryVarForm.Key, v[0], value.(string), -1)
+					}
+				}
+			}
+			queryParameterizes = tools.FindAllDestStr(queryVarForm.Value.(string), "{{(.*?)}}")
+			if queryParameterizes != nil {
+				for _, v := range queryParameterizes {
+					if value, ok := r.Parameters.Load(v[1]); ok {
+						queryVarForm.Value = strings.Replace(queryVarForm.Value.(string), v[0], value.(string), -1)
+					}
+				}
+			}
+			queryVarForm.Conversion()
+		}
+	}
+}
+
+func (r *Api) ReplaceQueryVarForm() {
+	if r.Request.Query != nil && r.Request.Query.Parameter != nil {
+		for _, queryVarForm := range r.Request.Header.Parameter {
+			queryParameterizes := tools.FindAllDestStr(queryVarForm.Key, "{{(.*?)}}")
+			if queryParameterizes != nil {
+				for _, v := range queryParameterizes {
+					if value, ok := r.Parameters.Load(v[1]); ok {
+						queryVarForm.Key = strings.Replace(queryVarForm.Key, v[0], value.(string), -1)
 					}
 				}
 			}
@@ -171,36 +285,81 @@ func ReplaceVarForm(r *Request, varFormList []*VarForm) []*VarForm {
 			}
 		}
 	}
-	return varFormList
+}
+
+func (r *Api) ReplaceAuthVarForm() {
+	if r.Request.Auth != nil {
+		switch r.Request.Auth.Type {
+		case KVType:
+
+			if r.Request.Auth.KV.Key != "" {
+				values := tools.FindAllDestStr(r.Request.Auth.KV.Value, "{{(.*?)}}")
+				if values != nil {
+					for _, value := range values {
+						if v, ok := r.Parameters.Load(value[1]); ok {
+							r.Request.Auth.KV.Value = strings.Replace(r.Request.Auth.KV.Value, value[0], v.(string), -1)
+						}
+					}
+				}
+			}
+
+		case BearerType:
+			if r.Request.Auth.Bearer.Key != "" {
+				values := tools.FindAllDestStr(r.Request.Auth.Bearer.Key, "{{(.*?)}}")
+				if values != nil {
+					for _, value := range values {
+						if v, ok := r.Parameters.Load(value[1]); ok {
+							r.Request.Auth.Bearer.Key = strings.Replace(r.Request.Auth.Bearer.Key, value[0], v.(string), -1)
+						}
+					}
+				}
+			}
+		case BasicType:
+			if r.Request.Auth.Basic.UserName != "" {
+				names := tools.FindAllDestStr(r.Request.Auth.Basic.UserName, "{{(.*?)}}")
+				if names != nil {
+					for _, value := range names {
+						if v, ok := r.Parameters.Load(value[1]); ok {
+							r.Request.Auth.Basic.UserName = strings.Replace(r.Request.Auth.Basic.UserName, value[0], v.(string), -1)
+						}
+					}
+				}
+
+			}
+
+			if r.Request.Auth.Basic.Password != "" {
+				passwords := tools.FindAllDestStr(r.Request.Auth.Basic.Password, "{{(.*?)}}")
+				if passwords != nil {
+					for _, value := range passwords {
+						if v, ok := r.Parameters.Load(value[1]); ok {
+							r.Request.Auth.Basic.Password = strings.Replace(r.Request.Auth.Basic.Password, value[0], v.(string), -1)
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 // FindParameterizes 将请求中的变量全部放到一个map中
-func (r *Request) FindParameterizes() {
+func (r *Api) FindParameterizes() {
 	if r.Parameters == nil {
 		r.Parameters = new(sync.Map)
 	}
-	urls := tools.FindAllDestStr(r.URL, "{{(.*?)}}")
+	urls := tools.FindAllDestStr(r.Request.URL, "{{(.*?)}}")
 	for _, name := range urls {
 		if _, ok := r.Parameters.Load(name[1]); !ok {
 			r.Parameters.Store(name[1], name[0])
 		}
 	}
-	bodyParameters := tools.FindAllDestStr(r.Body, "{{(.*?)}}")
-	for _, name := range bodyParameters {
-		if r.Parameters != nil {
-			if _, ok := r.Parameters.Load(name[1]); !ok {
-				r.Parameters.Store(name[1], name[0])
-			}
-		}
-
-	}
-	findVarFormParameters(r, r.Query)
-	findVarFormParameters(r, r.Header)
-	findVarFormParameters(r, r.Auth)
+	r.findBodyParameters()
+	r.findQueryParameters()
+	r.findHeaderParameters()
+	r.findAuthParameters()
 }
 
 // ReplaceParameters 将场景变量中的值赋值给，接口变量
-func (r *Request) ReplaceParameters(configuration *Configuration) {
+func (r *Api) ReplaceParameters(configuration *Configuration) {
 	if r.Parameters == nil {
 		r.Parameters = new(sync.Map)
 	}
@@ -222,11 +381,14 @@ func (r *Request) ReplaceParameters(configuration *Configuration) {
 	})
 }
 
-// 将请求中的[]VarForm中的变量，都存储到接口变量中
-func findVarFormParameters(r *Request, varForms []*VarForm) {
+// 将Query中的变量，都存储到接口变量中
+func (r *Api) findQueryParameters() {
 
-	for _, varForm := range varForms {
-		nameParameters := tools.FindAllDestStr(varForm.Name, "{{(.*?)}}")
+	if r.Request.Query == nil || r.Request.Query.Parameter == nil {
+		return
+	}
+	for _, varForm := range r.Request.Query.Parameter {
+		nameParameters := tools.FindAllDestStr(varForm.Key, "{{(.*?)}}")
 		for _, name := range nameParameters {
 			if _, ok := r.Parameters.Load(name[1]); !ok {
 				r.Parameters.Store(name[1], name[0])
@@ -243,6 +405,135 @@ func findVarFormParameters(r *Request, varForms []*VarForm) {
 		}
 	}
 
+}
+
+func (r *Api) findBodyParameters() {
+	if r.Request.Body != nil {
+		switch r.Request.Body.Mode {
+		case NoneMode:
+		case FormMode:
+			if r.Request.Body.Parameter == nil {
+				return
+			}
+			for _, parameter := range r.Request.Body.Parameter {
+				keys := tools.FindAllDestStr(parameter.Key, "{{(.*?)}}")
+				if keys != nil && len(keys) > 1 {
+					for _, key := range keys {
+						if _, ok := r.Parameters.Load(key[1]); !ok {
+							r.Parameters.Store(key[1], key[0])
+						}
+					}
+				}
+				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
+				if values != nil && len(values) > 1 {
+					for _, value := range values {
+						if _, ok := r.Parameters.Load(value[1]); !ok {
+							r.Parameters.Store(value[1], value[0])
+						}
+					}
+				}
+
+			}
+		case UrlencodeMode:
+
+		default:
+			if r.Request.Body.Raw == "" {
+				return
+			}
+			bodys := tools.FindAllDestStr(r.Request.Body.Raw, "{{(.*?)}}")
+			if bodys != nil {
+				for _, body := range bodys {
+					if len(body) > 1 {
+						if _, ok := r.Parameters.Load(body[1]); !ok {
+							r.Parameters.Store(body[1], body[0])
+						}
+					}
+				}
+			}
+		}
+	}
+
+}
+
+// 将Header中的变量，都存储到接口变量中
+func (r *Api) findHeaderParameters() {
+
+	if r.Request.Header == nil || r.Request.Header.Parameter == nil {
+		return
+	}
+	for _, varForm := range r.Request.Header.Parameter {
+		nameParameters := tools.FindAllDestStr(varForm.Key, "{{(.*?)}}")
+		for _, name := range nameParameters {
+			if _, ok := r.Parameters.Load(name[1]); !ok {
+				r.Parameters.Store(name[1], name[0])
+			}
+		}
+		valueParameters := tools.FindAllDestStr(varForm.Value.(string), "{{(.*?)}}")
+		for _, value := range valueParameters {
+			if len(value) > 1 {
+				if _, ok := r.Parameters.Load(value[1]); !ok {
+					r.Parameters.Store(value[1], value[0])
+				}
+			}
+
+		}
+	}
+
+}
+
+func (r *Api) findAuthParameters() {
+	if r.Request.Auth != nil {
+		switch r.Request.Auth.Type {
+		case KVType:
+			if r.Request.Auth.KV.Key == "" {
+				return
+			}
+			keys := tools.FindAllDestStr(r.Request.Auth.KV.Key, "{{(.*?)}}")
+			for _, key := range keys {
+				if _, ok := r.Parameters.Load(key[1]); !ok {
+					r.Parameters.Store(key[1], key[0])
+				}
+			}
+			if r.Request.Auth.KV.Value == "" {
+				return
+			}
+			values := tools.FindAllDestStr(r.Request.Auth.KV.Value, "{{(.*?)}}")
+			for _, value := range values {
+				if _, ok := r.Parameters.Load(value[1]); !ok {
+					r.Parameters.Store(value[1], value[0])
+				}
+			}
+		case BearerType:
+			if r.Request.Auth.Bearer.Key == "" {
+				return
+			}
+			keys := tools.FindAllDestStr(r.Request.Auth.Bearer.Key, "{{(.*?)}}")
+			for _, key := range keys {
+				if _, ok := r.Parameters.Load(key[1]); !ok {
+					r.Parameters.Store(key[1], key[0])
+				}
+			}
+		case BasicType:
+			if r.Request.Auth.Basic.UserName == "" {
+				return
+			}
+			names := tools.FindAllDestStr(r.Request.Auth.Basic.UserName, "{{(.*?)}}")
+			for _, name := range names {
+				if _, ok := r.Parameters.Load(name[1]); !ok {
+					r.Parameters.Store(name[1], name[0])
+				}
+			}
+			if r.Request.Auth.Basic.UserName == "" {
+				return
+			}
+			pws := tools.FindAllDestStr(r.Request.Auth.Basic.Password, "{{(.*?)}}")
+			for _, pw := range pws {
+				if _, ok := r.Parameters.Load(pw[1]); !ok {
+					r.Parameters.Store(pw[1], pw[0])
+				}
+			}
+		}
+	}
 }
 
 func GrpcReplaceParameterizes(r *pb.Request, globalVariable *sync.Map) {

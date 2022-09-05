@@ -15,7 +15,7 @@ import (
 
 // Grpc grpc 接口请求
 func Grpc(chanID uint64, ch chan<- *model.ResultDataMsg, totalNumber uint64, wg *sync.WaitGroup,
-	request *model.Request, ws *client.GrpcSocket) {
+	api *model.Api, ws *client.GrpcSocket) {
 	defer func() {
 		wg.Done()
 	}()
@@ -23,13 +23,13 @@ func Grpc(chanID uint64, ch chan<- *model.ResultDataMsg, totalNumber uint64, wg 
 		_ = ws.Close()
 	}()
 	for i := uint64(0); i < totalNumber; i++ {
-		grpcRequest(chanID, ch, i, request, ws)
+		grpcRequest(chanID, ch, i, api, ws)
 	}
 	return
 }
 
 // grpcRequest 请求
-func grpcRequest(chanID uint64, ch chan<- *model.ResultDataMsg, i uint64, request *model.Request,
+func grpcRequest(chanID uint64, ch chan<- *model.ResultDataMsg, i uint64, api *model.Api,
 	ws *client.GrpcSocket) {
 	var (
 		startTime = time.Now().UnixMilli()
@@ -46,7 +46,7 @@ func grpcRequest(chanID uint64, ch chan<- *model.ResultDataMsg, i uint64, reques
 		var (
 			ctx = context.Background()
 			req = &pb.Request{
-				UserName: request.Body,
+				UserName: api.Body,
 			}
 		)
 		rsp, err := c.HelloWorld(ctx, req)
