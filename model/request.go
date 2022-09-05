@@ -425,7 +425,7 @@ func (r *Api) findBodyParameters() {
 					}
 				}
 				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
-				if values != nil && len(values) > 1 {
+				if values != nil {
 					for _, value := range values {
 						if _, ok := r.Parameters.Load(value[1]); !ok {
 							r.Parameters.Store(value[1], value[0])
@@ -435,7 +435,27 @@ func (r *Api) findBodyParameters() {
 
 			}
 		case UrlencodeMode:
-
+			if r.Request.Body.Parameter == nil {
+				return
+			}
+			for _, parameter := range r.Request.Body.Parameter {
+				keys := tools.FindAllDestStr(parameter.Key, "{{(.*?)}}")
+				if keys != nil {
+					for _, key := range keys {
+						if _, ok := r.Parameters.Load(key[1]); !ok {
+							r.Parameters.Store(key[1], key[0])
+						}
+					}
+				}
+				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
+				if values != nil {
+					for _, value := range values {
+						if _, ok := r.Parameters.Load(value[1]); !ok {
+							r.Parameters.Store(value[1], value[0])
+						}
+					}
+				}
+			}
 		default:
 			if r.Request.Body.Raw == "" {
 				return
