@@ -12,18 +12,18 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, ch chan *SceneTestResultDataMsg) {
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg) {
 	defer kafkaProducer.Close()
 	for {
-		if testResultDataMsg, ok := <-ch; ok {
-			msg, err := json.Marshal(testResultDataMsg)
+		if resultDataMsg, ok := <-resultDataMsgCh; ok {
+			msg, err := json.Marshal(resultDataMsg)
 			if err != nil {
 				log.Logger.Error("json转换失败", err)
 				break
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = config.Config["Topic"].(string)
-			DataMsg.Key = sarama.StringEncoder(testResultDataMsg.PlanId + "-" + testResultDataMsg.SceneId)
+			DataMsg.Key = sarama.StringEncoder(resultDataMsg.PlanId + "-" + resultDataMsg.SceneId)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {

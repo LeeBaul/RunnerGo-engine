@@ -7,8 +7,8 @@ import (
 
 var Config map[string]interface{}
 
-func InitConfig() {
-	viper.SetConfigName("config\\runner-dev")
+func InitConfig(conf string) {
+	viper.SetConfigName(conf)
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()

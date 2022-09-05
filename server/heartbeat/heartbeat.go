@@ -17,6 +17,7 @@ import (
 var (
 	heartbeat = new(HeartBeat)
 	LocalIp   = ""
+	LocalHost = ""
 )
 
 func CheckHeartBeat(ctx context.Context) *HeartBeat {

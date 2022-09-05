@@ -19,7 +19,7 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body string, query, header []model.VarForm, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error) {
+func HTTPRequest(method, url string, body string, query, header, auth []*model.VarForm, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error) {
 
 	client := fastClient(timeout)
 	req = fasthttp.AcquireRequest()
@@ -44,7 +44,7 @@ func HTTPRequest(method, url string, body string, query, header []model.VarForm,
 		if query != nil {
 			for _, v := range query {
 				if v.Enable == true {
-					url += "?" + v.Value.(string)
+					url += "?" + v.Name + "=" + v.Value.(string)
 				}
 			}
 		}
@@ -61,7 +61,6 @@ func HTTPRequest(method, url string, body string, query, header []model.VarForm,
 	}
 	requestTime = tools.TimeDifference(startTime)
 	sendBytes = uint(req.Header.ContentLength())
-	log.Logger.Info("req", string(req.Body()))
 	return
 }
 

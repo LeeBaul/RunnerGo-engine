@@ -52,7 +52,9 @@ type ApiTestResultDataMsg struct {
 
 // ResultDataMsg 请求结果数据结构
 type ResultDataMsg struct {
-	ReportId              string
+	MachineIp             string `json:"machineIp" bson:"machineIp"`
+	MachineName           string `json:"machineName" bson:"machineName"`
+	ReportId              string `json:"reportId" bson:"reportId"`
 	ReportName            string
 	EventId               string
 	PlanId                string // 任务ID

@@ -20,7 +20,7 @@ func HttpSend(eventId string, request model.Request, globalVariable *sync.Map, r
 	)
 
 	resp, req, requestTime, sendBytes, err := client.HTTPRequest(request.Method, request.URL, request.Body, request.Query,
-		request.Header, request.Timeout)
+		request.Header, request.Auth, request.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
 	if request.Regulars != nil {

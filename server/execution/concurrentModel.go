@@ -19,7 +19,7 @@ func ExecutionConcurrentModel(
 	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
 
 	defer close(ch)
-	defer wg.Wait()
+
 	startTime := time.Now().UnixMilli()
 	concurrent := concurrentTest.Concurrent
 	switch concurrentTest.Type {

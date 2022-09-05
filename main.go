@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"kp-runner/config"
@@ -18,17 +19,20 @@ import (
 
 var (
 	GinRouter *gin.Engine
+	conf      string
 )
 
 func initService() {
 
+	flag.StringVar(&conf, "c", "config\\runner-dev", "配置文件,默认为conf文件夹下的dev文件")
+	flag.Parse()
 	// 初始化logger
 	zap.S().Debug("初始化logger")
 	log.InitLogger()
 
 	// 初始化配置文件
 	zap.S().Debug("初始化配置文件")
-	config.InitConfig()
+	config.InitConfig(conf)
 
 	// 获取本机地址
 	heartbeat.InitLocalIp()

@@ -95,14 +95,15 @@ func ExecutionPlan(plan *model.Plan) {
 	//sceneCh := make(chan *model.Plan)
 
 	// 设置接收数据缓存
-	ch := make(chan *model.ResultDataMsg, 10000)
-	sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
+	resultDataMsgCh := make(chan *model.ResultDataMsg, 10000)
+
 	var wg = &sync.WaitGroup{}
 
 	// 计算测试结果
-	go ReceivingResults(ch, sceneTestResultDataMsgCh)
+	//sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
+	//go ReceivingResults(ch, sceneTestResultDataMsgCh)
 	// 向kafka发送消息
-	go model.SendKafkaMsg(kafkaProducer, sceneTestResultDataMsgCh)
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh)
 
 	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
 
@@ -134,7 +135,7 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 分解任务
-	TaskDecomposition(planId, planName, reportId, reportName, scene, wg, ch, scene.Configuration.Variable, requestCollection)
+	TaskDecomposition(planId, planName, reportId, reportName, scene, wg, resultDataMsgCh, scene.Configuration.Variable, requestCollection)
 }
 
 // TaskDecomposition 分解任务
@@ -220,10 +221,11 @@ func TaskDecomposition(planId, planName, reportId, reportName string, scene *mod
 		close(resultDataMsgCh)
 
 	}
+	wg.Wait()
 	log.Logger.Info("计划", planName, "结束")
 }
 
-// ReceivingResults 计算并发送测试结果
+// ReceivingResults 计算并发送测试结果,
 func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResultDataMsgCh chan *model.SceneTestResultDataMsg) {
 	var (
 		sceneTestResultDataMsg = new(model.SceneTestResultDataMsg)
@@ -337,3 +339,18 @@ func timeLineCalculate(line int64, requestTimeList model.RequestTimeList) (reque
 	return
 
 }
+
+//// DebugScene 场景调试
+//func DebugScene() {
+//	gid := GetGid()
+//	golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+//}
+//
+//
+//// DebugApi api调试
+//func DebugApi(request model.Request) {
+//	event := model.Event{}
+//	event.Request = request
+//	wg := &sync.WaitGroup{}
+//	go golink.DisposeRequest(nil, "", "", "", "", "", "", nil, event, wg, requestResults, debugMsg, sceneVariable, requestCollection, options[0], options[1])
+//}
