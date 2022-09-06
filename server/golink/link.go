@@ -74,14 +74,11 @@ func DisposeScene(gid string, eventList []model.Event, resultDataMsgCh chan *mod
 // DisposeRequest 开始对请求进行处理
 func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 	planId, planName, sceneId, sceneName, reportId, reportName string, configuration *model.Configuration,
-	event model.Event, wg *sync.WaitGroup, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg, sceneVariable *sync.Map, requestCollection *mongo.Collection, options ...int64) {
+	event model.Event, wg *sync.WaitGroup, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg, sceneVariable *sync.Map, mongoCollection *mongo.Collection, options ...int64) {
 	defer wg.Done()
 
 	api := event.Api
 
-	if event.PreEventIdList != nil {
-
-	}
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此几口的比例
 	if api.Weight < 100 && api.Weight > 0 {
 		if float64(options[0]) < float64(options[1])*(float64(100-api.Weight)/100) {
@@ -89,7 +86,7 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		}
 	}
 
-	if planId != "" {
+	if requestResults != nil {
 		requestResults.PlanId = planId
 		requestResults.MachineIp = heartbeat.LocalIp
 		requestResults.MachineName = heartbeat.LocalHost
@@ -101,9 +98,9 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		requestResults.ReportName = reportName
 		requestResults.CustomRequestTimeLine = api.CustomRequestTime
 		requestResults.ErrorThreshold = api.ErrorThreshold
+		requestResults.TargetId = api.TargetId
+		requestResults.Name = api.Name
 	}
-	requestResults.TargetId = api.TargetId
-	requestResults.Name = api.Name
 
 	// 将请求信息中所有用的变量添加到接口变量维护的map中
 	api.FindParameterizes()
@@ -124,9 +121,11 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		contentLength = uint(0)
 		errMsg        = ""
 	)
+	log.Logger.Info("api", event.Api)
+	log.Logger.Info("api.TargetType", event.Api.TargetType)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event.EventId, api, sceneVariable, requestCollection, debugMsg)
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event.EventId, api, sceneVariable, mongoCollection, debugMsg)
 	case model.FormTypeWebSocket:
 		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
 	case model.FormTypeGRPC:
@@ -135,14 +134,14 @@ func DisposeRequest(resultDataMsgCh chan *model.ResultDataMsg,
 		return
 	}
 
-	requestResults.Name = api.Name
-	requestResults.RequestTime = requestTime
-	requestResults.ErrorType = errCode
-	requestResults.IsSucceed = isSucceed
-	requestResults.SendBytes = uint64(sendBytes)
-	requestResults.ReceivedBytes = uint64(contentLength)
-	requestResults.ErrorMsg = errMsg
 	if resultDataMsgCh != nil {
+		requestResults.Name = api.Name
+		requestResults.RequestTime = requestTime
+		requestResults.ErrorType = errCode
+		requestResults.IsSucceed = isSucceed
+		requestResults.SendBytes = uint64(sendBytes)
+		requestResults.ReceivedBytes = uint64(contentLength)
+		requestResults.ErrorMsg = errMsg
 		resultDataMsgCh <- requestResults
 	}
 

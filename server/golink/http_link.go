@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(eventId string, api model.Api, globalVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -19,13 +19,13 @@ func HttpSend(eventId string, api model.Api, globalVariable *sync.Map, requestCo
 		errMsg        = ""
 	)
 
-	resp, req, requestTime, sendBytes, err := client.HTTPRequest(api.Method, api.URL, api.Body, api.Query,
-		api.Header, api.Auth, api.Timeout)
+	resp, req, requestTime, sendBytes, err := client.HTTPRequest(api.Method, api.Request.URL, api.Request.Body, api.Request.Query,
+		api.Request.Header, api.Request.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
-	if api.Regulars != nil {
-		for _, regular := range api.Regulars {
-			regular.Extract(string(resp.Body()), globalVariable)
+	if api.Regex != nil {
+		for _, regular := range api.Regex {
+			regular.Extract(string(resp.Body()), sceneVariable)
 		}
 	}
 	if err != nil {
@@ -43,17 +43,8 @@ func HttpSend(eventId string, api model.Api, globalVariable *sync.Map, requestCo
 				succeed = true
 				msg     = ""
 			)
-			for k, v := range api.Assertions {
-				switch api.Assertions[k].Type {
-				case model.Text:
-					assert := v.AssertionText
-					code, succeed, msg = assert.VerifyAssertionText(resp)
-
-				case model.Regular:
-				case model.Json:
-				case model.XPath:
-
-				}
+			for _, v := range api.Assertions {
+				code, succeed, msg = v.VerifyAssertionText(resp)
 				if succeed != true {
 					errCode = code
 					isSucceed = succeed

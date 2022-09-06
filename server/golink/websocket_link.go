@@ -14,10 +14,13 @@ func webSocketSend(api model.Api) (bool, int64, uint64, uint, uint) {
 		contentLength = uint(0)
 	)
 	headers := map[string][]string{}
-	for _, header := range api.Header {
-		headers[header.Name] = []string{header.Value.(string)}
+	for _, header := range api.Request.Header.Parameter {
+		if header.Enable {
+			headers[header.Key] = []string{header.Value.(string)}
+		}
+
 	}
-	resp, requestTime, sendBytes, err := client.WebSocketRequest(api.URL, api.Body, headers, int(api.Timeout))
+	resp, requestTime, sendBytes, err := client.WebSocketRequest(api.Request.URL, api.Request.Body.ToString(), headers, int(api.Timeout))
 
 	if err != nil {
 		isSucceed = false

@@ -46,7 +46,7 @@ func grpcRequest(chanID uint64, ch chan<- *model.ResultDataMsg, i uint64, api *m
 		var (
 			ctx = context.Background()
 			req = &pb.Request{
-				UserName: api.Body,
+				//UserName: api.Request.Body,
 			}
 		)
 		rsp, err := c.HelloWorld(ctx, req)

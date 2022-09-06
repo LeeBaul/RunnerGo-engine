@@ -9,6 +9,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/execution"
+	"kp-runner/server/golink"
 	"kp-runner/server/heartbeat"
 	"sort"
 	"sync"
@@ -103,7 +104,7 @@ func ExecutionPlan(plan *model.Plan) {
 	//sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
 	//go ReceivingResults(ch, sceneTestResultDataMsgCh)
 	// 向kafka发送消息
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh)
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Config["Topic"].(string))
 
 	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
 
@@ -345,11 +346,30 @@ func timeLineCalculate(line int64, requestTimeList model.RequestTimeList) (reque
 //	golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
 //}
 //
-//
-//// DebugApi api调试
-//func DebugApi(request model.Request) {
-//	event := model.Event{}
-//	event.Request = request
-//	wg := &sync.WaitGroup{}
-//	go golink.DisposeRequest(nil, "", "", "", "", "", "", nil, event, wg, requestResults, debugMsg, sceneVariable, requestCollection, options[0], options[1])
-//}
+
+// DebugApi api调试
+func DebugApi(Api model.Api) {
+	event := model.Event{}
+	event.Api = Api
+	event.Api.Weight = 100
+	event.EventId = "接口调试"
+	wg := &sync.WaitGroup{}
+	sceneVariable := new(sync.Map)
+	// 新建mongo客户端连接，用于发送debug数据
+	mongoClient, err := model.NewMongoClient(
+		config.Config["mongoUser"].(string),
+		config.Config["mongoPassword"].(string),
+		config.Config["mongoHost"].(string),
+		config.Config["mongoDB"].(string))
+	if err != nil {
+		log.Logger.Error("连接mongo错误：", err)
+		return
+	}
+	defer mongoClient.Disconnect(context.TODO())
+	var debugMsg = &model.DebugMsg{}
+	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+
+	wg.Add(1)
+	go golink.DisposeRequest(nil, "", "", "", "", "", "", nil, event, wg, nil, debugMsg, sceneVariable, mongoCollection)
+	wg.Wait()
+}

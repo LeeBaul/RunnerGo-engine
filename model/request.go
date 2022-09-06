@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"kp-runner/model/proto/pb"
 	"kp-runner/tools"
@@ -13,8 +14,8 @@ import (
 type Api struct {
 	TargetId   int64     `json:"target_id" bson:"target_id"`
 	Name       string    `json:"name" bson:"name"`
-	TargetType string    `json:"targetType" bson:"targetType"` // api/webSocket/tcp/grpc
-	Method     string    `json:"method" bson:"method"`         // 方法 GET/POST/PUT
+	TargetType string    `json:"target_type" bson:"target_type"` // api/webSocket/tcp/grpc
+	Method     string    `json:"method" bson:"method"`           // 方法 GET/POST/PUT
 	Request    Request   `json:"request" bson:"request"`
 	Parameters *sync.Map `json:"parameters" bson:"parameters"`
 	//Parameterizes      *sync.Map            `json:"parameterizes" bson:"parameterizes"`               // 接口中定义的变量
@@ -43,6 +44,38 @@ type Body struct {
 	Mode      string     `json:"mode" bson:"mode"`
 	Raw       string     `json:"raw" bson:"raw"`
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
+}
+
+func (b *Body) ToString() (s string) {
+	if b == nil {
+		return s
+	}
+	switch b.Mode {
+	case NoneMode:
+	case FormMode:
+		body := make(map[string]interface{})
+		for _, value := range b.Parameter {
+			if !value.Enable {
+				continue
+			}
+			body[value.Key] = value.Value
+		}
+		data, _ := json.Marshal(body)
+		s = string(data)
+	case UrlencodeMode:
+		body := make(map[string]interface{})
+		for _, value := range b.Parameter {
+			if !value.Enable {
+				continue
+			}
+			body[value.Key] = value.Value
+		}
+		data, _ := json.Marshal(body)
+		s = string(data)
+	default:
+		s = b.Raw
+	}
+	return
 }
 
 type Header struct {
@@ -74,6 +107,7 @@ func (re RegularExpression) Extract(str string, parameters *sync.Map) {
 
 // VarForm 参数表
 type VarForm struct {
+	Enable      bool        `json:"enable" bson:"enable"`
 	IsChecked   int64       `json:"isChecked" bson:"isChecked"`
 	Type        string      `json:"type" bson:"type"`
 	Key         string      `json:"key" bson:"key"`

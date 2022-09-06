@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/Shopify/sarama"
 	"kp-runner/log"
-	"sync"
 )
 
 /*
@@ -12,8 +11,7 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string) {
 	defer kafkaProducer.Close()
 	for {
 		if resultDataMsg, ok := <-resultDataMsgCh; ok {
