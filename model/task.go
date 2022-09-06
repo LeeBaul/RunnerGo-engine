@@ -4,7 +4,6 @@ const (
 	ConcurrentModel = iota // 并发数模式
 	ErrorRateModel         // 错误率模式
 	LadderModel            // 阶梯模式
-	TpsModel               // 每秒事务数模式
 	QpsModel               // 每秒请求数模式
 	RTModel                // 响应时间模式
 )

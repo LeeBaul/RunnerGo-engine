@@ -15,7 +15,7 @@ func webSocketSend(api model.Api) (bool, int64, uint64, uint, uint) {
 	)
 	headers := map[string][]string{}
 	for _, header := range api.Request.Header.Parameter {
-		if header.Enable {
+		if header.IsChecked == 1 {
 			headers[header.Key] = []string{header.Value.(string)}
 		}
 

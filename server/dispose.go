@@ -12,6 +12,7 @@ import (
 	"kp-runner/server/golink"
 	"kp-runner/server/heartbeat"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -52,23 +53,18 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 	c.Start()
 
 	// 查询定时任务状态，如果redis中的状态变为停止，则关闭定时任务
-	status := model.QueryTimingTaskStatus(plan.PlanId + ":" + plan.Scene.SceneId + ":" + "timing")
+	status := model.QueryTimingTaskStatus(plan.PlanId + ":" + strconv.FormatInt(plan.Scene.SceneId, 10) + ":" + "timing")
 	if status == false {
 		c.Remove(id)
 	}
 
 }
 
-// ExecutionDebugRequest 接口调试
-//func ExecutionDebugRequest(request model.Request, globalVariable *sync.Map, requestResults *model.ResultDataMsg, debugMsg *model.DebugMsg) {
-//	golink.DisposeRequest(nil, "", "", "", "", "", "", nil, request, globalVariable, nil, requestResults, debugMsg, nil)
-//}
-
 // ExecutionPlan 执行计划
 func ExecutionPlan(plan *model.Plan) {
 
 	// 如果场景为空或者场景中的事件为空，直接结束该方法
-	if plan.Scene == nil || plan.Scene.EventList == nil {
+	if plan.Scene == nil || plan.Scene.Nodes == nil {
 		log.Logger.Error("计划的场景不能为空: ", plan)
 		return
 	}
@@ -107,11 +103,6 @@ func ExecutionPlan(plan *model.Plan) {
 	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Config["Topic"].(string))
 
 	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
-
-	planId := plan.PlanId
-	planName := plan.PlanName
-	reportId := plan.ReportId
-	reportName := plan.ReportName
 	scene := plan.Scene
 
 	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
@@ -136,12 +127,13 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 分解任务
-	TaskDecomposition(planId, planName, reportId, reportName, scene, wg, resultDataMsgCh, scene.Configuration.Variable, requestCollection)
+	TaskDecomposition(plan, wg, resultDataMsgCh, requestCollection)
 }
 
 // TaskDecomposition 分解任务
-func TaskDecomposition(planId, planName, reportId, reportName string, scene *model.Scene, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, sceneVariable *sync.Map, mongoCollection *mongo.Collection) {
+func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
 
+	scene := plan.Scene
 	if scene.Configuration.ParameterizedFile != nil {
 		var mu = sync.Mutex{}
 		p := scene.Configuration.ParameterizedFile
@@ -149,81 +141,78 @@ func TaskDecomposition(planId, planName, reportId, reportName string, scene *mod
 		p.ReadFile()
 	}
 
-	configTask := scene.ConfigTask
-	configuration := scene.Configuration
-	eventList := scene.EventList
-	sceneId := scene.SceneId
-	sceneName := scene.SceneName
-	switch configTask.TestModel.Type {
+	var reportMsg = &model.ResultDataMsg{}
+	reportMsg.PlanId = plan.PlanId
+	reportMsg.SceneId = strconv.FormatInt(scene.SceneId, 10)
+	reportMsg.SceneName = scene.SceneName
+	reportMsg.PlanName = plan.PlanName
+	reportMsg.ReportId = plan.ReportId
+	reportMsg.ReportName = plan.ReportName
+	switch scene.ConfigTask.TestModel.Type {
 	case model.ConcurrentModel:
-		execution.ExecutionConcurrentModel(
-			configTask.TestModel.ConcurrentTest,
-			resultDataMsgCh,
-			eventList,
-			planId,
-			planName,
-			reportId,
-			reportName,
-			sceneId,
-			sceneName,
-			configuration,
-			wg,
-			sceneVariable,
-			mongoCollection)
-
+		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	case model.ErrorRateModel:
-		execution.ExecutionErrorRateModel(
-			configTask.TestModel.ErrorRateTest,
-			eventList,
-			resultDataMsgCh,
-			planId,
-			planName,
-			sceneId,
-			sceneName,
-			reportId,
-			reportName,
-			configuration,
-			wg,
-			sceneVariable,
-			mongoCollection)
+		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	case model.LadderModel:
-		execution.ExecutionLadderModel(
-			configTask.TestModel.LadderTest,
-			eventList,
-			resultDataMsgCh,
-			planId,
-			planName,
-			sceneId,
-			sceneName,
-			reportId,
-			reportName,
-			configuration,
-			wg,
-			sceneVariable,
-			mongoCollection)
+		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
-		execution.ExecutionRTModel(
-			configTask.TestModel.RTTest,
-			eventList,
-			resultDataMsgCh,
-			planId,
-			planName,
-			sceneId,
-			sceneName,
-			reportId,
-			reportName,
-			configuration,
-			wg,
-			sceneVariable,
-			mongoCollection)
+		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	default:
 		close(resultDataMsgCh)
 
 	}
 	wg.Wait()
-	log.Logger.Info("计划", planName, "结束")
+	log.Logger.Info("计划:", plan.PlanId, ".............结束")
+}
+
+// DebugScene 场景调试
+func DebugScene(scene *model.Scene) {
+	gid := execution.GetGid()
+	wg := &sync.WaitGroup{}
+	mongoClient, err := model.NewMongoClient(
+		config.Config["mongoUser"].(string),
+		config.Config["mongoPassword"].(string),
+		config.Config["mongoHost"].(string),
+		config.Config["mongoDB"].(string))
+	if err != nil {
+		log.Logger.Error("连接mongo错误：", err)
+		return
+	}
+	defer mongoClient.Disconnect(context.TODO())
+	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+	wg.Add(1)
+	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
+}
+
+// DebugApi api调试
+func DebugApi(Api model.Api) {
+	event := model.Event{}
+	event.Api = Api
+	event.Weight = 100
+	event.Id = "接口调试"
+	wg := &sync.WaitGroup{}
+	// 新建mongo客户端连接，用于发送debug数据
+	mongoClient, err := model.NewMongoClient(
+		config.Config["mongoUser"].(string),
+		config.Config["mongoPassword"].(string),
+		config.Config["mongoHost"].(string),
+		config.Config["mongoDB"].(string))
+	if err != nil {
+		log.Logger.Error("连接mongo错误：", err)
+		return
+	}
+	defer mongoClient.Disconnect(context.TODO())
+	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+
+	configuration := new(model.Configuration)
+	configuration.Variable = new(sync.Map)
+	configuration.Mu = sync.Mutex{}
+	configuration.Variable.Store("mobile", "13300098221")
+	wg.Add(1)
+	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
+	wg.Wait()
 }
 
 // ReceivingResults 计算并发送测试结果,
@@ -338,38 +327,4 @@ func timeLineCalculate(line int64, requestTimeList model.RequestTimeList) (reque
 	}
 	return
 
-}
-
-//// DebugScene 场景调试
-//func DebugScene() {
-//	gid := GetGid()
-//	golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
-//}
-//
-
-// DebugApi api调试
-func DebugApi(Api model.Api) {
-	event := model.Event{}
-	event.Api = Api
-	event.Api.Weight = 100
-	event.EventId = "接口调试"
-	wg := &sync.WaitGroup{}
-	sceneVariable := new(sync.Map)
-	// 新建mongo客户端连接，用于发送debug数据
-	mongoClient, err := model.NewMongoClient(
-		config.Config["mongoUser"].(string),
-		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string),
-		config.Config["mongoDB"].(string))
-	if err != nil {
-		log.Logger.Error("连接mongo错误：", err)
-		return
-	}
-	defer mongoClient.Disconnect(context.TODO())
-	var debugMsg = &model.DebugMsg{}
-	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
-
-	wg.Add(1)
-	go golink.DisposeRequest(nil, "", "", "", "", "", "", nil, event, wg, nil, debugMsg, sceneVariable, mongoCollection)
-	wg.Wait()
 }

@@ -29,9 +29,9 @@ const (
 
 // 文本断言类型
 const (
-	ResponseCode    = iota // 断言响应码
-	ResponseHeaders        // 断言响应的信息头
-	ResponseData           // 断言响应的body信息
+	ResponseHeaders = 1 // 断言响应的信息头
+	ResponseData    = 2 // 断言响应的body信息
+	ResponseCode    = 3 // 断言响应码
 )
 
 // 事件类型

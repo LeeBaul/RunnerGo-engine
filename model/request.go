@@ -12,23 +12,18 @@ import (
 
 // Api 请求数据
 type Api struct {
-	TargetId   int64     `json:"target_id" bson:"target_id"`
-	Name       string    `json:"name" bson:"name"`
-	TargetType string    `json:"target_type" bson:"target_type"` // api/webSocket/tcp/grpc
-	Method     string    `json:"method" bson:"method"`           // 方法 GET/POST/PUT
-	Request    Request   `json:"request" bson:"request"`
-	Parameters *sync.Map `json:"parameters" bson:"parameters"`
-	//Parameterizes      *sync.Map            `json:"parameterizes" bson:"parameterizes"`               // 接口中定义的变量
-	Assertions           []*AssertionText     `json:"assertions" bson:"assertions"`                     // 验证的方法(断言)
-	Timeout              int64                `json:"timeout" bson:"timeout"`                           // 请求超时时间
-	ErrorThreshold       float32              `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
-	CustomRequestTime    int64                `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
-	RequestTimeThreshold int64                `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
-	Regex                []*RegularExpression `json:"regex" bson:"regex"`                               // 正则表达式
-	Debug                bool                 `json:"debug" bson:"debug"`                               // 是否开启Debug模式
-	Connection           int64                `json:"connection" bson:"connection"`                     // 0:websocket长连接
-	Weight               int64                `json:"weight" bson:"weight"`                             // 权重，并发分配的比例
-	Tag                  bool                 `json:"tag" bson:"tag"`                                   // Tps模式下，该标签代表以该接口为准
+	TargetId   int64                `json:"target_id" bson:"target_id"`
+	Name       string               `json:"name" bson:"name"`
+	TargetType string               `json:"target_type" bson:"target_type"` // api/webSocket/tcp/grpc
+	Method     string               `json:"method" bson:"method"`           // 方法 GET/POST/PUT
+	Request    Request              `json:"request" bson:"request"`
+	Parameters *sync.Map            `json:"parameters" bson:"parameters"`
+	Assert     []*AssertionText     `json:"assert" bson:"assert"`         // 验证的方法(断言)
+	Timeout    int64                `json:"timeout" bson:"timeout"`       // 请求超时时间
+	Regex      []*RegularExpression `json:"regex" bson:"regex"`           // 正则表达式
+	Debug      bool                 `json:"debug" bson:"debug"`           // 是否开启Debug模式
+	Connection int64                `json:"connection" bson:"connection"` // 0:websocket长连接
+
 }
 
 type Request struct {
@@ -55,7 +50,7 @@ func (b *Body) ToString() (s string) {
 	case FormMode:
 		body := make(map[string]interface{})
 		for _, value := range b.Parameter {
-			if !value.Enable {
+			if value.IsChecked != 1 {
 				continue
 			}
 			body[value.Key] = value.Value
@@ -65,7 +60,7 @@ func (b *Body) ToString() (s string) {
 	case UrlencodeMode:
 		body := make(map[string]interface{})
 		for _, value := range b.Parameter {
-			if !value.Enable {
+			if value.IsChecked != 1 {
 				continue
 			}
 			body[value.Key] = value.Value
@@ -97,18 +92,18 @@ type RegularExpression struct {
 }
 
 // Extract 提取response 中的值
-func (re RegularExpression) Extract(str string, parameters *sync.Map) {
+func (re RegularExpression) Extract(str string, parameters *sync.Map) (value string) {
 	name := tools.VariablesMatch(re.Var)
-	if value := tools.FindDestStr(str, re.Express); value != "" {
+	if value = tools.FindDestStr(str, re.Express); value != "" {
 		re.Val = value
 		parameters.Store(name, value)
 	}
+	return
 }
 
 // VarForm 参数表
 type VarForm struct {
-	Enable      bool        `json:"enable" bson:"enable"`
-	IsChecked   int64       `json:"isChecked" bson:"isChecked"`
+	IsChecked   int64       `json:"is_checked" bson:"is_checked"`
 	Type        string      `json:"type" bson:"type"`
 	Key         string      `json:"key" bson:"key"`
 	Value       interface{} `json:"value" bson:"value"`
@@ -397,18 +392,23 @@ func (r *Api) ReplaceParameters(configuration *Configuration) {
 	if r.Parameters == nil {
 		r.Parameters = new(sync.Map)
 	}
+
 	r.Parameters.Range(func(k, v any) bool {
-		if value, ok := configuration.Variable.Load(k); ok {
-			if v == fmt.Sprintf("{{%s}}", k) {
-				r.Parameters.Store(k, value)
+		if configuration.Variable != nil {
+			if value, ok := configuration.Variable.Load(k); ok {
+				if v == fmt.Sprintf("{{%s}}", k) {
+					r.Parameters.Store(k, value)
+				}
 			}
 		}
-		if _, ok := configuration.ParameterizedFile.VariableNames.VarMapList[k.(string)]; ok {
-			if v == fmt.Sprintf("{{%s}}", k) {
-				configuration.Mu.Lock()
-				value := configuration.ParameterizedFile.UseVar(k.(string))
-				r.Parameters.Store(k, value)
-				configuration.Mu.Unlock()
+		if configuration.ParameterizedFile != nil {
+			if _, ok := configuration.ParameterizedFile.VariableNames.VarMapList[k.(string)]; ok {
+				if v == fmt.Sprintf("{{%s}}", k) {
+					configuration.Mu.Lock()
+					value := configuration.ParameterizedFile.UseVar(k.(string))
+					r.Parameters.Store(k, value)
+					configuration.Mu.Unlock()
+				}
 			}
 		}
 		return true

@@ -32,19 +32,19 @@ func GetErrorRate(key string, errorRateData *ErrorRateData) {
 
 }
 
-// ExecutionErrorRateModel 错误率模式
-func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
-	planId, planName, sceneId, sceneName, reportId, reportName string,
-	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
+// ErrorRateModel 错误率模式
+func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 	defer close(resultDataMsgCh)
 
-	startConcurrent := errorRateTest.StartConcurrent
-	length := errorRateTest.Length
-	maxConcurrent := errorRateTest.MaxConcurrent
-	lengthDuration := errorRateTest.LengthDuration
-	stableDuration := errorRateTest.StableDuration
-	timeUp := errorRateTest.TimeUp
+	startConcurrent := scene.ConfigTask.TestModel.ErrorRateTest.StartConcurrent
+	length := scene.ConfigTask.TestModel.ErrorRateTest.Length
+	maxConcurrent := scene.ConfigTask.TestModel.ErrorRateTest.MaxConcurrent
+	lengthDuration := scene.ConfigTask.TestModel.ErrorRateTest.LengthDuration
+	stableDuration := scene.ConfigTask.TestModel.ErrorRateTest.StableDuration
+	timeUp := scene.ConfigTask.TestModel.ErrorRateTest.TimeUp
 
+	planId := reportMsg.PlanId
+	sceneId := reportMsg.SceneId
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	errorRateData := new(ErrorRateData)
 	startTime := time.Now().Unix()
@@ -56,7 +56,7 @@ func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []mode
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 		if status == "false" {
-			log.Logger.Info("计划", planName, "结束")
+			log.Logger.Info("计划:", planId, "...............结束")
 			return
 		}
 
@@ -66,7 +66,7 @@ func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []mode
 		for _, api := range apis {
 			if api.Threshold < api.Actual {
 				log.Logger.Info(api.ApiName, "接口：在", concurrent, "并发时,错误率", api.Actual, "大于所设阈值", api.Threshold)
-				log.Logger.Info("计划", planName, "结束")
+				log.Logger.Info("计划:", planId, "...............结束")
 				return
 			}
 		}
@@ -74,7 +74,7 @@ func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []mode
 			wg.Add(1)
 			go func(i, concurrent int64) {
 				gid := GetGid()
-				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
@@ -84,7 +84,7 @@ func ExecutionErrorRateModel(errorRateTest model.ErrorRateTest, eventList []mode
 		}
 
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().Unix() {
-			log.Logger.Info("计划", planName, "结束")
+			log.Logger.Info("计划:", planId, ".....................结束")
 			return
 		}
 		// 如果当前并发数小于最大并发数，

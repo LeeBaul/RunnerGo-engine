@@ -11,17 +11,16 @@ import (
 	"time"
 )
 
-// ExecutionConcurrentModel 并发模式
-func ExecutionConcurrentModel(
-	concurrentTest model.ConcurrentTest,
-	ch chan *model.ResultDataMsg, eventList []model.Event,
-	planId, planName, reportId, reportName, sceneId, sceneName string,
-	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
+// ConcurrentModel 并发模式
+func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
-	defer close(ch)
+	defer close(resultDataMsgCh)
 
 	startTime := time.Now().UnixMilli()
+	concurrentTest := scene.ConfigTask.TestModel.ConcurrentTest
 	concurrent := concurrentTest.Concurrent
+	planId := reportMsg.PlanId
+	sceneId := reportMsg.SceneId
 	switch concurrentTest.Type {
 	case model.DurationType:
 		index := 0
@@ -38,7 +37,7 @@ func ExecutionConcurrentModel(
 				wg.Add(1)
 				go func(i, concurrent int64) {
 					gid := GetGid()
-					golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 				index++
@@ -66,7 +65,7 @@ func ExecutionConcurrentModel(
 				wg.Add(1)
 				go func(i, concurrent int64) {
 					gid := GetGid()
-					golink.DisposeScene(gid, eventList, ch, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 			}

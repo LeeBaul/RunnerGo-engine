@@ -27,7 +27,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	req.Header.SetMethod(method)
 	if header.Parameter != nil {
 		for _, v := range header.Parameter {
-			if v.Enable == true {
+			if v.IsChecked == 1 {
 				if strings.EqualFold(v.Key, "content-type") {
 					req.Header.SetContentType(v.Value.(string))
 				}
@@ -43,7 +43,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	if method == "GET" {
 		if query.Parameter != nil {
 			for _, v := range query.Parameter {
-				if v.Enable == true {
+				if v.IsChecked == 1 {
 					url += "?" + v.Key + "=" + v.Value.(string)
 				}
 			}

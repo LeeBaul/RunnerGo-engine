@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection, debugMsg *model.DebugMsg) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -23,48 +23,48 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		api.Request.Header, api.Request.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
+	log.Logger.Error("resp", resp.String())
+	log.Logger.Error("req", req.String())
+	var regex []map[string]interface{}
 	if api.Regex != nil {
 		for _, regular := range api.Regex {
-			regular.Extract(string(resp.Body()), sceneVariable)
+			reg := make(map[string]interface{})
+			value := regular.Extract(string(resp.Body()), sceneVariable)
+			reg[regular.Var] = value
+			regex = append(regex, reg)
 		}
 	}
 	if err != nil {
-		isSucceed = false
-		errCode = model.RequestError // 请求错误
 		errMsg = err.Error()
-	} else {
-		// 断言验证
-		if api.Assertions != nil {
-
-			var assertionMsgList []model.AssertionMsg
-			var assertionMsg = model.AssertionMsg{}
-			var (
-				code    = int64(10000)
-				succeed = true
-				msg     = ""
-			)
-			for _, v := range api.Assertions {
-				code, succeed, msg = v.VerifyAssertionText(resp)
-				if succeed != true {
-					errCode = code
-					isSucceed = succeed
-					errMsg = msg
-				}
-				assertionMsg.Code = code
-				assertionMsg.IsSucceed = succeed
-				assertionMsg.Msg = msg
-				assertionMsgList = append(assertionMsgList, assertionMsg)
-			}
-		}
-		// 接收到的字节长度
-		contentLength = uint(resp.Header.ContentLength())
 	}
-	// 开启debug模式后，将请求响应信息写入到mongodb中
-
-	if api.Debug == true {
-		if debugMsg == nil {
-			debugMsg = &model.DebugMsg{}
+	var assertionMsgList []model.AssertionMsg
+	// 断言验证
+	if api.Assert != nil {
+		var assertionMsg = model.AssertionMsg{}
+		var (
+			code    = int64(10000)
+			succeed = true
+			msg     = ""
+		)
+		for _, v := range api.Assert {
+			code, succeed, msg = v.VerifyAssertionText(resp)
+			if succeed != true {
+				errCode = code
+				isSucceed = succeed
+				errMsg = msg
+			}
+			assertionMsg.Code = code
+			assertionMsg.IsSucceed = succeed
+			assertionMsg.Msg = msg
+			assertionMsgList = append(assertionMsgList, assertionMsg)
 		}
+	}
+	// 接收到的字节长度
+	contentLength = uint(resp.Header.ContentLength())
+
+	// 开启debug模式后，将请求响应信息写入到mongodb中
+	if api.Debug == true {
+		debugMsg := new(model.DebugMsg)
 		debugMsg.EventId = eventId
 		debugMsg.ApiId = api.TargetId
 		debugMsg.ApiName = api.Name
@@ -74,14 +74,19 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		debugMsg.Response = make(map[string]string)
 		debugMsg.Response["header"] = resp.Header.String()
 		debugMsg.Response["body"] = string(resp.Body())
-
+		if api.Assert != nil {
+			debugMsg.Assertion = make(map[string][]model.AssertionMsg)
+			debugMsg.Assertion["assertion"] = assertionMsgList
+		}
+		if api.Regex != nil {
+			debugMsg.Regex = regex
+		}
 		msg := make(map[string]*model.DebugMsg)
 		msg["debug"] = debugMsg
 		log.Logger.Info(api.TargetId)
 		if requestCollection != nil {
 			model.Insert(requestCollection, msg)
 		}
-
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg
 }

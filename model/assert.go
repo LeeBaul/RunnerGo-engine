@@ -1,7 +1,9 @@
 package model
 
 import (
+	"fmt"
 	"github.com/valyala/fasthttp"
+	"kp-runner/tools"
 	"strconv"
 	"strings"
 )
@@ -69,11 +71,20 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 		}
 	case ResponseData:
 		switch assertionText.Compare {
+		case Equal:
+
+			rex := fmt.Sprintf("%s:(.*?)", assertionText.Var)
+			str := tools.FindDestStr(response.String(), rex)
+			if assertionText.Val == str {
+				return NoError, true, "响应中，" + assertionText.Var + " = " + assertionText.Val + " 断言: 成功"
+			} else {
+				return AssertError, false, "响应中," + assertionText.Var + " = " + assertionText.Val + " 断言: 失败"
+			}
 		case Includes:
 			if strings.Contains(response.String(), assertionText.Val) {
-				return NoError, true, "响应中包含：" + assertionText.Val + " 断言:成功"
+				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
 			} else {
-				return AssertError, false, "响应中不包含：" + assertionText.Val + " 断言:失败"
+				return AssertError, false, "响应中不包含：" + assertionText.Val + " 断言: 失败"
 			}
 		}
 	}

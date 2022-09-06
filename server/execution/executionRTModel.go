@@ -29,22 +29,20 @@ func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) 
 
 }
 
-// ExecutionRTModel 响应时间模式
-func ExecutionRTModel(rtTest model.RTTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
-	planId, planName, sceneId, sceneName, reportId, reportName string,
-	configuration *model.Configuration,
-	wg *sync.WaitGroup,
-	sceneVariable *sync.Map,
-	requestCollection *mongo.Collection) {
+// RTModel 响应时间模式
+func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
 	defer close(resultDataMsgCh)
 
-	startConcurrent := rtTest.StartConcurrent
-	length := rtTest.Length
-	maxConcurrent := rtTest.MaxConcurrent
-	lengthDuration := rtTest.LengthDuration
-	stableDuration := rtTest.StableDuration
-	timeUp := rtTest.TimeUp
+	startConcurrent := scene.ConfigTask.TestModel.RTTest.StartConcurrent
+	length := scene.ConfigTask.TestModel.RTTest.Length
+	maxConcurrent := scene.ConfigTask.TestModel.RTTest.MaxConcurrent
+	lengthDuration := scene.ConfigTask.TestModel.RTTest.LengthDuration
+	stableDuration := scene.ConfigTask.TestModel.RTTest.StableDuration
+	timeUp := scene.ConfigTask.TestModel.RTTest.TimeUp
+
+	planId := reportMsg.PlanId
+	sceneId := reportMsg.SceneId
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
@@ -77,7 +75,7 @@ func ExecutionRTModel(rtTest model.RTTest, eventList []model.Event, resultDataMs
 			wg.Add(1)
 			go func(i, concurrent int64) {
 				gid := GetGid()
-				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
@@ -99,7 +97,7 @@ func ExecutionRTModel(rtTest model.RTTest, eventList []model.Event, resultDataMs
 
 		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().UnixMilli() {
-			log.Logger.Info("计划", planName, "结束")
+			log.Logger.Info("计划: ", planId, "..............结束")
 			return
 		}
 
@@ -119,7 +117,7 @@ func ExecutionRTModel(rtTest model.RTTest, eventList []model.Event, resultDataMs
 				for _, api := range apis {
 					if api.Threshold < api.Actual {
 						log.Logger.Info(api.ApiName, "接口：在", concurrent, "并发时", api.Custom, "线响应时间", api.Actual, "大于所设阈值", api.Threshold)
-						log.Logger.Info("计划", planName, "结束")
+						log.Logger.Info("计划:", planId, "...............结束")
 						return
 
 					}

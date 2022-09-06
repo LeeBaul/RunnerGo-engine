@@ -9,20 +9,20 @@ import (
 	"time"
 )
 
-// ExecutionLadderModel 阶梯模式
-func ExecutionLadderModel(ladderTest model.LadderTest, eventList []model.Event, resultDataMsgCh chan *model.ResultDataMsg,
-	planId, planName, sceneId, sceneName, reportId, reportName string,
-
-	configuration *model.Configuration, wg *sync.WaitGroup, sceneVariable *sync.Map, requestCollection *mongo.Collection) {
+// LadderModel 阶梯模式
+func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
 	defer close(resultDataMsgCh)
 
-	startConcurrent := ladderTest.StartConcurrent
-	length := ladderTest.Length
-	maxConcurrent := ladderTest.MaxConcurrent
-	lengthDuration := ladderTest.LengthDuration
-	stableDuration := ladderTest.StableDuration
-	timeUp := ladderTest.TimeUp
+	startConcurrent := scene.ConfigTask.TestModel.LadderTest.StartConcurrent
+	length := scene.ConfigTask.TestModel.LadderTest.Length
+	maxConcurrent := scene.ConfigTask.TestModel.LadderTest.MaxConcurrent
+	lengthDuration := scene.ConfigTask.TestModel.LadderTest.LengthDuration
+	stableDuration := scene.ConfigTask.TestModel.LadderTest.StableDuration
+	timeUp := scene.ConfigTask.TestModel.LadderTest.TimeUp
+
+	planId := reportMsg.PlanId
+	sceneId := reportMsg.SceneId
 
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	startTime := time.Now().Unix()
@@ -36,14 +36,14 @@ func ExecutionLadderModel(ladderTest model.LadderTest, eventList []model.Event, 
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 		if status == "false" {
-			log.Logger.Info("计划", planName, "结束")
+			log.Logger.Info("计划:", planId, "...............结束")
 			return
 		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
 				gid := GetGid()
-				golink.DisposeScene(gid, eventList, resultDataMsgCh, planId, planName, sceneId, sceneName, reportId, reportName, configuration, wg, sceneVariable, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent, wg)
 
@@ -53,7 +53,7 @@ func ExecutionLadderModel(ladderTest model.LadderTest, eventList []model.Event, 
 			}
 		}
 		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().Unix() {
-			log.Logger.Info("计划", planName, "结束")
+			log.Logger.Info("计划: ", planId, "..................结束")
 			return
 		}
 		// 如果当前并发数小于最大并发数，
