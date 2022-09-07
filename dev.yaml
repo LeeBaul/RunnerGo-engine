@@ -1,0 +1,29 @@
+
+
+http:
+  address: "0.0.0.0:8002"
+  readTimeout: 5000
+  writeTimeout: 5000
+  noDefaultUserAgentHeader: true
+  maxConnPerHost: 10000
+  MaxIdleConnDuration: 5000
+  NoDefaultUserAgentHeader: 30000
+
+redis:
+  address: "172.17.101.191:6398"
+  password: "apipost"
+  db: 0
+
+kafka:
+  address: "172.17.101.188:9092"
+  topIc: "StressTestData"
+
+
+mongo:
+  db: "kunpeng"
+  user: "kunpeng"
+  password: "kYjJpU8BYvb4EJ9x"
+  stressDebugTable: "stress_debug"
+  sceneDebugTable: "scene_debug"
+  apiDebugTable: "api_debug"
+  address: "dds-8vb14448e6c8d6241844-pub.mongodb.zhangbei.rds.aliyuncs.com:3717"

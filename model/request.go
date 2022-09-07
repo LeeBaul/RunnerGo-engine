@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	"kp-runner/tools"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 // Api 请求数据
 type Api struct {
 	TargetId   int64                `json:"target_id" bson:"target_id"`
+	Uuid       uuid.UUID            `json:"uuid" bson:"uuid"`
 	Name       string               `json:"name" bson:"name"`
 	TargetType string               `json:"target_type" bson:"target_type"` // api/webSocket/tcp/grpc
 	Method     string               `json:"method" bson:"method"`           // 方法 GET/POST/PUT

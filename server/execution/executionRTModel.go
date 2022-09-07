@@ -3,10 +3,8 @@ package execution
 import (
 	"github.com/olivere/elastic"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
-	"kp-runner/server/client"
 	"kp-runner/server/golink"
 	"sync"
 	"time"
@@ -46,11 +44,11 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
-	err, esClient := client.NewEsClient(config.Config["esHost"].(string))
-	if err != nil {
-		return
-	}
-	go GetRequestTime(esClient, requestTimeData)
+	//err, esClient := client.NewEsClient(config.Config["esHost"].(string))
+	//if err != nil {
+	//	return
+	//}
+	//go GetRequestTime(esClient, requestTimeData)
 
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent

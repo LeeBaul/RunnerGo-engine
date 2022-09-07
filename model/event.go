@@ -1,7 +1,10 @@
 package model
 
+import uuid "github.com/satori/go.uuid"
+
 type Event struct {
 	Id                   string      `json:"id" bson:"id"`
+	Uuid                 uuid.UUID   `json:"uuid" bson:"uuid"`
 	Type                 string      `json:"type" bson:"type"` //   事件类型 "request" "controller"
 	PreList              []string    `json:"pre_list" bson:"pre_list"`
 	NextList             []string    `json:"next_list"   bson:"next_list"`

@@ -1,10 +1,14 @@
 package model
 
-import "sync"
+import (
+	uuid "github.com/satori/go.uuid"
+	"sync"
+)
 
 // Scene 场景结构体
 type Scene struct {
 	SceneId                 int64          `json:"scene_id" bson:"scene_id"` // 场景Id
+	Uuid                    uuid.UUID      `json:"uuid" bson:"uuid"`
 	TeamId                  int64          `json:"team_id" bson:"team_id"`
 	SceneName               string         `json:"scene_name" bson:"scene_name"` // 场景名称
 	Version                 int64          `json:"version" bson:"version"`

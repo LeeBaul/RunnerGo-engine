@@ -68,14 +68,14 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 // 获取fasthttp客户端
 func fastClient(timeOut int64) *fasthttp.Client {
 	fc := &fasthttp.Client{
-		Name:                     config.Config["httpClientName"].(string),
-		NoDefaultUserAgentHeader: config.Config["httpNoDefaultUserAgentHeader"].(bool),
+		Name:                     config.Conf.Http.Name,
+		NoDefaultUserAgentHeader: config.Conf.Http.NoDefaultUserAgentHeader,
 		TLSConfig:                &tls.Config{InsecureSkipVerify: true},
-		MaxConnsPerHost:          int(config.Config["httpClientMaxConnsPerHost"].(int64)),
-		MaxIdleConnDuration:      time.Duration(config.Config["httpClientMaxIdleConnDuration"].(int64)) * time.Millisecond,
+		MaxConnsPerHost:          config.Conf.Http.MaxConnPerHost,
+		MaxIdleConnDuration:      config.Conf.Http.MaxIdleConnDuration * time.Millisecond,
 		ReadTimeout:              time.Duration(timeOut) * time.Millisecond,
-		WriteTimeout:             time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
-		MaxConnWaitTimeout:       time.Duration(config.Config["httpClientMaxConnWaitTimeout"].(int64)) * time.Millisecond,
+		WriteTimeout:             time.Duration(timeOut) * time.Millisecond,
+		MaxConnWaitTimeout:       config.Conf.Http.MaxConnWaitTimeout * time.Millisecond,
 	}
 	return fc
 

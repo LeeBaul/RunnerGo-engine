@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"kp-runner/config"
@@ -19,29 +18,26 @@ import (
 
 var (
 	GinRouter *gin.Engine
-	conf      string
 )
 
 func initService() {
 
-	flag.StringVar(&conf, "c", ".\\runner-dev", "配置文件,默认为conf文件夹下的dev文件")
-	flag.Parse()
 	// 初始化logger
 	zap.S().Debug("初始化logger")
 	log.InitLogger()
 
 	// 初始化配置文件
 	zap.S().Debug("初始化配置文件")
-	config.InitConfig(conf)
+	config.InitConfig()
 
 	// 获取本机地址
 	heartbeat.InitLocalIp()
 	// 初始化redis客户端
 	log.Logger.Debug("初始化redis客户端")
 	if err := model.InitRedisClient(
-		config.Config["redisAddr"].(string),
-		config.Config["redisPassword"].(string),
-		config.Config["redisDB"].(int64),
+		config.Conf.Redis.Address,
+		config.Conf.Redis.Password,
+		config.Conf.Redis.DB,
 	); err != nil {
 		log.Logger.Error("redis连接失败:", err)
 		return
@@ -65,10 +61,10 @@ func initService() {
 	// 注册服务
 	log.Logger.Debug("注册服务")
 	kpRunnerService := &http.Server{
-		Addr:           config.Config["serverAddress"].(string),
+		Addr:           config.Conf.Http.Address,
 		Handler:        GinRouter,
-		ReadTimeout:    time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
-		WriteTimeout:   time.Duration(config.Config["httpClientWriteTimeout"].(int64)) * time.Millisecond,
+		ReadTimeout:    config.Conf.Http.ReadTimeout * time.Millisecond,
+		WriteTimeout:   config.Conf.Http.WriteTimeout * time.Millisecond,
 		MaxHeaderBytes: 1 << 20,
 	}
 

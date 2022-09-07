@@ -38,10 +38,10 @@ func RunScene(c *gin.Context) {
 	}
 
 	log.Logger.Info("运行场景", scene)
-
+	uid := uuid.NewV4()
+	scene.Uuid = uid
 	go server.DebugScene(&scene)
 
-	uid := uuid.NewV4()
 	global.ReturnMsg(c, http.StatusOK, "调式场景", uid)
 }
 
@@ -53,6 +53,7 @@ func RunApi(c *gin.Context) {
 		return
 	}
 	uid := uuid.NewV4()
+	api.Uuid = uid
 	go server.DebugApi(api)
 	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
 }

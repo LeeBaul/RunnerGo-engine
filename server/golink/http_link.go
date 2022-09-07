@@ -88,7 +88,7 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		msg["debug"] = debugMsg
 		log.Logger.Info(api.TargetId)
 		if requestCollection != nil {
-			model.Insert(requestCollection, msg)
+			model.Insert(requestCollection, api.Uuid, msg)
 		}
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg

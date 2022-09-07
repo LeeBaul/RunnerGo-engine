@@ -70,7 +70,7 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 设置kafka消费者，目的是像kafka中发送测试结果
-	kafkaProducer, err := model.NewKafkaProducer([]string{config.Config["kafkaAddress"].(string)})
+	kafkaProducer, err := model.NewKafkaProducer([]string{config.Conf.Kafka.Address})
 	if err != nil {
 		log.Logger.Error("kafka连接失败", err)
 		return
@@ -78,10 +78,10 @@ func ExecutionPlan(plan *model.Plan) {
 
 	// 新建mongo客户端连接，用于发送debug数据
 	mongoClient, err := model.NewMongoClient(
-		config.Config["mongoUser"].(string),
-		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string),
-		config.Config["mongoDB"].(string))
+		config.Conf.Mongo.User,
+		config.Conf.Mongo.Password,
+		config.Conf.Mongo.Address,
+		config.Conf.Mongo.DB)
 	if err != nil {
 		log.Logger.Error("连接mongo错误：", err)
 		return
@@ -100,9 +100,9 @@ func ExecutionPlan(plan *model.Plan) {
 	//sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
 	//go ReceivingResults(ch, sceneTestResultDataMsgCh)
 	// 向kafka发送消息
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Config["Topic"].(string))
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Conf.Kafka.TopIc)
 
-	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["stressDebugTable"].(string), mongoClient)
+	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	scene := plan.Scene
 
 	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
@@ -172,16 +172,16 @@ func DebugScene(scene *model.Scene) {
 	gid := execution.GetGid()
 	wg := &sync.WaitGroup{}
 	mongoClient, err := model.NewMongoClient(
-		config.Config["mongoUser"].(string),
-		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string),
-		config.Config["mongoDB"].(string))
+		config.Conf.Mongo.User,
+		config.Conf.Mongo.Password,
+		config.Conf.Mongo.Address,
+		config.Conf.Mongo.DB)
 	if err != nil {
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
 	defer mongoClient.Disconnect(context.TODO())
-	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["sceneDebugTable"].(string), mongoClient)
+	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
 }
 
@@ -194,16 +194,16 @@ func DebugApi(Api model.Api) {
 	wg := &sync.WaitGroup{}
 	// 新建mongo客户端连接，用于发送debug数据
 	mongoClient, err := model.NewMongoClient(
-		config.Config["mongoUser"].(string),
-		config.Config["mongoPassword"].(string),
-		config.Config["mongoHost"].(string),
-		config.Config["mongoDB"].(string))
+		config.Conf.Mongo.User,
+		config.Conf.Mongo.Password,
+		config.Conf.Mongo.Address,
+		config.Conf.Mongo.DB)
 	if err != nil {
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
 	defer mongoClient.Disconnect(context.TODO())
-	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["apiDebugTable"].(string), mongoClient)
+	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.ApiDebugTable, mongoClient)
 
 	configuration := new(model.Configuration)
 	configuration.Variable = new(sync.Map)

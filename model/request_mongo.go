@@ -32,8 +32,9 @@ func NewCollection(db, table string, mongoClient *mongo.Client) (collection *mon
 	return
 }
 
-func Insert(collection *mongo.Collection, msg interface{}) {
-	_, err := collection.InsertOne(context.TODO(), msg)
+func Insert(collection *mongo.Collection, uuid, msg interface{}) {
+	//_, err := collection.InsertOne(context.TODO(), msg)
+	_, err := collection.InsertMany(context.TODO(), []interface{}{uuid, msg})
 	if err != nil {
 		log.Logger.Error("向mongo写入数据错误:", err)
 	}
