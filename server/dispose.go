@@ -102,7 +102,7 @@ func ExecutionPlan(plan *model.Plan) {
 	// 向kafka发送消息
 	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Config["Topic"].(string))
 
-	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+	requestCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["stressDebugTable"].(string), mongoClient)
 	scene := plan.Scene
 
 	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
@@ -181,8 +181,7 @@ func DebugScene(scene *model.Scene) {
 		return
 	}
 	defer mongoClient.Disconnect(context.TODO())
-	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
-	wg.Add(1)
+	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["sceneDebugTable"].(string), mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
 }
 
@@ -204,7 +203,7 @@ func DebugApi(Api model.Api) {
 		return
 	}
 	defer mongoClient.Disconnect(context.TODO())
-	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["mongoRequestTable"].(string), mongoClient)
+	mongoCollection := model.NewCollection(config.Config["mongoDB"].(string), config.Config["apiDebugTable"].(string), mongoClient)
 
 	configuration := new(model.Configuration)
 	configuration.Variable = new(sync.Map)

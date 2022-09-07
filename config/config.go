@@ -56,7 +56,8 @@ func InitConfig(conf string) {
 	Config["mongoPassword"] = viper.Get("mongo.password")
 	Config["mongoHost"] = viper.Get("mongo.host")
 	Config["mongoDB"] = viper.Get("mongo.DB")
-	Config["mongoRequestTable"] = viper.Get("mongo.requestTable")
-	Config["mongoResponseTable"] = viper.Get("mongo.responseTable")
+	Config["stressDebugTable"] = viper.Get("mongo.stressDebugTable")
+	Config["sceneDebugTable"] = viper.Get("mongo.sceneDebugTable")
+	Config["apiDebugTable"] = viper.Get("mongo.apiDebugTable")
 	zap.S().Info(Config)
 }

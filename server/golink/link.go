@@ -67,7 +67,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 
 			}
 		}(node)
-
+		wg.Wait()
 	}
 }
 
@@ -150,7 +150,9 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 
 // DisposeController 处理控制器
 func DisposeController(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, configuration *model.Configuration, event model.Event, requestCollection *mongo.Collection, options ...int64) {
-	defer wg.Done()
+	if wg != nil {
+		defer wg.Done()
+	}
 	controller := event.Controller
 	switch controller.ControllerType {
 	case model.IfControllerType:
