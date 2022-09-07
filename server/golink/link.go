@@ -17,6 +17,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 	planId := reportMsg.PlanId
 	sceneId := reportMsg.SceneId
 	for _, node := range nodes {
+		node.Uuid = scene.Uuid
 		wg.Add(1)
 		go func(event model.Event) {
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，知道上一级所有事件全部完成

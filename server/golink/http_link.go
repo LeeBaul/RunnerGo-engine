@@ -62,33 +62,33 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug == true {
-		debugMsg := new(model.DebugMsg)
-		debugMsg.EventId = eventId
-		debugMsg.ApiId = api.TargetId
-		debugMsg.ApiName = api.Name
-		debugMsg.RequestTime = requestTime
-		debugMsg.RequestCode = resp.StatusCode()
+		debugMsg := make(map[string]interface{})
 
-		debugMsg.Request = make(map[string]interface{})
-		debugMsg.Request["header"] = req.Header.String()
-		debugMsg.Request["body"] = string(req.Body())
+		debugMsg["uuid"] = api.Uuid.String()
+		debugMsg["event_id"] = eventId
+		debugMsg["api_id"] = api.TargetId
+		debugMsg["api_name"] = api.Name
+		debugMsg["request_time"] = requestTime
+		debugMsg["request_code"] = resp.StatusCode()
 
-		debugMsg.Response = make(map[string]interface{})
-		debugMsg.Response["header"] = resp.Header.Header()
-		debugMsg.Response["body"] = string(resp.Body())
+		debugMsg["request_header"] = req.Header.String()
+		debugMsg["request_body"] = string(req.Body())
+
+		debugMsg["response_header"] = resp.Header.String()
+		debugMsg["response_body"] = string(resp.Body())
+		debugMsg["response_bytes"] = resp.Header.ContentLength()
+		debugMsg["response_status_message"] = string(resp.Header.StatusMessage())
 
 		if api.Assert != nil {
-			debugMsg.Assertion = make(map[string][]model.AssertionMsg)
-			debugMsg.Assertion["assertion"] = assertionMsgList
+			debugMsg["assertion"] = assertionMsgList
 		}
 		if api.Regex != nil {
-			debugMsg.Regex = regex
+			debugMsg["regex"] = regex
 		}
-		msg := make(map[string]*model.DebugMsg)
-		msg["debug"] = debugMsg
+
 		log.Logger.Info(api.TargetId)
 		if requestCollection != nil {
-			model.Insert(requestCollection, api.Uuid, msg)
+			model.Insert(requestCollection, debugMsg)
 		}
 	}
 	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg
