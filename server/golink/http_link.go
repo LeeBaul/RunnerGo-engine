@@ -2,6 +2,7 @@
 package golink
 
 import (
+	"encoding/json"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
@@ -23,8 +24,6 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		api.Request.Header, api.Request.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
-	log.Logger.Error("resp", resp.String())
-	log.Logger.Error("req", req.String())
 	var regex []map[string]interface{}
 	if api.Regex != nil {
 		for _, regular := range api.Regex {
@@ -68,12 +67,20 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		debugMsg.EventId = eventId
 		debugMsg.ApiId = api.TargetId
 		debugMsg.ApiName = api.Name
-		debugMsg.Request = make(map[string]string)
-		debugMsg.Request["header"] = req.Header.String()
+		debugMsg.Request = make(map[string]interface{})
+		requestHeader := make(map[string]interface{})
+		_ = json.Unmarshal(req.Header.Header(), &requestHeader)
+		debugMsg.Request["header"] = requestHeader
+
 		debugMsg.Request["body"] = string(req.Body())
-		debugMsg.Response = make(map[string]string)
-		debugMsg.Response["header"] = resp.Header.String()
+
+		debugMsg.Response = make(map[string]interface{})
+		responseHeader := make(map[string]interface{})
+		_ = json.Unmarshal(req.Header.Header(), &responseHeader)
+		debugMsg.Response["header"] = responseHeader
+
 		debugMsg.Response["body"] = string(resp.Body())
+
 		if api.Assert != nil {
 			debugMsg.Assertion = make(map[string][]model.AssertionMsg)
 			debugMsg.Assertion["assertion"] = assertionMsgList
