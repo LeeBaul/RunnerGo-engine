@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
 	"kp-runner/global"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -38,9 +39,10 @@ func RunScene(c *gin.Context) {
 
 	log.Logger.Info("运行场景", scene)
 
-	server.DebugScene(&scene)
+	go server.DebugScene(&scene)
 
-	global.ReturnMsg(c, http.StatusOK, "调式场景", nil)
+	uid := uuid.NewV4()
+	global.ReturnMsg(c, http.StatusOK, "调式场景", uid)
 }
 
 func RunApi(c *gin.Context) {
@@ -50,6 +52,7 @@ func RunApi(c *gin.Context) {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
 	}
-	server.DebugApi(api)
-	global.ReturnMsg(c, http.StatusOK, "调试接口", "")
+	uid := uuid.NewV4()
+	go server.DebugApi(api)
+	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
 }

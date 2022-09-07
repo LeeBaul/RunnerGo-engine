@@ -24,7 +24,7 @@ var (
 
 func initService() {
 
-	flag.StringVar(&conf, "c", "config\\runner-dev", "配置文件,默认为conf文件夹下的dev文件")
+	flag.StringVar(&conf, "c", ".\\runner-dev", "配置文件,默认为conf文件夹下的dev文件")
 	flag.Parse()
 	// 初始化logger
 	zap.S().Debug("初始化logger")
