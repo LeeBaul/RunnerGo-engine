@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"kp-runner/model/proto/pb"
 	"kp-runner/tools"
 	"strconv"
 	"strings"
@@ -586,32 +585,6 @@ func (r *Api) findAuthParameters() {
 					r.Parameters.Store(pw[1], pw[0])
 				}
 			}
-		}
-	}
-}
-
-func GrpcReplaceParameterizes(r *pb.Request, globalVariable *sync.Map) {
-	for k, v := range r.Parameterizes {
-		// 查找header的key中是否存在变量{{****}}
-		keys := tools.FindAllDestStr(k, "{{(.*?)}}")
-		if keys != nil {
-			delete(r.Parameterizes, k)
-			for _, realKey := range keys {
-				if value, ok := globalVariable.Load(realKey[1]); ok {
-					k = strings.Replace(k, realKey[0], value.(string), -1)
-				}
-			}
-			r.Parameterizes[k] = v
-		}
-
-		values := tools.FindAllDestStr(v.String(), "{{(.*?)}}")
-		if values != nil {
-			for _, realValue := range values {
-				if value, ok := globalVariable.Load(realValue[1]); ok {
-					v.Value = []byte(strings.Replace(v.String(), realValue[0], value.(string), -1))
-				}
-			}
-			r.Parameterizes[k] = v
 		}
 	}
 }

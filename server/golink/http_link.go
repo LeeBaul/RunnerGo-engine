@@ -2,7 +2,6 @@
 package golink
 
 import (
-	"encoding/json"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
@@ -67,18 +66,15 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		debugMsg.EventId = eventId
 		debugMsg.ApiId = api.TargetId
 		debugMsg.ApiName = api.Name
-		debugMsg.Request = make(map[string]interface{})
-		requestHeader := make(map[string]interface{})
-		_ = json.Unmarshal(req.Header.Header(), &requestHeader)
-		debugMsg.Request["header"] = requestHeader
+		debugMsg.RequestTime = requestTime
+		debugMsg.RequestCode = resp.StatusCode()
 
+		debugMsg.Request = make(map[string]interface{})
+		debugMsg.Request["header"] = req.Header.String()
 		debugMsg.Request["body"] = string(req.Body())
 
 		debugMsg.Response = make(map[string]interface{})
-		responseHeader := make(map[string]interface{})
-		_ = json.Unmarshal(req.Header.Header(), &responseHeader)
-		debugMsg.Response["header"] = responseHeader
-
+		debugMsg.Response["header"] = resp.Header.Header()
 		debugMsg.Response["body"] = string(resp.Body())
 
 		if api.Assert != nil {
