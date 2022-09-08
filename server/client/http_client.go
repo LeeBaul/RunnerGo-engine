@@ -42,9 +42,19 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 
 	if method == "GET" {
 		if query.Parameter != nil {
+			var temp []*model.VarForm
 			for _, v := range query.Parameter {
 				if v.IsChecked == 1 {
+					if !strings.Contains(url, v.Key) {
+						temp = append(temp, v)
+					}
+				}
+			}
+			for k, v := range temp {
+				if k == 0 {
 					url += "?" + v.Key + "=" + v.Value.(string)
+				} else {
+					url += "&" + v.Key + "=" + v.Value.(string)
 				}
 			}
 		}

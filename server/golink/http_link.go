@@ -78,6 +78,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable *sync.Map, request
 		debugMsg["response_header"] = resp.Header.String()
 		debugMsg["response_body"] = string(resp.Body())
 		debugMsg["response_bytes"] = resp.Header.ContentLength()
+		debugMsg["response_msg"] = err.Error()
 		switch isSucceed {
 		case false:
 			debugMsg["status"] = model.Failed
