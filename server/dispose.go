@@ -22,6 +22,8 @@ func DisposeTask(plan *model.Plan) {
 	if plan.ConfigTask != nil && plan.Scene.EnablePlanConfiguration == true {
 		plan.Scene.ConfigTask = plan.ConfigTask
 	}
+	log.Logger.Error("planConfig", plan.ConfigTask)
+	log.Logger.Error("plan.scene.Config", plan.Scene.ConfigTask)
 	switch plan.Scene.ConfigTask.TaskType {
 	case model.CommonTaskType:
 		ExecutionPlan(plan)

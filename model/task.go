@@ -21,15 +21,15 @@ const (
 
 // ConfigTask 任务配置
 type ConfigTask struct {
-	TaskType  int64     `json:"taskType"` // 任务类型：0. 普通任务； 1. 定时任务； 2. cicd任务
+	TaskType  int64     `json:"task_type"` // 任务类型：0. 普通任务； 1. 定时任务； 2. cicd任务
 	Task      Task      `json:"task"`
-	TestModel TestModel `json:"testModel"`
+	TestModel TestModel `json:"test_model"`
 }
 
 // Task 任务
 type Task struct {
-	TimingTask TimingTask `json:"timingTask"`
-	CICDTask   CICDTask   `json:"CICDTask"`
+	TimingTask TimingTask `json:"timing_task"`
+	CICDTask   CICDTask   `json:"cicd_task"`
 }
 
 // TimingTask 定时任务
