@@ -103,7 +103,13 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 					DisposeRequest(wg, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
 
-			case model.ControllerType:
+			case model.IfControllerType:
+				if options != nil && len(options) > 0 {
+					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
+				} else {
+					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection)
+				}
+			case model.WaitControllerType:
 				if options != nil && len(options) > 0 {
 					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
 				} else {
@@ -212,8 +218,6 @@ func DisposeController(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, confi
 		if v, ok := configuration.Variable.Load(controller.IfController.Key); ok {
 			controller.IfController.PerForm(v.(string))
 		}
-	case model.CollectionType:
-		// 集合点, 待开发
 	case model.WaitControllerType: // 等待控制器
 		timeWait, _ := strconv.Atoi(controller.WaitController.WaitTime)
 		time.Sleep(time.Duration(timeWait) * time.Millisecond)
