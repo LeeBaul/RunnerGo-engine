@@ -104,7 +104,7 @@ func ExecutionPlan(plan *model.Plan) {
 	// 向kafka发送消息
 	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Conf.Kafka.TopIc)
 
-	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
+	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	scene := plan.Scene
 
 	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
