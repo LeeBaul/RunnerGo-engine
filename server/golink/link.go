@@ -13,6 +13,7 @@ import (
 // DisposeScene 对场景进行处理
 func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 
+	log.Logger.Info("djflkasjlfjsjdflks", scene.Uuid)
 	nodes := scene.Nodes
 	sceneId := strconv.FormatInt(scene.SceneId, 10)
 	for _, node := range nodes {
@@ -93,6 +94,8 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 
 			switch event.Type {
 			case model.RequestType:
+				event.Api.Uuid = scene.Uuid
+				log.Logger.Error("event.Api.Uuid", event.Api.Uuid)
 				if options != nil && len(options) > 0 {
 					var requestResults = &model.ResultDataMsg{}
 					DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
