@@ -11,12 +11,12 @@ import (
 
 // ParameterizedFile 参数化文件
 type ParameterizedFile struct {
-	Paths         []string       `json:"path"`          // 文件地址
-	VariableNames *VariableNames `json:"variableNames"` // 存储变量及数据的map
+	Paths         []string       `json:"path"`           // 文件地址
+	VariableNames *VariableNames `json:"variable_names"` // 存储变量及数据的map
 }
 
 type VariableNames struct {
-	VarMapList map[string][]string `json:"varMapList"`
+	VarMapList map[string][]string `json:"var_map_list"`
 	Index      int                 `json:"index"`
 	Mu         sync.Mutex          `json:"mu"`
 }

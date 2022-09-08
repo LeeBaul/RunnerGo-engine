@@ -49,7 +49,6 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 			}
 		}
 	}
-	log.Logger.Info("body", body.ToString())
 	req.SetRequestURI(url)
 
 	req.SetBodyString(body.ToString())

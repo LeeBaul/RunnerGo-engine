@@ -31,7 +31,6 @@ func RunPlan(c *gin.Context) {
 func RunScene(c *gin.Context) {
 	var scene model.Scene
 	err := c.ShouldBindJSON(&scene)
-
 	if err != nil {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
@@ -54,6 +53,11 @@ func RunApi(c *gin.Context) {
 	}
 	uid := uuid.NewV4()
 	api.Uuid = uid
+	api.Debug = true
 	go server.DebugApi(api)
 	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
+}
+
+func GetId(c *gin.Context) {
+
 }

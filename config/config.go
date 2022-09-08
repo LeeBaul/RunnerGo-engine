@@ -45,7 +45,7 @@ type Mongo struct {
 	Address          string `yaml:"address"`
 	DB               string `yaml:"db"`
 	StressDebugTable string `yaml:"stressDebugTable"`
-	SceneDebugTable  string `yaml:"SceneDebugTable"`
+	SceneDebugTable  string `yaml:"sceneDebugTable"`
 	ApiDebugTable    string `yaml:"apiDebugTable"`
 }
 
@@ -70,28 +70,5 @@ func InitConfig() {
 	}
 
 	fmt.Println("config initialized")
-	// mongodb
-	//Config["mongoUser"] = viper.Get("mongo.user")
-	//Config["mongoPassword"] = viper.Get("mongo.password")
-	//Config["mongoHost"] = viper.Get("mongo.host")
-	//Config["mongoDB"] = viper.Get("mongo.DB")
-	//Config["stressDebugTable"] = viper.Get("mongo.stressDebugTable")
-	//Config["sceneDebugTable"] = viper.Get("mongo.sceneDebugTable")
-	//Config["apiDebugTable"] = viper.Get("mongo.apiDebugTable")
-
-	// redis
-	//Config["redisAddr"] = viper.Get("redis.Addr")
-	//Config["redisPassword"] = viper.Get("redis.password")
-	//Config["redisDB"] = viper.Get("redis.DB")
-	//Config["redisSize"] = viper.Get("redis.size")
-
-	// 读取http客户端配置
-	//Config["httpClientName"] = viper.Get("httpClient.name")
-	//Config["httpNoDefaultUserAgentHeader"] = viper.Get("httpClient.noDefaultUserAgentHeader")
-	//Config["httpClientMaxConnsPerHost"] = viper.Get("httpClient.maxConnsPerHost")
-	//Config["httpClientMaxIdleConnDuration"] = viper.Get("httpClient.maxIdleConnDuration")
-	//Config["httpClientReadTimeout"] = viper.Get("httpClient.writeTimeout")
-	//Config["httpClientWriteTimeout"] = viper.Get("httpClient.writeTimeout")
-	//Config["httpClientMaxConnWaitTimeout"] = viper.Get("httpClient.maxConnWaitTimeout")
 
 }

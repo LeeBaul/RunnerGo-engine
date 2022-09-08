@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(event model.Event, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -33,6 +33,7 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		}
 	}
 	if err != nil {
+		isSucceed = false
 		errMsg = err.Error()
 	}
 	var assertionMsgList []model.AssertionMsg
@@ -65,7 +66,7 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		debugMsg := make(map[string]interface{})
 
 		debugMsg["uuid"] = api.Uuid.String()
-		debugMsg["event_id"] = eventId
+		debugMsg["event_id"] = event.Id
 		debugMsg["api_id"] = api.TargetId
 		debugMsg["api_name"] = api.Name
 		debugMsg["request_time"] = requestTime
@@ -77,7 +78,14 @@ func HttpSend(eventId string, api model.Api, sceneVariable *sync.Map, requestCol
 		debugMsg["response_header"] = resp.Header.String()
 		debugMsg["response_body"] = string(resp.Body())
 		debugMsg["response_bytes"] = resp.Header.ContentLength()
-		debugMsg["response_status_message"] = string(resp.Header.StatusMessage())
+		switch isSucceed {
+		case false:
+			debugMsg["status"] = model.Failed
+		case true:
+			debugMsg["status"] = model.Success
+		}
+
+		debugMsg["next_list"] = event.NextList
 
 		if api.Assert != nil {
 			debugMsg["assertion"] = assertionMsgList

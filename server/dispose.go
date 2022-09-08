@@ -180,9 +180,24 @@ func DebugScene(scene *model.Scene) {
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
+	for _, node := range scene.Nodes {
+		if node.Type == model.RequestType {
+			node.Api.Debug = true
+			node.Api.Uuid = scene.Uuid
+			log.Logger.Info("node.api.uuid", node.Api.Uuid.String())
+		}
+
+	}
+	if scene.Configuration.ParameterizedFile != nil {
+		var mu = sync.Mutex{}
+		p := scene.Configuration.ParameterizedFile
+		p.VariableNames.Mu = mu
+		p.ReadFile()
+	}
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
+	wg.Wait()
 }
 
 // DebugApi api调试
@@ -204,7 +219,6 @@ func DebugApi(Api model.Api) {
 	}
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.ApiDebugTable, mongoClient)
-
 	configuration := new(model.Configuration)
 	configuration.Variable = new(sync.Map)
 	configuration.Mu = sync.Mutex{}

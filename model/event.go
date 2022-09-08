@@ -8,13 +8,13 @@ type Event struct {
 	Type                 string      `json:"type" bson:"type"` //   事件类型 "request" "controller"
 	PreList              []string    `json:"pre_list" bson:"pre_list"`
 	NextList             []string    `json:"next_list"   bson:"next_list"`
-	Api                  Api         `json:"request" bson:"request"`
 	Weight               int64       `json:"weight" bson:"weight"`                             // 权重，并发分配的比例
 	Tag                  bool        `json:"tag" bson:"tag"`                                   // Tps模式下，该标签代表以该接口为准
 	ErrorThreshold       float32     `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
 	CustomRequestTime    int64       `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
 	RequestTimeThreshold int64       `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
-	Controller           *Controller `json:"controller" bson:"controller"`                     // 控制器
+	Api                  Api         `json:"api" bson:"api"`
+	Controller           *Controller `json:"controller" bson:"controller"` // 控制器
 }
 
 type EventStatus struct {

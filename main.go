@@ -40,6 +40,7 @@ func initService() {
 		config.Conf.Redis.DB,
 	); err != nil {
 		log.Logger.Error("redis连接失败:", err)
+		panic("redis 连接失败")
 		return
 	}
 
@@ -51,12 +52,6 @@ func initService() {
 	if err := initialize.InitTrans("zh"); err != nil {
 		log.Logger.Error(err)
 	}
-
-	//go func() {
-	//	log.Logger.Debug("注册grpc服务")
-	//	api.InitGrpcService(config.Config["GrpcPort"].(string))
-	//	fmt.Println("000000000000000000000000000")
-	//}()
 
 	// 注册服务
 	log.Logger.Debug("注册服务")

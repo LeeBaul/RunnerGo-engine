@@ -14,8 +14,7 @@ import (
 func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 
 	nodes := scene.Nodes
-	planId := reportMsg.PlanId
-	sceneId := reportMsg.SceneId
+	sceneId := strconv.FormatInt(scene.SceneId, 10)
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
@@ -23,52 +22,102 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，知道上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
-				for _, request := range nodes {
-					if event.Id == event.PreList[0] {
-						if request.Weight != 100 && request.Weight != 0 {
-							options[1] = int64(float64(options[1]) * (float64(request.Weight) / 100))
+				if options != nil && len(options) > 1 {
+					var preMaxCon = int64(0)
+					for _, request := range nodes {
+						for _, tempEvent := range event.PreList {
+							if request.Id == tempEvent {
+								if request.Weight < 100 && request.Weight > 0 {
+									tempWeight := request.Weight
+									if tempWeight > preMaxCon {
+										preMaxCon = tempWeight
+									}
+								}
+							}
 						}
+					}
 
+					if preMaxCon != 0 {
+						options[1] = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
+					} else {
+						if event.Weight > 0 && event.Weight < 100 {
+							options[1] = int64(float64(options[1]) * (float64(event.Weight) / 100))
+						}
 					}
 				}
 
 				var status = true
+				startTime := time.Now().UnixMilli()
 				for status {
 					for _, eventId := range event.PreList {
 						if eventId != "" {
 							// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
-							err, preEventStatus := model.QueryPlanStatus(gid + ":" + planId + ":" + sceneId + ":" + eventId + ":status")
+							err, preEventStatus := model.QueryPlanStatus(gid + ":" + sceneId + ":" + eventId + ":status")
 							if err != nil {
 								status = true
 								break
 							}
-							if preEventStatus == "true" {
+							switch preEventStatus {
+							case model.End:
 								status = false
+							case model.NotRun:
+								expiration := 60 * time.Second
+								err = model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+								if err != nil {
+									log.Logger.Error("事件状态写入数据库失败", err)
+								}
+								debugMsg := make(map[string]interface{})
+								debugMsg["uuid"] = event.Uuid.String()
+								debugMsg["event_id"] = eventId
+								debugMsg["status"] = model.NotRun
+								debugMsg["next_list"] = event.NextList
+								if requestCollection != nil {
+									model.Insert(requestCollection, debugMsg)
+								}
+								return
 							}
 						}
 					}
+					if startTime+6000 < time.Now().UnixMilli() {
+						status = false
+					}
+				}
+			} else {
+				if event.Weight > 0 && event.Weight < 100 {
+					if options != nil && len(options) > 0 {
+						options[1] = int64(float64(options[1]) * (float64(event.Weight) / 100))
+					}
+
 				}
 			}
 
 			switch event.Type {
 			case model.RequestType:
-				var requestResults = &model.ResultDataMsg{}
-				go DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
+				if options != nil && len(options) > 0 {
+					var requestResults = &model.ResultDataMsg{}
+					DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
+				} else {
+					DisposeRequest(wg, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
+				}
+
 			case model.ControllerType:
-				go DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
+				if options != nil && len(options) > 0 {
+					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
+				} else {
+					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection)
+				}
 			}
 
 			// 如果该事件下还有事件，那么将该事件得状态发送到redis
 			if event.NextList != nil && len(event.NextList) > 0 {
-				expiration := 10 * time.Second
-				err := model.InsertStatus(gid+":"+planId+":"+sceneId+":"+event.Id+":status", "true", expiration)
+				expiration := 60 * time.Second
+				err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 				if err != nil {
 					log.Logger.Error("事件状态写入数据库失败", err)
 				}
 
 			}
 		}(node)
-		wg.Wait()
 	}
 }
 
@@ -81,10 +130,12 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 
 	api := event.Api
 
-	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此几口的比例
+	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
 	if event.Weight < 100 && event.Weight > 0 {
-		if float64(options[0]) < float64(options[1])*(float64(100-event.Weight)/100) {
-			return
+		if options != nil && len(options) > 0 {
+			if float64(options[0]) < float64(options[1])*(float64(100-event.Weight)/100) {
+				return
+			}
 		}
 	}
 
@@ -123,11 +174,9 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		contentLength = uint(0)
 		errMsg        = ""
 	)
-	log.Logger.Info("api", event.Api)
-	log.Logger.Info("api.TargetType", event.Api.TargetType)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event.Id, api, configuration.Variable, mongoCollection)
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event, api, configuration.Variable, mongoCollection)
 	case model.FormTypeWebSocket:
 		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
 	case model.FormTypeGRPC:
