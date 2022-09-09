@@ -136,10 +136,24 @@ func ExecutionPlan(plan *model.Plan) {
 func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
 
 	scene := plan.Scene
+	if scene.Configuration == nil {
+		scene.Configuration = new(model.Configuration)
+	}
+	if scene.Configuration.Variable == nil {
+		scene.Configuration.Variable = new(sync.Map)
+	}
+	if scene.Configuration.ParameterizedFile == nil {
+		scene.Configuration.ParameterizedFile = new(model.ParameterizedFile)
+	}
+	if scene.Configuration.ParameterizedFile.VariableNames == nil {
+		scene.Configuration.ParameterizedFile.VariableNames = new(model.VariableNames)
+	}
+	if scene.Configuration.ParameterizedFile.VariableNames.VarMapList == nil {
+		scene.Configuration.ParameterizedFile.VariableNames.VarMapList = make(map[string][]string)
+	}
 	if scene.Configuration.ParameterizedFile != nil {
-		var mu = sync.Mutex{}
 		p := scene.Configuration.ParameterizedFile
-		p.VariableNames.Mu = mu
+		p.VariableNames.Mu = sync.Mutex{}
 		p.ReadFile()
 	}
 

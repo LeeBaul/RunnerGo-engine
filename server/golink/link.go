@@ -5,7 +5,9 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/heartbeat"
+	"kp-runner/tools"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -105,12 +107,45 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 
 			case model.IfControllerType:
-				if v, ok := scene.Configuration.Variable.Load(event.Key); ok {
-					event.PerForm(v.(string))
+				keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
+				if len(keys) > 0 {
+					for _, val := range keys {
+						if v, ok := scene.Configuration.Variable.Load(event.Var); ok {
+							event.Var = strings.Replace(event.Var, val[0], v.(string), -1)
+						}
+					}
+				}
+				var result = model.Failed
+				var msg = ""
+				if v, ok := scene.Configuration.Variable.Load(event.Var); ok {
+					result, msg = event.PerForm(v.(string))
+				} else {
+					result, msg = event.PerForm(event.Var)
+				}
+				if event.Debug == true {
+					debugMsg := make(map[string]interface{})
+					debugMsg["uuid"] = event.Uuid.String()
+					debugMsg["event_id"] = event.Id
+					debugMsg["status"] = result
+					debugMsg["msg"] = msg
+					debugMsg["next_list"] = event.NextList
+					if requestCollection != nil {
+						model.Insert(requestCollection, debugMsg)
+					}
 				}
 			case model.WaitControllerType:
-				log.Logger.Info("..................", event.WaitTime)
-				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
+				time.Sleep(time.Duration(event.WaitTime) * time.Second)
+				if scene.Debug == true {
+					debugMsg := make(map[string]interface{})
+					debugMsg["uuid"] = event.Uuid.String()
+					debugMsg["event_id"] = event.Id
+					debugMsg["status"] = model.Success
+					debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "秒"
+					debugMsg["next_list"] = event.NextList
+					if requestCollection != nil {
+						model.Insert(requestCollection, debugMsg)
+					}
+				}
 			}
 
 			// 如果该事件下还有事件，那么将该事件得状态发送到redis

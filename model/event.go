@@ -4,6 +4,7 @@ import uuid "github.com/satori/go.uuid"
 
 type Event struct {
 	Id                   string    `json:"id" bson:"id"`
+	IsCheck              bool      `json:"is_check" bson:"is_check"`
 	Uuid                 uuid.UUID `json:"uuid" bson:"uuid"`
 	Type                 string    `json:"type" bson:"type"` //   事件类型 "request" "controller"
 	PreList              []string  `json:"pre_list" bson:"pre_list"`
@@ -15,10 +16,10 @@ type Event struct {
 	CustomRequestTime    int64     `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
 	RequestTimeThreshold int64     `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
 	Api                  Api       `json:"api" bson:"api"`
-	Key                  string    `json:"key"`   // key，值某个变量
-	Logic                string    `json:"logic"` // 逻辑运算符
-	Value                string    `json:"value"` // key对应的值
-	Name                 string    `json:"name"`
+	Var                  string    `json:"var"`     // if控制器key，值某个变量
+	Compare              string    `json:"compare"` // 逻辑运算符
+	Val                  string    `json:"val"`     // key对应的值
+	Name                 string    `json:"name"`    // 控制器名称
 	WaitTime             int       `json:"wait_ms"` // 等待时长，ms
 }
 
