@@ -182,20 +182,25 @@ func DebugScene(scene *model.Scene) {
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
-	for _, node := range scene.Nodes {
-		if node.Type == model.RequestType {
-			node.Api.Debug = true
-			node.Api.Uuid = scene.Uuid
-			log.Logger.Info("node.api.uuid", node.Api.Uuid.String())
-		}
-
+	if scene.Configuration == nil {
+		scene.Configuration = new(model.Configuration)
+		scene.Configuration.Variable = new(sync.Map)
+		scene.Configuration.Mu = sync.Mutex{}
+	}
+	if scene.Configuration.Variable == nil {
+		scene.Configuration.Variable = new(sync.Map)
+		scene.Configuration.Mu = sync.Mutex{}
 	}
 	if scene.Configuration.ParameterizedFile != nil {
-		var mu = sync.Mutex{}
 		p := scene.Configuration.ParameterizedFile
-		p.VariableNames.Mu = mu
+		if p.VariableNames == nil {
+			p.VariableNames = new(model.VariableNames)
+		}
+		p.VariableNames.Mu = sync.Mutex{}
 		p.ReadFile()
 	}
+
+	scene.Debug = true
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)

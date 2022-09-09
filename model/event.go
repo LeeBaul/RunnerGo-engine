@@ -3,18 +3,23 @@ package model
 import uuid "github.com/satori/go.uuid"
 
 type Event struct {
-	Id                   string      `json:"id" bson:"id"`
-	Uuid                 uuid.UUID   `json:"uuid" bson:"uuid"`
-	Type                 string      `json:"type" bson:"type"` //   事件类型 "request" "controller"
-	PreList              []string    `json:"pre_list" bson:"pre_list"`
-	NextList             []string    `json:"next_list"   bson:"next_list"`
-	Weight               int64       `json:"weight" bson:"weight"`                             // 权重，并发分配的比例
-	Tag                  bool        `json:"tag" bson:"tag"`                                   // Tps模式下，该标签代表以该接口为准
-	ErrorThreshold       float32     `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
-	CustomRequestTime    int64       `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
-	RequestTimeThreshold int64       `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
-	Api                  Api         `json:"api" bson:"api"`
-	Controller           *Controller `json:"controller" bson:"controller"` // 控制器
+	Id                   string    `json:"id" bson:"id"`
+	Uuid                 uuid.UUID `json:"uuid" bson:"uuid"`
+	Type                 string    `json:"type" bson:"type"` //   事件类型 "request" "controller"
+	PreList              []string  `json:"pre_list" bson:"pre_list"`
+	NextList             []string  `json:"next_list"   bson:"next_list"`
+	Weight               int64     `json:"weight" bson:"weight"` // 权重，并发分配的比例
+	Tag                  bool      `json:"tag" bson:"tag"`       // Tps模式下，该标签代表以该接口为准
+	Debug                bool      `json:"debug" bson:"debug"`
+	ErrorThreshold       float32   `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
+	CustomRequestTime    int64     `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
+	RequestTimeThreshold int64     `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
+	Api                  Api       `json:"api" bson:"api"`
+	Key                  string    `json:"key"`   // key，值某个变量
+	Logic                string    `json:"logic"` // 逻辑运算符
+	Value                string    `json:"value"` // key对应的值
+	Name                 string    `json:"name"`
+	WaitTime             int       `json:"wait_ms"` // 等待时长，ms
 }
 
 type EventStatus struct {

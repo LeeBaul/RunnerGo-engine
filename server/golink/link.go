@@ -20,6 +20,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 		node.Uuid = scene.Uuid
 		wg.Add(1)
 		go func(event model.Event) {
+
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，知道上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
@@ -95,7 +96,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 			switch event.Type {
 			case model.RequestType:
 				event.Api.Uuid = scene.Uuid
-				log.Logger.Error("event.Api.Uuid", event.Api.Uuid)
+				event.Debug = scene.Debug
 				if options != nil && len(options) > 0 {
 					var requestResults = &model.ResultDataMsg{}
 					DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
@@ -104,17 +105,12 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 
 			case model.IfControllerType:
-				if options != nil && len(options) > 0 {
-					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
-				} else {
-					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection)
+				if v, ok := scene.Configuration.Variable.Load(event.Key); ok {
+					event.PerForm(v.(string))
 				}
 			case model.WaitControllerType:
-				if options != nil && len(options) > 0 {
-					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection, options[0], options[1])
-				} else {
-					DisposeController(wg, reportMsg, scene.Configuration, event, requestCollection)
-				}
+				log.Logger.Info("..................", event.WaitTime)
+				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
 			}
 
 			// 如果该事件下还有事件，那么将该事件得状态发送到redis
@@ -138,7 +134,11 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	}
 
 	api := event.Api
-
+	if event.Debug == true {
+		api.Debug = true
+	}
+	log.Logger.Error("23123123123", event.Debug)
+	log.Logger.Error("56756756756756", api.Debug)
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
 	if event.Weight < 100 && event.Weight > 0 {
 		if options != nil && len(options) > 0 {
@@ -183,6 +183,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		contentLength = uint(0)
 		errMsg        = ""
 	)
+	log.Logger.Error("configuration.Variable", configuration.Variable)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
 		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event, api, configuration.Variable, mongoCollection)
@@ -203,24 +204,6 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.ReceivedBytes = uint64(contentLength)
 		requestResults.ErrorMsg = errMsg
 		resultDataMsgCh <- requestResults
-	}
-
-}
-
-// DisposeController 处理控制器
-func DisposeController(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, configuration *model.Configuration, event model.Event, requestCollection *mongo.Collection, options ...int64) {
-	if wg != nil {
-		defer wg.Done()
-	}
-	controller := event.Controller
-	switch controller.ControllerType {
-	case model.IfControllerType:
-		if v, ok := configuration.Variable.Load(controller.IfController.Key); ok {
-			controller.IfController.PerForm(v.(string))
-		}
-	case model.WaitControllerType: // 等待控制器
-		timeWait, _ := strconv.Atoi(controller.WaitController.WaitTime)
-		time.Sleep(time.Duration(timeWait) * time.Millisecond)
 	}
 
 }

@@ -61,6 +61,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable *sync.Map, request
 	// 接收到的字节长度
 	contentLength = uint(resp.Header.ContentLength())
 
+	log.Logger.Info("debug...............", api.Debug)
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug == true {
 		debugMsg := make(map[string]interface{})
