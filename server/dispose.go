@@ -247,6 +247,7 @@ func DebugApi(Api model.Api) {
 	wg.Add(1)
 	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
+
 }
 
 // ReceivingResults 计算并发送测试结果,
