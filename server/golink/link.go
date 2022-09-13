@@ -78,6 +78,22 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 									model.Insert(requestCollection, debugMsg)
 								}
 								return
+							case model.NotHit:
+								expiration := 60 * time.Second
+								err = model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+								if err != nil {
+									log.Logger.Error("事件状态写入数据库失败", err)
+								}
+								debugMsg := make(map[string]interface{})
+								debugMsg["uuid"] = event.Uuid.String()
+								debugMsg["event_id"] = eventId
+								debugMsg["status"] = model.NotRun
+								debugMsg["next_list"] = event.NextList
+								if requestCollection != nil {
+									model.Insert(requestCollection, debugMsg)
+								}
+								return
+
 							}
 						}
 					}
@@ -105,6 +121,15 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 					DisposeRequest(wg, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
 
+				// 如果该事件下还有事件，那么将该事件得状态发送到redis
+				if event.NextList != nil && len(event.NextList) > 0 {
+					expiration := 60 * time.Second
+					err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+					if err != nil {
+						log.Logger.Error("事件状态写入数据库失败", err)
+					}
+
+				}
 			case model.IfControllerType:
 				keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
 				if len(keys) > 0 {
@@ -141,6 +166,21 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 						model.Insert(requestCollection, debugMsg)
 					}
 				}
+				// 如果该事件下还有事件，那么将该事件得状态发送到redis
+				if event.NextList != nil && len(event.NextList) > 0 {
+					expiration := 60 * time.Second
+					if result == model.Failed {
+						err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
+						if err != nil {
+							log.Logger.Error("事件状态写入数据库失败", err)
+						}
+					} else {
+						err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+						if err != nil {
+							log.Logger.Error("事件状态写入数据库失败", err)
+						}
+					}
+				}
 			case model.WaitControllerType:
 				time.Sleep(time.Duration(event.WaitTime) * time.Second)
 				if scene.Debug == true {
@@ -154,17 +194,15 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 						model.Insert(requestCollection, debugMsg)
 					}
 				}
-			}
-
-			// 如果该事件下还有事件，那么将该事件得状态发送到redis
-			if event.NextList != nil && len(event.NextList) > 0 {
-				expiration := 60 * time.Second
-				err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-				if err != nil {
-					log.Logger.Error("事件状态写入数据库失败", err)
+				if event.NextList != nil && len(event.NextList) > 0 {
+					expiration := 60 * time.Second
+					err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+					if err != nil {
+						log.Logger.Error("事件状态写入数据库失败", err)
+					}
 				}
-
 			}
+
 		}(node)
 	}
 }

@@ -20,7 +20,8 @@ func RunPlan(c *gin.Context) {
 		return
 	}
 
-	log.Logger.Info("开始执行计划", planInstance)
+	requestJson, _ := json.Marshal(planInstance)
+	log.Logger.Info("开始执行计划", string(requestJson))
 	go func(planInstance *model.Plan) {
 		server.DisposeTask(planInstance)
 	}(&planInstance)
@@ -37,12 +38,11 @@ func RunScene(c *gin.Context) {
 		return
 	}
 
-	requestJson, _ := json.Marshal(scene)
-	log.Logger.Info("运行场景", string(requestJson))
 	uid := uuid.NewV4()
 	scene.Uuid = uid
+	requestJson, _ := json.Marshal(scene)
+	log.Logger.Info("调试场景", string(requestJson))
 	go server.DebugScene(&scene)
-
 	global.ReturnMsg(c, http.StatusOK, "调式场景", uid)
 }
 
@@ -53,9 +53,12 @@ func RunApi(c *gin.Context) {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
 	}
+
 	uid := uuid.NewV4()
 	api.Uuid = uid
 	api.Debug = true
+	requestJson, _ := json.Marshal(api)
+	log.Logger.Info("调试接口", string(requestJson))
 	go server.DebugApi(api)
 	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
 }
