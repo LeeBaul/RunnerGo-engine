@@ -150,10 +150,16 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				var result = model.Failed
 				var msg = ""
 
+				var temp = false
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == event.Var {
+						temp = true
 						result, msg = event.PerForm(kv.Value)
+						break
 					}
+				}
+				if temp == false {
+					result, msg = event.PerForm(event.Val)
 				}
 				if event.Debug == true {
 					debugMsg := make(map[string]interface{})
