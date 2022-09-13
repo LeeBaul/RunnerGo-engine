@@ -39,7 +39,7 @@ func DisposeTask(plan *model.Plan) {
 
 // TimingExecutionPlan 定时任务
 func TimingExecutionPlan(plan *model.Plan, job func()) {
-	if plan.ConfigTask.Task.TimingTask.Spec == "" {
+	if plan.ConfigTask.CronExpr == "" {
 		log.Logger.Error("定时任务，执行时间不能为空")
 		return
 	}
@@ -48,7 +48,7 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 		cron.WithSeconds(),
 	)
 
-	id, err := c.AddFunc(plan.ConfigTask.Task.TimingTask.Spec, job)
+	id, err := c.AddFunc(plan.ConfigTask.CronExpr, job)
 	if err != nil {
 		log.Logger.Error("定时任务执行失败", err)
 		return
@@ -171,9 +171,9 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.PlanName = plan.PlanName
 	reportMsg.ReportId = plan.ReportId
 	reportMsg.ReportName = plan.ReportName
-	testModelJson, _ := json.Marshal(scene.ConfigTask.TestModel)
+	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
 	log.Logger.Info("plan.scene.Config:", string(testModelJson))
-	switch scene.ConfigTask.TestModel.Type {
+	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	case model.ErrorRateModel:
@@ -184,6 +184,8 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
 		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+	case model.QpsModel:
+		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	default:
 		close(resultDataMsgCh)
 

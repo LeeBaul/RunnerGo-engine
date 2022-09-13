@@ -17,14 +17,13 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 	defer close(resultDataMsgCh)
 
 	startTime := time.Now().UnixMilli()
-	concurrentTest := scene.ConfigTask.TestModel.ConcurrentTest
-	concurrent := concurrentTest.Concurrent
+	concurrent := scene.ConfigTask.ModeConf.Concurrency
 	planId := reportMsg.PlanId
 	sceneId := reportMsg.SceneId
-	switch concurrentTest.Type {
-	case model.DurationType:
+	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
+	if scene.ConfigTask.ModeConf.Duration != 0 {
 		index := 0
-		duration := concurrentTest.Duration * 1000
+		duration := scene.ConfigTask.ModeConf.Duration * 1000
 		currentTime := time.Now().UnixMilli()
 
 		for startTime+duration > currentTime {
@@ -46,9 +45,15 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
-				index++
-			}
 
+				if reheatTime > 0 && index == 0 {
+					durationTime := time.Now().UnixMilli() - startTime
+					if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
+						time.Sleep(time.Duration(durationTime) * time.Millisecond)
+					}
+				}
+			}
+			index++
 			// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
 			distance := time.Now().UnixMilli() - startCurrentTime
 			if distance < 1000 {
@@ -57,11 +62,11 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 			currentTime = time.Now().UnixMilli()
 		}
-		log.Logger.Info(index)
 
-	case model.RoundsType:
-		rounds := concurrentTest.Rounds
+	} else {
+		rounds := scene.ConfigTask.ModeConf.RoundNum
 		for i := int64(0); i < rounds; i++ {
+			index := 0
 			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 			if status == "false" {
 				return
@@ -74,7 +79,14 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
+				if reheatTime > 0 && index == 0 {
+					durationTime := time.Now().UnixMilli() - startTime
+					if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
+						time.Sleep(time.Duration(durationTime) * time.Millisecond)
+					}
+				}
 			}
+			index++
 
 			distance := time.Now().UnixMilli() - currentTime
 			if distance < 1000 {
@@ -84,6 +96,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 		}
+
 	}
 
 }

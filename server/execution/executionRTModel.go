@@ -32,12 +32,12 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 
 	defer close(resultDataMsgCh)
 
-	startConcurrent := scene.ConfigTask.TestModel.RTTest.StartConcurrent
-	length := scene.ConfigTask.TestModel.RTTest.Length
-	maxConcurrent := scene.ConfigTask.TestModel.RTTest.MaxConcurrent
-	lengthDuration := scene.ConfigTask.TestModel.RTTest.LengthDuration
-	stableDuration := scene.ConfigTask.TestModel.RTTest.StableDuration
-	timeUp := scene.ConfigTask.TestModel.RTTest.TimeUp
+	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
+	step := scene.ConfigTask.ModeConf.Step
+	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
+	stepRunTime := scene.ConfigTask.ModeConf.StepRunTime
+	stableDuration := scene.ConfigTask.ModeConf.Duration
+	timeUp := scene.ConfigTask.ModeConf.ReheatTime
 
 	planId := reportMsg.PlanId
 	sceneId := reportMsg.SceneId
@@ -52,8 +52,8 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent
-	lengthDuration *= 1000
-	length *= 1000
+	stepRunTime *= 1000
+	step *= 1000
 	stableDuration *= 1000
 	concurrent := startConcurrent
 
@@ -62,7 +62,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	currentTime := startTime
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+lengthDuration > currentTime {
+	for startTime+stepRunTime > currentTime {
 		index := 0
 		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 		if status == "false" {
@@ -94,7 +94,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		currentTime = time.Now().UnixMilli()
 
 		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
-		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().UnixMilli() {
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().UnixMilli() {
 			log.Logger.Info("计划: ", planId, "..............结束")
 			return
 		}
@@ -102,14 +102,14 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		// 如果当前并发数小于最大并发数，
 		if concurrent <= maxConcurrent {
 			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+lengthDuration >= time.Now().UnixMilli() {
+			if startTime+stepRunTime >= time.Now().UnixMilli() {
 				startTime = time.Now().UnixMilli()
 				//preConcurrent = concurrent
-				if concurrent+length <= maxConcurrent {
-					concurrent = concurrent + length
+				if concurrent+step <= maxConcurrent {
+					concurrent = concurrent + step
 				} else {
 					concurrent = maxConcurrent
-					lengthDuration = stableDuration
+					stepRunTime = stableDuration
 				}
 				apis := requestTimeData.Apis
 				for _, api := range apis {

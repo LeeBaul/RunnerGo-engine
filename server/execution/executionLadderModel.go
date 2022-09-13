@@ -14,12 +14,12 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 
 	defer close(resultDataMsgCh)
 
-	startConcurrent := scene.ConfigTask.TestModel.LadderTest.StartConcurrent
-	length := scene.ConfigTask.TestModel.LadderTest.Length
-	maxConcurrent := scene.ConfigTask.TestModel.LadderTest.MaxConcurrent
-	lengthDuration := scene.ConfigTask.TestModel.LadderTest.LengthDuration
-	stableDuration := scene.ConfigTask.TestModel.LadderTest.StableDuration
-	timeUp := scene.ConfigTask.TestModel.LadderTest.TimeUp
+	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
+	step := scene.ConfigTask.ModeConf.Step
+	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
+	stepRunTime := scene.ConfigTask.ModeConf.StepRunTime
+	stableDuration := scene.ConfigTask.ModeConf.Duration
+	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
 	planId := reportMsg.PlanId
 	sceneId := reportMsg.SceneId
@@ -32,7 +32,8 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	concurrent := startConcurrent
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+lengthDuration > time.Now().Unix() {
+	for startTime+stepRunTime > time.Now().Unix() {
+		index := 0
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
 		if status == "false" {
@@ -48,24 +49,28 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 			}(i, concurrent, wg)
 
 			// 如果设置了启动并发时长
-			if timeUp != 0 && (startConcurrent/timeUp)%i == 0 && i != 0 {
-				time.Sleep(1 * time.Second)
+			if reheatTime > 0 && index == 0 {
+				durationTime := time.Now().UnixMilli() - startTime
+				if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
+					time.Sleep(time.Duration(durationTime) * time.Millisecond)
+				}
 			}
 		}
-		if concurrent == maxConcurrent && lengthDuration == stableDuration && startTime+lengthDuration >= time.Now().Unix() {
+		index++
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().Unix() {
 			log.Logger.Info("计划: ", planId, "..................结束")
 			return
 		}
 		// 如果当前并发数小于最大并发数，
 		if concurrent <= maxConcurrent {
 			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+int64(lengthDuration) >= time.Now().Unix() {
+			if startTime+stepRunTime >= time.Now().Unix() {
 				startTime = time.Now().Unix()
-				if concurrent+length <= maxConcurrent {
-					concurrent = concurrent + length
+				if concurrent+step <= maxConcurrent {
+					concurrent = concurrent + step
 				} else {
 					concurrent = maxConcurrent
-					lengthDuration = stableDuration
+					stepRunTime = stableDuration
 				}
 			}
 		}
