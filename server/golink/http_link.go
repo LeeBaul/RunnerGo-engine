@@ -113,7 +113,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 				debugMsg["status"] = model.Success
 				debugMsg["next_list"] = event.NextList
 				if err != nil {
-					debugMsg["request_body"] = err.Error()
+					debugMsg["response_body"] = err.Error()
 				}
 				if api.Assert != nil {
 					debugMsg["assertion"] = assertionMsgList
