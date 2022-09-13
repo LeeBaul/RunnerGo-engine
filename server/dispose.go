@@ -223,7 +223,7 @@ func DebugScene(scene *model.Scene) {
 		p.ReadFile()
 	}
 
-	scene.Debug = true
+	scene.Debug = model.All
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)

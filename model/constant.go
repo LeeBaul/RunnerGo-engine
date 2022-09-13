@@ -102,3 +102,10 @@ const (
 	NotHit  = "not_hit" // 未命中
 	NotRun  = "not_run" // 未运行
 )
+
+// debug日志状态
+const (
+	All         = "all"
+	OnlyError   = "only_error"
+	OnlySuccess = "only_success"
+)

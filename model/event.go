@@ -11,7 +11,7 @@ type Event struct {
 	NextList             []string  `json:"next_list"   bson:"next_list"`
 	Weight               int64     `json:"weight" bson:"weight"` // 权重，并发分配的比例
 	Tag                  bool      `json:"tag" bson:"tag"`       // Tps模式下，该标签代表以该接口为准
-	Debug                bool      `json:"debug" bson:"debug"`
+	Debug                string    `json:"debug" bson:"debug"`
 	ErrorThreshold       float32   `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
 	CustomRequestTime    int64     `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
 	RequestTimeThreshold int64     `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值

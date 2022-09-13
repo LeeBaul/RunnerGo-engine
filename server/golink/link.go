@@ -161,7 +161,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				if temp == false {
 					result, msg = event.PerForm(event.Val)
 				}
-				if event.Debug == true {
+				if event.Debug != "" {
 					debugMsg := make(map[string]interface{})
 					debugMsg["uuid"] = event.Uuid.String()
 					debugMsg["event_id"] = event.Id
@@ -188,7 +188,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 
 			case model.WaitControllerType:
 				time.Sleep(time.Duration(event.WaitTime) * time.Second)
-				if scene.Debug == true {
+				if scene.Debug != "" {
 					debugMsg := make(map[string]interface{})
 					debugMsg["uuid"] = event.Uuid.String()
 					debugMsg["event_id"] = event.Id
@@ -218,9 +218,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	}
 
 	api := event.Api
-	if event.Debug == true {
-		api.Debug = true
-	}
+	api.Debug = event.Debug
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
 	if event.Weight < 100 && event.Weight > 0 {
 		if options != nil && len(options) > 0 {

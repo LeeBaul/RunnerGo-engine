@@ -22,7 +22,7 @@ type Api struct {
 	Assert     []*AssertionText     `json:"assert" bson:"assert"`         // 验证的方法(断言)
 	Timeout    int64                `json:"timeout" bson:"timeout"`       // 请求超时时间
 	Regex      []*RegularExpression `json:"regex" bson:"regex"`           // 正则表达式
-	Debug      bool                 `json:"debug" bson:"debug"`           // 是否开启Debug模式
+	Debug      string               `json:"debug" bson:"debug"`           // 是否开启Debug模式
 	Connection int64                `json:"connection" bson:"connection"` // 0:websocket长连接
 
 }

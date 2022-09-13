@@ -56,7 +56,7 @@ func RunApi(c *gin.Context) {
 
 	uid := uuid.NewV4()
 	api.Uuid = uid
-	api.Debug = true
+	api.Debug = model.All
 	requestJson, _ := json.Marshal(api)
 	log.Logger.Info("调试接口", string(requestJson))
 	go server.DebugApi(api)

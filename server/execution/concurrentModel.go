@@ -28,9 +28,15 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		currentTime := time.Now().UnixMilli()
 
 		for startTime+duration > currentTime {
-			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
+			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":status")
 			if status == "false" {
 				return
+			}
+			_, debug := model.QueryPlanStatus(planId + ":" + sceneId + ":debug")
+			if debug != "" {
+				scene.Debug = debug
+			} else {
+				scene.Debug = ""
 			}
 			startCurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
