@@ -134,26 +134,30 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
 				if len(keys) > 0 {
 					for _, val := range keys {
-						if v, ok := scene.Configuration.Variable.Load(val[1]); ok {
-							event.Var = strings.Replace(event.Var, val[0], v.(string), -1)
+						for _, kv := range scene.Configuration.Variable {
+							if kv.Key == val[1] {
+								event.Var = strings.Replace(event.Var, val[0], kv.Value, -1)
+							}
 						}
 					}
 				}
 				values := tools.FindAllDestStr(event.Val, "{{(.*?)}}")
 				if len(values) > 0 {
 					for _, val := range values {
-						if v, ok := scene.Configuration.Variable.Load(val[1]); ok {
-							event.Val = strings.Replace(event.Val, val[0], v.(string), -1)
+						for _, kv := range scene.Configuration.Variable {
+							if kv.Key == val[1] {
+								event.Val = strings.Replace(event.Val, val[0], kv.Value, -1)
+							}
 						}
 					}
 				}
 				var result = model.Failed
 				var msg = ""
 
-				if v, ok := scene.Configuration.Variable.Load(event.Var); ok {
-					result, msg = event.PerForm(v.(string))
-				} else {
-					result, msg = event.PerForm(event.Var)
+				for _, kv := range scene.Configuration.Variable {
+					if kv.Key == event.Var {
+						result, msg = event.PerForm(kv.Value)
+					}
 				}
 				if event.Debug == true {
 					debugMsg := make(map[string]interface{})

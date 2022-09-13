@@ -6,11 +6,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/model"
 	"kp-runner/server/client"
-	"sync"
 )
 
 // HttpSend 发送http请求
-func HttpSend(event model.Event, api model.Api, sceneVariable *sync.Map, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string) {
+func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError

@@ -93,11 +93,15 @@ type RegularExpression struct {
 }
 
 // Extract 提取response 中的值
-func (re RegularExpression) Extract(str string, parameters *sync.Map) (value string) {
+func (re RegularExpression) Extract(str string, parameters []*KV) (value string) {
 	name := tools.VariablesMatch(re.Var)
 	if value = tools.FindDestStr(str, re.Express); value != "" {
 		re.Val = value
-		parameters.Store(name, value)
+		kv := &KV{
+			Key:   name,
+			Value: value,
+		}
+		parameters = append(parameters, kv)
 	}
 	return
 }
@@ -401,9 +405,11 @@ func (r *Api) ReplaceParameters(configuration *Configuration) {
 
 	r.Parameters.Range(func(k, v any) bool {
 		if configuration.Variable != nil {
-			if value, ok := configuration.Variable.Load(k); ok {
-				if v == fmt.Sprintf("{{%s}}", k) {
-					r.Parameters.Store(k, value)
+			for _, kv := range configuration.Variable {
+				if kv.Key == k {
+					if kv.Value == fmt.Sprintf("{{%s}}", k) {
+						r.Parameters.Store(k, kv.Value)
+					}
 				}
 			}
 		}

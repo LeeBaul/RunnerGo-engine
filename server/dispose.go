@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
@@ -22,8 +23,8 @@ func DisposeTask(plan *model.Plan) {
 	if plan.ConfigTask != nil && plan.Scene.EnablePlanConfiguration == true {
 		plan.Scene.ConfigTask = plan.ConfigTask
 	}
-	log.Logger.Error("planConfig", plan.ConfigTask)
-	log.Logger.Error("plan.scene.Config", plan.Scene.ConfigTask)
+	configTaskJson, _ := json.Marshal(plan.Scene.ConfigTask)
+	log.Logger.Info("plan.scene.Config:", string(configTaskJson))
 	switch plan.Scene.ConfigTask.TaskType {
 	case model.CommonTaskType:
 		ExecutionPlan(plan)
@@ -118,14 +119,20 @@ func ExecutionPlan(plan *model.Plan) {
 	// 循环读全局变量，如果场景变量不存在则将添加到场景变量中，如果有参数化数据则，将其替换
 	if plan.Variable != nil {
 		if scene.Configuration.Variable == nil {
-			scene.Configuration.Variable = new(sync.Map)
+			scene.Configuration.Variable = []*model.KV{}
 		}
-		plan.Variable.Range(func(key, value any) bool {
-			if _, ok := scene.Configuration.Variable.Load(key); !ok {
-				scene.Configuration.Variable.Store(key, value)
+		for _, value := range plan.Variable {
+			var target = false
+			for _, kv := range scene.Configuration.Variable {
+				if value == kv {
+					target = true
+					break
+				}
 			}
-			return true
-		})
+			if target == false {
+				scene.Configuration.Variable = append(scene.Configuration.Variable, value)
+			}
+		}
 	}
 
 	// 分解任务
@@ -140,7 +147,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		scene.Configuration = new(model.Configuration)
 	}
 	if scene.Configuration.Variable == nil {
-		scene.Configuration.Variable = new(sync.Map)
+		scene.Configuration.Variable = []*model.KV{}
 	}
 	if scene.Configuration.ParameterizedFile == nil {
 		scene.Configuration.ParameterizedFile = new(model.ParameterizedFile)
@@ -164,6 +171,8 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.PlanName = plan.PlanName
 	reportMsg.ReportId = plan.ReportId
 	reportMsg.ReportName = plan.ReportName
+	testModelJson, _ := json.Marshal(scene.ConfigTask.TestModel)
+	log.Logger.Info("plan.scene.Config:", string(testModelJson))
 	switch scene.ConfigTask.TestModel.Type {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
@@ -198,11 +207,11 @@ func DebugScene(scene *model.Scene) {
 	}
 	if scene.Configuration == nil {
 		scene.Configuration = new(model.Configuration)
-		scene.Configuration.Variable = new(sync.Map)
+		scene.Configuration.Variable = []*model.KV{}
 		scene.Configuration.Mu = sync.Mutex{}
 	}
 	if scene.Configuration.Variable == nil {
-		scene.Configuration.Variable = new(sync.Map)
+		scene.Configuration.Variable = []*model.KV{}
 		scene.Configuration.Mu = sync.Mutex{}
 	}
 	if scene.Configuration.ParameterizedFile != nil {
@@ -241,9 +250,8 @@ func DebugApi(Api model.Api) {
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.ApiDebugTable, mongoClient)
 	configuration := new(model.Configuration)
-	configuration.Variable = new(sync.Map)
+	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
-	configuration.Variable.Store("mobile", "13300098221")
 	wg.Add(1)
 	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
