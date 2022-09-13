@@ -23,7 +23,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	timeUp := scene.ConfigTask.ModeConf.ReheatTime
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
-	sceneId := reportMsg.SceneId
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
@@ -43,13 +42,18 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	startTime := time.Now().UnixMilli()
 	startCurrentTime := startTime
 	currentTime := startTime
-
+	index := 0
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > currentTime {
-		index := 0
-		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
-		if status == "false" {
+		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+		if status == "stop" {
 			return
+		}
+		_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+		if debug != "" {
+			scene.Debug = debug
+		} else {
+			scene.Debug = ""
 		}
 		startConcurrentTime := time.Now().UnixMilli()
 		for i := int64(0); i < concurrent; i++ {

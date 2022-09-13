@@ -63,6 +63,24 @@ func RunApi(c *gin.Context) {
 	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
 }
 
-func GetId(c *gin.Context) {
-
+func Stop(c *gin.Context) {
+	var stop model.Stop
+	err := c.ShouldBindJSON(&stop)
+	if err != nil {
+		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
+		return
+	}
+	if stop.ReportIds == nil || len(stop.ReportIds) < 1 {
+		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", "报告列表不能为空")
+		return
+	}
+	go func(stop model.Stop) {
+		for _, reportId := range stop.ReportIds {
+			err = model.InsertStatus(reportId+":status", "stop", 20)
+			if err != nil {
+				log.Logger.Error("向redis写入任务状态失败：", err)
+			}
+		}
+	}(stop)
+	global.ReturnMsg(c, http.StatusOK, "停止任务", nil)
 }

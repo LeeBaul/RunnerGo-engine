@@ -7,7 +7,6 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -19,8 +18,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 	startTime := time.Now().UnixMilli()
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
-	planId := strconv.FormatInt(reportMsg.PlanId, 10)
-	sceneId := reportMsg.SceneId
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 	if scene.ConfigTask.ModeConf.Duration != 0 {
 		index := 0
@@ -28,11 +25,11 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		currentTime := time.Now().UnixMilli()
 
 		for startTime+duration > currentTime {
-			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":status")
-			if status == "false" {
+			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+			if status == "stop" {
 				return
 			}
-			_, debug := model.QueryPlanStatus(planId + ":" + sceneId + ":debug")
+			_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
 			if debug != "" {
 				scene.Debug = debug
 			} else {
@@ -65,12 +62,19 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		}
 
 	} else {
+		index := 0
 		rounds := scene.ConfigTask.ModeConf.RoundNum
 		for i := int64(0); i < rounds; i++ {
-			index := 0
-			_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
-			if status == "false" {
+
+			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+			if status == "stop" {
 				return
+			}
+			_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+			if debug != "" {
+				scene.Debug = debug
+			} else {
+				scene.Debug = ""
 			}
 			currentTime := time.Now().UnixMilli()
 			for j := int64(0); j < concurrent; j++ {

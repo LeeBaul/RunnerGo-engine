@@ -53,13 +53,18 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	//preConcurrent := startConcurrent
 	concurrent := startConcurrent
 	// 只要开始时间+持续时长大于当前时间就继续循环
+	index := 0
 	for startTime+stepRunTime > time.Now().Unix() {
-		index := 0
 		// 查询任务是否结束
-		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
-		if status == "false" {
-			log.Logger.Info("计划:", planId, "...............结束")
+		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+		if status == "stop" {
 			return
+		}
+		_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+		if debug != "" {
+			scene.Debug = debug
+		} else {
+			scene.Debug = ""
 		}
 
 		// 查询当前错误率时多少

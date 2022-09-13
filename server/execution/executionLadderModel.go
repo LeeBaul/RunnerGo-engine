@@ -23,7 +23,6 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
-	sceneId := reportMsg.SceneId
 
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	startTime := time.Now().Unix()
@@ -31,15 +30,20 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	//preConcurrent := startConcurrent
 
 	concurrent := startConcurrent
-
+	index := 0
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > time.Now().Unix() {
-		index := 0
+
 		// 查询任务是否结束
-		_, status := model.QueryPlanStatus(planId + ":" + sceneId + ":" + "status")
-		if status == "false" {
-			log.Logger.Info("计划:", planId, "...............结束")
+		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+		if status == "stop" {
 			return
+		}
+		_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+		if debug != "" {
+			scene.Debug = debug
+		} else {
+			scene.Debug = ""
 		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
