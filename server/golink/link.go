@@ -15,7 +15,6 @@ import (
 // DisposeScene 对场景进行处理
 func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 
-	log.Logger.Info("djflkasjlfjsjdflks", scene.Uuid)
 	nodes := scene.Nodes
 	sceneId := strconv.FormatInt(scene.SceneId, 10)
 	for _, node := range nodes {
@@ -95,10 +94,10 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 			}
 
+			event.Debug = scene.Debug
 			switch event.Type {
 			case model.RequestType:
 				event.Api.Uuid = scene.Uuid
-				event.Debug = scene.Debug
 				if options != nil && len(options) > 0 {
 					var requestResults = &model.ResultDataMsg{}
 					DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
@@ -125,6 +124,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 				var result = model.Failed
 				var msg = ""
+
 				if v, ok := scene.Configuration.Variable.Load(event.Var); ok {
 					result, msg = event.PerForm(v.(string))
 				} else {
@@ -180,8 +180,6 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	if event.Debug == true {
 		api.Debug = true
 	}
-	log.Logger.Error("23123123123", event.Debug)
-	log.Logger.Error("56756756756756", api.Debug)
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
 	if event.Weight < 100 && event.Weight > 0 {
 		if options != nil && len(options) > 0 {
@@ -226,7 +224,6 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		contentLength = uint(0)
 		errMsg        = ""
 	)
-	log.Logger.Error("configuration.Variable", configuration.Variable)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
 		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event, api, configuration.Variable, mongoCollection)

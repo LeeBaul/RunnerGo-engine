@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"kp-runner/global"
@@ -36,7 +37,8 @@ func RunScene(c *gin.Context) {
 		return
 	}
 
-	log.Logger.Info("运行场景", scene)
+	requestJson, _ := json.Marshal(scene)
+	log.Logger.Info("运行场景", string(requestJson))
 	uid := uuid.NewV4()
 	scene.Uuid = uid
 	go server.DebugScene(&scene)
