@@ -218,7 +218,9 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	}
 
 	api := event.Api
-	api.Debug = event.Debug
+	if api.Debug == "" {
+		api.Debug = event.Debug
+	}
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
 	if event.Weight < 100 && event.Weight > 0 {
 		if options != nil && len(options) > 0 {
