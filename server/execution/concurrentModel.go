@@ -7,6 +7,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -18,7 +19,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 	startTime := time.Now().UnixMilli()
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
-	planId := reportMsg.PlanId
+	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	sceneId := reportMsg.SceneId
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 	if scene.ConfigTask.ModeConf.Duration != 0 {

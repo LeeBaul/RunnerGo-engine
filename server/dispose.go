@@ -56,7 +56,7 @@ func TimingExecutionPlan(plan *model.Plan, job func()) {
 	c.Start()
 
 	// 查询定时任务状态，如果redis中的状态变为停止，则关闭定时任务
-	status := model.QueryTimingTaskStatus(plan.PlanId + ":" + strconv.FormatInt(plan.Scene.SceneId, 10) + ":" + "timing")
+	status := model.QueryTimingTaskStatus(strconv.FormatInt(plan.PlanId, 10) + ":" + strconv.FormatInt(plan.Scene.SceneId, 10) + ":" + "timing")
 	if status == false {
 		c.Remove(id)
 	}
@@ -191,7 +191,12 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 
 	}
 	wg.Wait()
+	debugMsg := make(map[string]interface{})
+	debugMsg["reportId"] = plan.ReportId
+	debugMsg["end"] = true
+	model.Insert(mongoCollection, debugMsg)
 	log.Logger.Info("计划:", plan.PlanId, ".............结束")
+
 }
 
 // DebugScene 场景调试
@@ -278,7 +283,7 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 			if !ok {
 				goto end
 			}
-			if sceneTestResultDataMsg.PlanId == "" {
+			if sceneTestResultDataMsg.PlanId == 0 {
 				sceneTestResultDataMsg.PlanId = resultDataMsg.PlanId
 			}
 			if sceneTestResultDataMsg.PlanName == "" {
@@ -306,7 +311,7 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId] == nil {
 				sceneTestResultDataMsg.Results[resultDataMsg.TargetId] = new(model.ApiTestResultDataMsg)
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId == "" {
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId == 0 {
 				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId = resultDataMsg.PlanId
 			}
 			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName == "" {

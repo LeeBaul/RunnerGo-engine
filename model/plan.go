@@ -2,7 +2,7 @@ package model
 
 // Plan 计划结构体
 type Plan struct {
-	PlanId     string      `json:"plan_id" bson:"plan_id"`     // 计划id
+	PlanId     int64       `json:"plan_id" bson:"plan_id"`     // 计划id
 	PlanName   string      `json:"plan_name" bson:"plan_name"` // 计划名称
 	ReportId   string      `json:"report_id" bson:"report_id"` // 报告名称
 	ReportName string      `json:"report_name" bson:"report_name"`

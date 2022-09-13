@@ -6,6 +6,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	stableDuration := scene.ConfigTask.ModeConf.Duration
 	timeUp := scene.ConfigTask.ModeConf.ReheatTime
 
-	planId := reportMsg.PlanId
+	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	sceneId := reportMsg.SceneId
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	requestTimeData := new(RequestTimeData)

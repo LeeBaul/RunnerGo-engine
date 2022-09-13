@@ -5,6 +5,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -21,7 +22,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	stableDuration := scene.ConfigTask.ModeConf.Duration
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
-	planId := reportMsg.PlanId
+	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	sceneId := reportMsg.SceneId
 
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中

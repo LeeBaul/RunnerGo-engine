@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/Shopify/sarama"
 	"kp-runner/log"
+	"strconv"
 )
 
 /*
@@ -22,7 +23,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Key = sarama.StringEncoder(resultDataMsg.PlanId + "-" + resultDataMsg.SceneId)
+			DataMsg.Key = sarama.StringEncoder(strconv.FormatInt(resultDataMsg.PlanId, 10) + "-" + resultDataMsg.SceneId)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {

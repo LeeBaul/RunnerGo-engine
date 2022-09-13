@@ -17,7 +17,7 @@ type SceneTestResultDataMsg struct {
 	MachineName string                                `json:"machine_name" bson:"machine_name"`
 	ReportId    string                                `json:"report_id" bson:"report_id"`
 	ReportName  string                                `json:"report_name" bson:"report_name"`
-	PlanId      string                                `json:"plan_id" bson:"plan_id"`     // 任务ID
+	PlanId      int64                                 `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName    string                                `json:"plan_name" bson:"plan_name"` //
 	SceneId     string                                `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName   string                                `json:"scene_name" bson:"scene_name"`
@@ -28,7 +28,7 @@ type SceneTestResultDataMsg struct {
 type ApiTestResultDataMsg struct {
 	ReportId                   string `json:"report_id" bson:"report_id"`
 	ReportName                 string `json:"report_name" bson:"report_name"`
-	PlanId                     string `json:"plan_id" bson:"plan_id"`     // 任务ID
+	PlanId                     int64  `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName                   string `json:"plan_name" bson:"plan_name"` //
 	SceneId                    string `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName                  string `json:"scene_name" bson:"scene_name"`
@@ -57,7 +57,7 @@ type ResultDataMsg struct {
 	ReportId              string  `json:"report_id" bson:"report_id"`
 	ReportName            string  `json:"report_name" bson:"report_name"`
 	EventId               string  `json:"event_id" bson:"event_id"`
-	PlanId                string  `json:"plan_id" bson:"plan_id"`     // 任务ID
+	PlanId                int64   `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName              string  `json:"plan_name" bson:"plan_name"` //
 	SceneId               string  `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName             string  `json:"sceneName" bson:"scene_name"`
