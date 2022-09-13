@@ -76,7 +76,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 			debugMsg["response_body"] = string(resp.Body())
 			debugMsg["response_bytes"] = resp.Header.ContentLength()
 			if err != nil {
-				debugMsg["request_body"] = err.Error()
+				debugMsg["response_body"] = err.Error()
 			}
 			switch isSucceed {
 			case false:
