@@ -10,12 +10,21 @@ import (
 var Conf Config
 
 type Config struct {
-	Http  Http  `yaml:"http"`
-	Kafka Kafka `yaml:"kafka"`
-	Redis Redis `yaml:"redis"`
-	Mongo Mongo `yaml:"mongo"`
+	Http      Http      `yaml:"http"`
+	Kafka     Kafka     `yaml:"kafka"`
+	Redis     Redis     `yaml:"redis"`
+	Mongo     Mongo     `yaml:"mongo"`
+	Es        Es        `yaml:"es"`
+	Grpc      Grpc      `yaml:"grpc"`
+	Heartbeat Heartbeat `yaml:"heartbeat"`
 }
 
+type Heartbeat struct {
+	Port     int32  `yaml:"port"`
+	Region   string `yaml:"region"`
+	Duration int64  `yaml:"duration"`
+	GrpcHost string `yaml:"grpcHost"`
+}
 type Http struct {
 	Name                     string        `yaml:"name"`
 	Address                  string        `yaml:"address"`
@@ -47,6 +56,16 @@ type Mongo struct {
 	StressDebugTable string `yaml:"stressDebugTable"`
 	SceneDebugTable  string `yaml:"sceneDebugTable"`
 	ApiDebugTable    string `yaml:"apiDebugTable"`
+}
+
+type Es struct {
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Address  string `yaml:"address"`
+}
+
+type Grpc struct {
+	Port string `yaml:"port"`
 }
 
 func InitConfig() {

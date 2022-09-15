@@ -264,10 +264,11 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		sendBytes     = uint(0)
 		contentLength = uint(0)
 		errMsg        = ""
+		timestamp     = int64(0)
 	)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg = HttpSend(event, api, configuration.Variable, mongoCollection)
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg, timestamp = HttpSend(event, api, configuration.Variable, mongoCollection)
 	case model.FormTypeWebSocket:
 		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
 	case model.FormTypeGRPC:
@@ -284,6 +285,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.SendBytes = uint64(sendBytes)
 		requestResults.ReceivedBytes = uint64(contentLength)
 		requestResults.ErrorMsg = errMsg
+		requestResults.Timestamp = timestamp
 		resultDataMsgCh <- requestResults
 	}
 

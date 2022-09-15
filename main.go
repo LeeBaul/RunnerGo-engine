@@ -69,7 +69,10 @@ func initService() {
 			return
 		}
 	}()
-
+	// 注册并发送心跳数据
+	//go func() {
+	//	heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
+	//}()
 	/// 接收终止信号
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

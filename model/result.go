@@ -52,6 +52,7 @@ type ApiTestResultDataMsg struct {
 
 // ResultDataMsg 请求结果数据结构
 type ResultDataMsg struct {
+	End                   bool    `json:"end" bson:"end"`
 	MachineIp             string  `json:"machine_ip" bson:"machine_ip"`
 	MachineName           string  `json:"machine_name" bson:"machine_name"`
 	ReportId              string  `json:"report_id" bson:"report_id"`
@@ -71,6 +72,7 @@ type ResultDataMsg struct {
 	ErrorMsg              string  `json:"error_msg" bson:"error_msg"`                               // 错误信息
 	SendBytes             uint64  `json:"send_bytes" bson:"send_bytes"`                             // 发送字节数
 	ReceivedBytes         uint64  `json:"received_bytes" bson:"received_bytes"`                     // 接收字节数
+	Timestamp             int64   `json:"timestamp" bson:"timestamp"`
 }
 
 func (tr *ApiTestResultDataMsg) Encode() ([]byte, error) {

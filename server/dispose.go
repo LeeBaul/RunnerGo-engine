@@ -20,7 +20,7 @@ import (
 
 // DisposeTask 处理任务
 func DisposeTask(plan *model.Plan) {
-	if plan.ConfigTask != nil && plan.Scene.EnablePlanConfiguration == true {
+	if plan.ConfigTask != nil {
 		plan.Scene.ConfigTask = plan.ConfigTask
 	}
 	configTaskJson, _ := json.Marshal(plan.Scene.ConfigTask)
@@ -141,7 +141,7 @@ func ExecutionPlan(plan *model.Plan) {
 
 // TaskDecomposition 分解任务
 func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
-
+	defer close(resultDataMsgCh)
 	scene := plan.Scene
 	if scene.Configuration == nil {
 		scene.Configuration = new(model.Configuration)
@@ -186,8 +186,6 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
 	case model.QpsModel:
 		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
-	default:
-		close(resultDataMsgCh)
 
 	}
 	wg.Wait()
@@ -195,6 +193,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	debugMsg["reportId"] = plan.ReportId
 	debugMsg["end"] = true
 	model.Insert(mongoCollection, debugMsg)
+
 	log.Logger.Info("计划:", plan.PlanId, ".............结束")
 
 }

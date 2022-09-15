@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"encoding/json"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -23,19 +22,8 @@ type Apis struct {
 	Actual    float64 `json:"actual"`
 }
 
-// GetErrorRate 查询es，当前错误率
-func GetErrorRate(key string, errorRateData *ErrorRateData) {
-	value, err := model.RDB.Get(key).Result()
-	if err != nil {
-		return
-	}
-	_ = json.Unmarshal([]byte(value), errorRateData)
-
-}
-
 // ErrorRateModel 错误率模式
 func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
-	defer close(resultDataMsgCh)
 
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
@@ -45,7 +33,6 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
-	sceneId := reportMsg.SceneId
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	errorRateData := new(ErrorRateData)
 	startTime := time.Now().Unix()
@@ -68,7 +55,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		}
 
 		// 查询当前错误率时多少
-		GetErrorRate(planId+":"+sceneId+":"+"errorRate", errorRateData)
+		//GetErrorRate(planId+":"+sceneId+":"+"errorRate", errorRateData)
 		apis := errorRateData.Apis
 		for _, api := range apis {
 			if api.Threshold < api.Actual {

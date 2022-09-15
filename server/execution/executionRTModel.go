@@ -31,8 +31,6 @@ func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) 
 // RTModel 响应时间模式
 func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
-	defer close(resultDataMsgCh)
-
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
 	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency

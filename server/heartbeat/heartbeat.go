@@ -1,6 +1,10 @@
 package heartbeat
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
@@ -8,7 +12,11 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"kp-runner/config"
 	"kp-runner/log"
+	"kp-runner/proto/app/services"
 	gonet "net"
 	"strings"
 	"time"
@@ -28,6 +36,42 @@ func CheckHeartBeat(ctx context.Context) *HeartBeat {
 	heartbeat.network = GetNetwork("")
 	heartbeat.disk = GetDiskUsed("")
 	return heartbeat
+}
+
+func SendHeartBeat(host string, duration int64) {
+	systemRoots, err := x509.SystemCertPool()
+	if err != nil {
+		panic(errors.Wrap(err, "cannot load root CA certs"))
+	}
+	creds := credentials.NewTLS(&tls.Config{
+		RootCAs: systemRoots,
+	})
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, host, grpc.WithTransportCredentials(creds))
+
+	if err != nil {
+		log.Logger.Error(fmt.Sprintf("服务注册失败： %s", err))
+	}
+	defer conn.Close()
+	// 初始化grpc客户端
+
+	grpcClient := services.NewKpControllerClient(conn)
+	req := new(services.RegisterMachineReq)
+	req.IP = LocalIp
+	req.Port = config.Conf.Heartbeat.Port
+	req.Region = config.Conf.Heartbeat.Region
+	ticker := time.NewTicker(time.Duration(duration) * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			_, err = grpcClient.RegisterMachine(ctx, req)
+			if err != nil {
+				log.Logger.Error("grpc服务心跳发送失败", err)
+			}
+		}
+
+	}
+
 }
 
 type HeartBeat struct {
