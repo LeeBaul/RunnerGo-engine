@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"kp-runner/config"
 	"kp-runner/log"
-	"kp-runner/proto/app/services"
+	"kp-runner/proto"
 	gonet "net"
 	"strings"
 	"time"
