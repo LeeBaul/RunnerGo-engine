@@ -51,7 +51,7 @@ func SendHeartBeat(host string, duration int64) {
 		RootCAs: systemRoots,
 	})
 
-	conn, err := grpc.Dial("kpcontroller.apipost.cn:443", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(host, grpc.WithTransportCredentials(creds))
 
 	//
 	//systemRoots, err := x509.SystemCertPool()
@@ -72,20 +72,16 @@ func SendHeartBeat(host string, duration int64) {
 
 	grpcClient := services.NewKpControllerClient(conn)
 
-	//req := new(services.RegisterMachineReq)
-	//req.IP = LocalIp
-	//req.Port = config.Conf.Heartbeat.Port
-	//req.Region = config.Conf.Heartbeat.Region
+	req := new(services.RegisterMachineReq)
+	req.IP = LocalIp
+	req.Port = config.Conf.Heartbeat.Port
+	req.Region = config.Conf.Heartbeat.Region
 	ticker := time.NewTicker(time.Duration(duration) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			_, err = grpcClient.RegisterMachine(ctx, &services.RegisterMachineReq{
-				Region: config.Conf.Heartbeat.Region,
-				IP:     LocalIp,
-				Port:   config.Conf.Heartbeat.Port,
-				Weight: 10,
-			})
+			_, err = grpcClient.RegisterMachine(ctx, req)
+			log.Logger.Info("发送心跳", req)
 			if err != nil {
 				log.Logger.Error("grpc服务心跳发送失败", err)
 			}
