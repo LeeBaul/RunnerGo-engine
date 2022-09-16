@@ -2,18 +2,20 @@ package main
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"kp-runner/config"
-	"kp-runner/initialize"
-	"kp-runner/log"
-	"kp-runner/model"
-	"kp-runner/server/heartbeat"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"kp-runner/config"
+	"kp-runner/initialize"
+	"kp-runner/log"
+	"kp-runner/model"
+	"kp-runner/server/heartbeat"
 )
 
 var (
@@ -70,9 +72,9 @@ func initService() {
 		}
 	}()
 	// 注册并发送心跳数据
-	//go func() {
-	//	heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
-	//}()
+	go func() {
+		heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
+	}()
 	/// 接收终止信号
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

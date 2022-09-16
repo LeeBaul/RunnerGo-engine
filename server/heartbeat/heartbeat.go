@@ -3,7 +3,10 @@ package heartbeat
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
+	gonet "net"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -14,12 +17,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
 	"kp-runner/config"
 	"kp-runner/log"
 	services "kp-runner/proto"
-	gonet "net"
-	"strings"
-	"time"
 )
 
 var (
@@ -39,6 +40,9 @@ func CheckHeartBeat(ctx context.Context) *HeartBeat {
 }
 
 func SendHeartBeat(host string, duration int64) {
+
+	ctx := context.TODO()
+
 	systemRoots, err := x509.SystemCertPool()
 	if err != nil {
 		panic(errors.Wrap(err, "cannot load root CA certs"))
@@ -46,25 +50,42 @@ func SendHeartBeat(host string, duration int64) {
 	creds := credentials.NewTLS(&tls.Config{
 		RootCAs: systemRoots,
 	})
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, host, grpc.WithTransportCredentials(creds))
 
-	if err != nil {
-		log.Logger.Error(fmt.Sprintf("服务注册失败： %s", err))
-	}
-	defer conn.Close()
+	conn, err := grpc.Dial("kpcontroller.apipost.cn:443", grpc.WithTransportCredentials(creds))
+
+	//
+	//systemRoots, err := x509.SystemCertPool()
+	//if err != nil {
+	//	panic(errors.Wrap(err, "cannot load root CA certs"))
+	//}
+	//creds := credentials.NewTLS(&tls.Config{
+	//	RootCAs: systemRoots,
+	//})
+	//ctx := context.Background()
+	//conn, err := grpc.DialContext(ctx, host, grpc.WithTransportCredentials(creds))
+
+	//if err != nil {
+	//	log.Logger.Error(fmt.Sprintf("服务注册失败： %s", err))
+	//}
+	//defer conn.Close()
 	// 初始化grpc客户端
 
 	grpcClient := services.NewKpControllerClient(conn)
-	req := new(services.RegisterMachineReq)
-	req.IP = LocalIp
-	req.Port = config.Conf.Heartbeat.Port
-	req.Region = config.Conf.Heartbeat.Region
+
+	//req := new(services.RegisterMachineReq)
+	//req.IP = LocalIp
+	//req.Port = config.Conf.Heartbeat.Port
+	//req.Region = config.Conf.Heartbeat.Region
 	ticker := time.NewTicker(time.Duration(duration) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			_, err = grpcClient.RegisterMachine(ctx, req)
+			_, err = grpcClient.RegisterMachine(ctx, &services.RegisterMachineReq{
+				Region: config.Conf.Heartbeat.Region,
+				IP:     LocalIp,
+				Port:   config.Conf.Heartbeat.Port,
+				Weight: 10,
+			})
 			if err != nil {
 				log.Logger.Error("grpc服务心跳发送失败", err)
 			}
