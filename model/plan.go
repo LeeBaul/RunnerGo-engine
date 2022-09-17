@@ -6,6 +6,7 @@ type Plan struct {
 	PlanName   string      `json:"plan_name" bson:"plan_name"` // 计划名称
 	ReportId   string      `json:"report_id" bson:"report_id"` // 报告名称
 	ReportName string      `json:"report_name" bson:"report_name"`
+	MachineNum int64       `json:"machine_num" bson:"machine_num"` // 使用的机器数量
 	ConfigTask *ConfigTask `json:"config_task" bson:"config_task"` // 任务配置
 	Variable   []*KV       `json:"variable" bson:"variable"`       // 全局变量
 	Scene      *Scene      `json:"scene" bson:"scene"`             // 场景

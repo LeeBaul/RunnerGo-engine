@@ -53,23 +53,6 @@ func SendHeartBeat(host string, duration int64) {
 
 	conn, err := grpc.Dial(host, grpc.WithTransportCredentials(creds))
 
-	//
-	//systemRoots, err := x509.SystemCertPool()
-	//if err != nil {
-	//	panic(errors.Wrap(err, "cannot load root CA certs"))
-	//}
-	//creds := credentials.NewTLS(&tls.Config{
-	//	RootCAs: systemRoots,
-	//})
-	//ctx := context.Background()
-	//conn, err := grpc.DialContext(ctx, host, grpc.WithTransportCredentials(creds))
-
-	//if err != nil {
-	//	log.Logger.Error(fmt.Sprintf("服务注册失败： %s", err))
-	//}
-	//defer conn.Close()
-	// 初始化grpc客户端
-
 	grpcClient := services.NewKpControllerClient(conn)
 
 	req := new(services.RegisterMachineReq)
@@ -81,7 +64,6 @@ func SendHeartBeat(host string, duration int64) {
 		select {
 		case <-ticker.C:
 			_, err = grpcClient.RegisterMachine(ctx, req)
-			log.Logger.Info("发送心跳", req)
 			if err != nil {
 				log.Logger.Error("grpc服务心跳发送失败", err)
 			}

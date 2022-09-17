@@ -4,7 +4,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
-	"kp-runner/server/heartbeat"
 	"kp-runner/tools"
 	"strconv"
 	"strings"
@@ -20,8 +19,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
-		go func(event model.Event) {
-
+		go func(event model.Event, wgTemp *sync.WaitGroup) {
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，知道上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
@@ -77,6 +75,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 								if requestCollection != nil {
 									model.Insert(requestCollection, debugMsg)
 								}
+								wgTemp.Done()
 								return
 							case model.NotHit:
 								expiration := 60 * time.Second
@@ -92,6 +91,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 								if requestCollection != nil {
 									model.Insert(requestCollection, debugMsg)
 								}
+								wgTemp.Done()
 								return
 
 							}
@@ -116,9 +116,9 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				event.Api.Uuid = scene.Uuid
 				if options != nil && len(options) > 0 {
 					var requestResults = &model.ResultDataMsg{}
-					DisposeRequest(wg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
+					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
 				} else {
-					DisposeRequest(wg, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
+					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
 
 				expiration := 60 * time.Second
@@ -185,7 +185,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 						log.Logger.Error("事件状态写入数据库失败", err)
 					}
 				}
-
+				wgTemp.Done()
 			case model.WaitControllerType:
 				time.Sleep(time.Duration(event.WaitTime) * time.Second)
 				if scene.Debug != "" {
@@ -204,9 +204,10 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				if err != nil {
 					log.Logger.Error("事件状态写入数据库失败", err)
 				}
+				wgTemp.Done()
 			}
 
-		}(node)
+		}(node, wg)
 	}
 }
 
@@ -232,11 +233,10 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 
 	if requestResults != nil {
 		requestResults.PlanId = reportMsg.PlanId
-		requestResults.MachineIp = heartbeat.LocalIp
-		requestResults.MachineName = heartbeat.LocalHost
 		requestResults.PlanName = reportMsg.PlanName
 		requestResults.EventId = event.Id
 		requestResults.SceneId = reportMsg.SceneId
+		requestResults.MachineIp = reportMsg.MachineIp
 		requestResults.SceneName = reportMsg.SceneName
 		requestResults.ReportId = reportMsg.ReportId
 		requestResults.ReportName = reportMsg.ReportName
@@ -244,6 +244,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.ErrorThreshold = event.ErrorThreshold
 		requestResults.TargetId = api.TargetId
 		requestResults.Name = api.Name
+		requestResults.MachineNum = reportMsg.MachineNum
 	}
 
 	// 将请求信息中所有用的变量添加到接口变量维护的map中

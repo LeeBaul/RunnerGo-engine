@@ -19,7 +19,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
 	if scene.ConfigTask.ModeConf.Duration != 0 {
-		log.Logger.Info("开始性能测试,持续时间", scene.ConfigTask.ModeConf.Duration)
+		log.Logger.Info("开始性能测试,持续时间", scene.ConfigTask.ModeConf.Duration, "秒")
 		index := 0
 		duration := scene.ConfigTask.ModeConf.Duration * 1000
 		currentTime := time.Now().UnixMilli()

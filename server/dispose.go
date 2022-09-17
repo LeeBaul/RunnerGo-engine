@@ -165,12 +165,16 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	}
 
 	var reportMsg = &model.ResultDataMsg{}
+	if plan.MachineNum <= 0 {
+		plan.MachineNum = 1
+	}
 	reportMsg.PlanId = plan.PlanId
-	reportMsg.SceneId = strconv.FormatInt(scene.SceneId, 10)
+	reportMsg.SceneId = scene.SceneId
 	reportMsg.SceneName = scene.SceneName
 	reportMsg.PlanName = plan.PlanName
 	reportMsg.ReportId = plan.ReportId
 	reportMsg.ReportName = plan.ReportName
+	reportMsg.MachineNum = plan.MachineNum
 	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
 	log.Logger.Info("plan.scene.Config:", string(testModelJson))
 	switch scene.ConfigTask.Mode {
@@ -233,7 +237,9 @@ func DebugScene(scene *model.Scene) {
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
+
 	wg.Wait()
+
 }
 
 // DebugApi api调试
@@ -288,7 +294,7 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 			if sceneTestResultDataMsg.PlanName == "" {
 				sceneTestResultDataMsg.PlanName = resultDataMsg.PlanName
 			}
-			if sceneTestResultDataMsg.SceneId == "" {
+			if sceneTestResultDataMsg.SceneId == 0 {
 				sceneTestResultDataMsg.SceneId = resultDataMsg.SceneId
 			}
 			if sceneTestResultDataMsg.SceneName == "" {
@@ -316,7 +322,7 @@ func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResu
 			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName == "" {
 				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName = resultDataMsg.PlanName
 			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId == "" {
+			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId == 0 {
 				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId = resultDataMsg.SceneId
 			}
 			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneName == "" {

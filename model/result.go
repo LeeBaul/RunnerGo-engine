@@ -19,7 +19,7 @@ type SceneTestResultDataMsg struct {
 	ReportName  string                                `json:"report_name" bson:"report_name"`
 	PlanId      int64                                 `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName    string                                `json:"plan_name" bson:"plan_name"` //
-	SceneId     string                                `json:"scene_id" bson:"scene_id"`   // 场景
+	SceneId     int64                                 `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName   string                                `json:"scene_name" bson:"scene_name"`
 	Results     map[interface{}]*ApiTestResultDataMsg `json:"results" bson:"results"`
 }
@@ -30,7 +30,7 @@ type ApiTestResultDataMsg struct {
 	ReportName                 string `json:"report_name" bson:"report_name"`
 	PlanId                     int64  `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName                   string `json:"plan_name" bson:"plan_name"` //
-	SceneId                    string `json:"scene_id" bson:"scene_id"`   // 场景
+	SceneId                    int64  `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName                  string `json:"scene_name" bson:"scene_name"`
 	TargetId                   int64  `json:"target_id" bson:"target_id"`                   // 接口ID
 	Name                       string `json:"name" bson:"name"`                             // 接口名称
@@ -53,14 +53,14 @@ type ApiTestResultDataMsg struct {
 // ResultDataMsg 请求结果数据结构
 type ResultDataMsg struct {
 	End                   bool    `json:"end" bson:"end"`
+	MachineNum            int64   `json:"machine_num" bson:"machine_num"` // 机器数量
 	MachineIp             string  `json:"machine_ip" bson:"machine_ip"`
-	MachineName           string  `json:"machine_name" bson:"machine_name"`
 	ReportId              string  `json:"report_id" bson:"report_id"`
 	ReportName            string  `json:"report_name" bson:"report_name"`
 	EventId               string  `json:"event_id" bson:"event_id"`
 	PlanId                int64   `json:"plan_id" bson:"plan_id"`     // 任务ID
 	PlanName              string  `json:"plan_name" bson:"plan_name"` //
-	SceneId               string  `json:"scene_id" bson:"scene_id"`   // 场景
+	SceneId               int64   `json:"scene_id" bson:"scene_id"`   // 场景
 	SceneName             string  `json:"sceneName" bson:"scene_name"`
 	TargetId              int64   `json:"target_id" bson:"target_id"`                               // 接口ID
 	Name                  string  `json:"name" bson:"name"`                                         // 接口名称
