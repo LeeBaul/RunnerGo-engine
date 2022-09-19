@@ -5,5 +5,5 @@ type Stop struct {
 }
 
 type StopScene struct {
-	SceneId string `json:"sceneId"`
+	SceneId int64 `json:"scene_id"`
 }

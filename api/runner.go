@@ -9,6 +9,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server"
 	"net/http"
+	"strconv"
 )
 
 func RunPlan(c *gin.Context) {
@@ -92,8 +93,13 @@ func StopScene(c *gin.Context) {
 		return
 	}
 
+	if stop.SceneId == 0 {
+		global.ReturnMsg(c, http.StatusBadRequest, "scene_id不正确", stop.SceneId)
+		return
+	}
+	stopId := strconv.FormatInt(stop.SceneId, 10)
 	go func(stop model.StopScene) {
-		err := model.InsertStatus(stop.SceneId+":status", "stop", 20)
+		err := model.InsertStatus(stopId+":status", "stop", 20)
 		if err != nil {
 			log.Logger.Error("向redis写入任务状态失败：", err)
 		}
