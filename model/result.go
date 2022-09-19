@@ -53,6 +53,7 @@ type ApiTestResultDataMsg struct {
 // ResultDataMsg 请求结果数据结构
 type ResultDataMsg struct {
 	End                   bool    `json:"end" bson:"end"`
+	Concurrency           int64   `json:"concurrency" bson:"concurrency"`
 	MachineNum            int64   `json:"machine_num" bson:"machine_num"` // 机器数量
 	MachineIp             string  `json:"machine_ip" bson:"machine_ip"`
 	ReportId              string  `json:"report_id" bson:"report_id"`

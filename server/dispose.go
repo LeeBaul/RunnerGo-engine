@@ -236,7 +236,7 @@ func DebugScene(scene *model.Scene) {
 	scene.Debug = model.All
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
-	golink.DisposeScene(wg, gid, scene, nil, nil, mongoCollection)
+	golink.DisposeScene(wg, gid, model.SceneType, scene, nil, nil, mongoCollection)
 
 	wg.Wait()
 

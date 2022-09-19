@@ -40,7 +40,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				wg.Add(1)
 				go func(i, concurrent int64) {
 					gid := GetGid()
-					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 
@@ -81,7 +81,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				wg.Add(1)
 				go func(i, concurrent int64) {
 					gid := GetGid()
-					golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 				if reheatTime > 0 && index == 0 {

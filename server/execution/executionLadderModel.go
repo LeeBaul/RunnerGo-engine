@@ -47,7 +47,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 			wg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
 				gid := GetGid()
-				golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent, wg)
 

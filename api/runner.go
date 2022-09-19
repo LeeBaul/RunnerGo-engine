@@ -65,8 +65,8 @@ func RunApi(c *gin.Context) {
 
 func Stop(c *gin.Context) {
 	var stop model.Stop
-	err := c.ShouldBindJSON(&stop)
-	if err != nil {
+
+	if err := c.ShouldBindJSON(&stop); err != nil {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
 	}
@@ -76,11 +76,28 @@ func Stop(c *gin.Context) {
 	}
 	go func(stop model.Stop) {
 		for _, reportId := range stop.ReportIds {
-			err = model.InsertStatus(reportId+":status", "stop", 20)
+			err := model.InsertStatus(reportId+":status", "stop", 20)
 			if err != nil {
 				log.Logger.Error("向redis写入任务状态失败：", err)
 			}
 		}
 	}(stop)
 	global.ReturnMsg(c, http.StatusOK, "停止任务", nil)
+}
+
+func StopScene(c *gin.Context) {
+	var stop model.StopScene
+	if err := c.ShouldBindJSON(&stop); err != nil {
+		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
+		return
+	}
+
+	go func(stop model.StopScene) {
+		err := model.InsertStatus(stop.SceneId+":status", "stop", 20)
+		if err != nil {
+			log.Logger.Error("向redis写入任务状态失败：", err)
+		}
+	}(stop)
+
+	global.ReturnMsg(c, http.StatusOK, "停止成功", nil)
 }

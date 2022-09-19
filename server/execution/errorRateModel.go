@@ -68,7 +68,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			wg.Add(1)
 			go func(i, concurrent int64) {
 				gid := GetGid()
-				golink.DisposeScene(wg, gid, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长

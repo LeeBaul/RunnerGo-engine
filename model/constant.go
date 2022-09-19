@@ -109,3 +109,9 @@ const (
 	OnlyError   = "only_error"
 	OnlySuccess = "only_success"
 )
+
+// 运行类型
+const (
+	SceneType = "scene"
+	PlanType  = "plan"
+)

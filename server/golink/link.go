@@ -12,7 +12,7 @@ import (
 )
 
 // DisposeScene 对场景进行处理
-func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
+func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 
 	nodes := scene.Nodes
 	sceneId := strconv.FormatInt(scene.SceneId, 10)
@@ -57,7 +57,21 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				startTime := time.Now().UnixMilli()
 
 				for len(preMap) > 0 {
-
+					if runType == "scene" {
+						err, sceneStatus := model.QuerySceneStatus(sceneId + ":status")
+						if err == nil && sceneStatus == "stop" {
+							debugMsg := make(map[string]interface{})
+							debugMsg["uuid"] = event.Uuid.String()
+							debugMsg["event_id"] = event.Id
+							debugMsg["status"] = model.NotRun
+							debugMsg["next_list"] = event.NextList
+							if requestCollection != nil {
+								model.Insert(requestCollection, debugMsg)
+							}
+							wgTemp.Done()
+							return
+						}
+					}
 					for eventId, _ := range preMap {
 						if eventId != "" {
 							// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
@@ -194,9 +208,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 				wgTemp.Done()
 			case model.WaitControllerType:
-				log.Logger.Error("等待中。。。。", gid+":"+sceneId+":"+event.Id+":status")
 				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
-				log.Logger.Error("等待中。。。。结束")
 				if scene.Debug != "" {
 					debugMsg := make(map[string]interface{})
 					debugMsg["uuid"] = event.Uuid.String()
