@@ -104,7 +104,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 							}
 						}
 					}
-					if startTime+6000 < time.Now().UnixMilli() {
+					if startTime+60000 < time.Now().UnixMilli() {
 						break
 					}
 				}
@@ -194,7 +194,9 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 				}
 				wgTemp.Done()
 			case model.WaitControllerType:
-				time.Sleep(time.Duration(event.WaitTime) * time.Second)
+				log.Logger.Error("等待中。。。。", gid+":"+sceneId+":"+event.Id+":status")
+				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
+				log.Logger.Error("等待中。。。。结束")
 				if scene.Debug != "" {
 					debugMsg := make(map[string]interface{})
 					debugMsg["uuid"] = event.Uuid.String()
