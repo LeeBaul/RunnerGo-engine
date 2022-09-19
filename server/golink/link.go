@@ -47,20 +47,28 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 					}
 				}
 
-				var status = true
+				var preMap = make(map[string]bool)
+				for _, eventId := range event.PreList {
+					if eventId != "" {
+						preMap[eventId] = false
+					}
+				}
+
 				startTime := time.Now().UnixMilli()
-				for status {
-					for _, eventId := range event.PreList {
+
+				for len(preMap) > 0 {
+
+					for eventId, _ := range preMap {
 						if eventId != "" {
 							// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
 							err, preEventStatus := model.QueryPlanStatus(gid + ":" + sceneId + ":" + eventId + ":status")
 							if err != nil {
-								status = true
 								break
 							}
+
 							switch preEventStatus {
 							case model.End:
-								status = false
+								delete(preMap, eventId)
 							case model.NotRun:
 								expiration := 60 * time.Second
 								err = model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
@@ -69,7 +77,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 								}
 								debugMsg := make(map[string]interface{})
 								debugMsg["uuid"] = event.Uuid.String()
-								debugMsg["event_id"] = eventId
+								debugMsg["event_id"] = event.Id
 								debugMsg["status"] = model.NotRun
 								debugMsg["next_list"] = event.NextList
 								if requestCollection != nil {
@@ -85,7 +93,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 								}
 								debugMsg := make(map[string]interface{})
 								debugMsg["uuid"] = event.Uuid.String()
-								debugMsg["event_id"] = eventId
+								debugMsg["event_id"] = event.Id
 								debugMsg["status"] = model.NotRun
 								debugMsg["next_list"] = event.NextList
 								if requestCollection != nil {
@@ -93,12 +101,11 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 								}
 								wgTemp.Done()
 								return
-
 							}
 						}
 					}
 					if startTime+6000 < time.Now().UnixMilli() {
-						status = false
+						break
 					}
 				}
 			} else {
@@ -159,7 +166,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, scene *model.Scene, reportMsg 
 					}
 				}
 				if temp == false {
-					result, msg = event.PerForm(event.Val)
+					result, msg = event.PerForm(event.Var)
 				}
 				if event.Debug != "" {
 					debugMsg := make(map[string]interface{})
