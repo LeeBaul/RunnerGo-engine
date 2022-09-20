@@ -39,7 +39,6 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 		} else {
 			// 发送结束消息
-			log.Logger.Info(reportId, "报告消息发送结束")
 			result := new(ResultDataMsg)
 			result.ReportId = reportId
 			result.End = true
@@ -58,6 +57,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 				log.Logger.Error("向kafka发送消息失败", err)
 				break
 			}
+			log.Logger.Info(reportId, "报告消息发送结束")
 			return
 
 		}
