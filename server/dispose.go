@@ -143,6 +143,7 @@ func ExecutionPlan(plan *model.Plan) {
 func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
 	defer close(resultDataMsgCh)
 	scene := plan.Scene
+	scene.ReportId = plan.ReportId
 	if scene.Configuration == nil {
 		scene.Configuration = new(model.Configuration)
 	}

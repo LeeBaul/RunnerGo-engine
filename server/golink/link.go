@@ -132,6 +132,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 			}
 
 			event.Debug = scene.Debug
+			event.ReportId = scene.ReportId
 			switch event.Type {
 			case model.RequestType:
 				event.Api.Uuid = scene.Uuid

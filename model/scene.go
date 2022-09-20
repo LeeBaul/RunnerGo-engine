@@ -9,6 +9,7 @@ import (
 type Scene struct {
 	SceneId                 int64          `json:"scene_id" bson:"scene_id"` // 场景Id
 	Uuid                    uuid.UUID      `json:"uuid" bson:"uuid"`
+	ReportId                string         `json:"report_id" bson:"report_id"`
 	TeamId                  int64          `json:"team_id" bson:"team_id"`
 	SceneName               string         `json:"scene_name" bson:"scene_name"` // 场景名称
 	Version                 int64          `json:"version" bson:"version"`
