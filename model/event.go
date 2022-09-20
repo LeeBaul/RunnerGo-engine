@@ -4,6 +4,7 @@ import uuid "github.com/satori/go.uuid"
 
 type Event struct {
 	Id                   string    `json:"id" bson:"id"`
+	TeamId               int64     `json:"team_id" bson:"team_id"`
 	IsCheck              bool      `json:"is_check" bson:"is_check"`
 	Uuid                 uuid.UUID `json:"uuid" bson:"uuid"`
 	Type                 string    `json:"type" bson:"type"` //   事件类型 "request" "controller"

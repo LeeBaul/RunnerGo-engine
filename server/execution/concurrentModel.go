@@ -25,10 +25,12 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		currentTime := time.Now().UnixMilli()
 
 		for startTime+duration > currentTime {
+			// 查询是否停止
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
 				return
 			}
+			// 查询是否开启debug
 			_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
 			if debug != "" {
 				scene.Debug = debug

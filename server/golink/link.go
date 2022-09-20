@@ -256,6 +256,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.PlanId = reportMsg.PlanId
 		requestResults.PlanName = reportMsg.PlanName
 		requestResults.EventId = event.Id
+		requestResults.TeamId = event.TeamId
 		requestResults.SceneId = reportMsg.SceneId
 		requestResults.MachineIp = reportMsg.MachineIp
 		requestResults.SceneName = reportMsg.SceneName
