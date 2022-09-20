@@ -108,6 +108,7 @@ const (
 	All         = "all"
 	OnlyError   = "only_error"
 	OnlySuccess = "only_success"
+	StopDebug   = "stop"
 )
 
 // 运行类型

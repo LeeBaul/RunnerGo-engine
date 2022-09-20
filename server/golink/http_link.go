@@ -4,6 +4,7 @@ package golink
 import (
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
+	log2 "kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/client"
 )
@@ -59,7 +60,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 	}
 	// 接收到的字节长度
 	contentLength = uint(resp.Header.ContentLength())
-
+	log2.Logger.Debug("api.debu", api.Debug)
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug != "" {
 		switch api.Debug {
