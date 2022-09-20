@@ -307,6 +307,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.IsSucceed = isSucceed
 		requestResults.SendBytes = uint64(sendBytes)
 		requestResults.ReceivedBytes = uint64(contentLength)
+		log.Logger.Info("requestResults.ReceivedBytes", requestResults.ReceivedBytes, " ...............", contentLength)
 		requestResults.ErrorMsg = errMsg
 		requestResults.Timestamp = timestamp
 		resultDataMsgCh <- requestResults
