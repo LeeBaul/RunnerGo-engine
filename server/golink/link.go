@@ -134,6 +134,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				}
 			}
 
+			event.TeamId = scene.TeamId
 			event.Debug = scene.Debug
 			event.ReportId = scene.ReportId
 			switch event.Type {

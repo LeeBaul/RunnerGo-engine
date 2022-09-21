@@ -13,6 +13,7 @@ import (
 // SceneTestResultDataMsg 场景的测试结果
 
 type SceneTestResultDataMsg struct {
+	TeamId      int                                   `json:"team_id" bson:"team_id"`
 	MachineIp   string                                `json:"machine_ip" bson:"machine_ip"`
 	MachineName string                                `json:"machine_name" bson:"machine_name"`
 	ReportId    string                                `json:"report_id" bson:"report_id"`
@@ -26,6 +27,7 @@ type SceneTestResultDataMsg struct {
 
 // ApiTestResultDataMsg 接口测试数据经过计算后的测试结果
 type ApiTestResultDataMsg struct {
+	TeamId                     int64  `json:"team_id" bson:"team_id"`
 	ReportId                   string `json:"report_id" bson:"report_id"`
 	ReportName                 string `json:"report_name" bson:"report_name"`
 	PlanId                     int64  `json:"plan_id" bson:"plan_id"`     // 任务ID

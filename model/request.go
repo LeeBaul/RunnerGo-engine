@@ -15,6 +15,7 @@ type Api struct {
 	TargetId   int64                `json:"target_id" bson:"target_id"`
 	Uuid       uuid.UUID            `json:"uuid" bson:"uuid"`
 	Name       string               `json:"name" bson:"name"`
+	TeamId     int64                `json:"team_id" bson:"team_id"`
 	TargetType string               `json:"target_type" bson:"target_type"` // api/webSocket/tcp/grpc
 	Method     string               `json:"method" bson:"method"`           // 方法 GET/POST/PUT
 	Request    Request              `json:"request" bson:"request"`
