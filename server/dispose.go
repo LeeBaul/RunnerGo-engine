@@ -195,7 +195,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	}
 	wg.Wait()
 	debugMsg := make(map[string]interface{})
-	debugMsg["reportId"] = plan.ReportId
+	debugMsg["report_id"] = plan.ReportId
 	debugMsg["end"] = true
 	model.Insert(mongoCollection, debugMsg)
 

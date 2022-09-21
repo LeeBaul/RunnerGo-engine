@@ -100,6 +100,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 			}
 			if requestCollection != nil {
 				debugMsg["report_id"] = event.ReportId
+				log2.Logger.Debug("report_id", debugMsg["report_id"])
 				model.Insert(requestCollection, debugMsg)
 			}
 		case model.Success:
@@ -128,6 +129,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 					debugMsg["regex"] = regex
 				}
 				if requestCollection != nil {
+					log2.Logger.Debug("report_id", debugMsg["report_id"])
 					debugMsg["report_id"] = event.ReportId
 					model.Insert(requestCollection, debugMsg)
 				}
