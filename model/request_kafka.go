@@ -30,7 +30,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Key = sarama.StringEncoder(resultDataMsg.ReportId)
+			DataMsg.Key = sarama.StringEncoder(topic)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
