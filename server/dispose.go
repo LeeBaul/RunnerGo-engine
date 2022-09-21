@@ -103,7 +103,12 @@ func ExecutionPlan(plan *model.Plan) {
 	//sceneTestResultDataMsgCh := make(chan *model.SceneTestResultDataMsg, 10)
 	//go ReceivingResults(ch, sceneTestResultDataMsgCh)
 	// 向kafka发送消息
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, config.Conf.Kafka.TopIc)
+	if plan.TeamId == 0 {
+		log.Logger.Error("teamId不能为0")
+		return
+	}
+	topic := strconv.FormatInt(plan.TeamId, 10)
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic)
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	scene := plan.Scene

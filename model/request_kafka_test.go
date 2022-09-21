@@ -25,7 +25,7 @@ func TestSendKafkaMsg(t *testing.T) {
 	}
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go SendKafkaMsg(kafkaProducer, resultDataMsgCh, "StressTestData", wg)
+	go SendKafkaMsg(kafkaProducer, resultDataMsgCh, "StressTestData")
 	wg.Wait()
 
 }

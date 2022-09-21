@@ -64,6 +64,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 							debugMsg["uuid"] = event.Uuid.String()
 							debugMsg["event_id"] = event.Id
 							debugMsg["status"] = model.NotRun
+							debugMsg["report_id"] = event.ReportId
 							debugMsg["next_list"] = event.NextList
 							if requestCollection != nil {
 								model.Insert(requestCollection, debugMsg)
@@ -93,6 +94,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 								debugMsg["uuid"] = event.Uuid.String()
 								debugMsg["event_id"] = event.Id
 								debugMsg["status"] = model.NotRun
+								debugMsg["report_id"] = event.ReportId
 								debugMsg["next_list"] = event.NextList
 								if requestCollection != nil {
 									model.Insert(requestCollection, debugMsg)
@@ -109,6 +111,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 								debugMsg["uuid"] = event.Uuid.String()
 								debugMsg["event_id"] = event.Id
 								debugMsg["status"] = model.NotRun
+								debugMsg["report_id"] = event.ReportId
 								debugMsg["next_list"] = event.NextList
 								if requestCollection != nil {
 									model.Insert(requestCollection, debugMsg)
@@ -146,7 +149,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				expiration := 60 * time.Second
 				err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 				if err != nil {
-					log.Logger.Error("事件状态写入数据库失败", err)
+					log.Logger.Error("事件状态写入redis数据库失败", err)
 				}
 			case model.IfControllerType:
 				keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
@@ -189,6 +192,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					debugMsg["event_id"] = event.Id
 					debugMsg["status"] = result
 					debugMsg["msg"] = msg
+					debugMsg["report_id"] = event.ReportId
 					debugMsg["next_list"] = event.NextList
 					if requestCollection != nil {
 						model.Insert(requestCollection, debugMsg)
@@ -199,12 +203,12 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				if result == model.Failed {
 					err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
 					if err != nil {
-						log.Logger.Error("事件状态写入数据库失败", err)
+						log.Logger.Error("事件状态写入redis数据库失败", err)
 					}
 				} else {
 					err := model.InsertStatus(gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 					if err != nil {
-						log.Logger.Error("事件状态写入数据库失败", err)
+						log.Logger.Error("事件状态写入redis数据库失败", err)
 					}
 				}
 				wgTemp.Done()
@@ -214,6 +218,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					debugMsg := make(map[string]interface{})
 					debugMsg["uuid"] = event.Uuid.String()
 					debugMsg["event_id"] = event.Id
+					debugMsg["report_id"] = event.ReportId
 					debugMsg["status"] = model.Success
 					debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "秒"
 					debugMsg["next_list"] = event.NextList
@@ -308,7 +313,6 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.IsSucceed = isSucceed
 		requestResults.SendBytes = uint64(sendBytes)
 		requestResults.ReceivedBytes = uint64(contentLength)
-		log.Logger.Info("requestResults.ReceivedBytes", requestResults.ReceivedBytes, " ...............", contentLength)
 		requestResults.ErrorMsg = errMsg
 		requestResults.Timestamp = timestamp
 		resultDataMsgCh <- requestResults

@@ -63,9 +63,8 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 	//contentLength = uint(resp.Header.ContentLength())
 	responseMsg, _ := json.Marshal(resp)
 	contentLength = uint(len(responseMsg))
-	log2.Logger.Debug("api.debu", api.Debug)
 	// 开启debug模式后，将请求响应信息写入到mongodb中
-	if api.Debug != "" {
+	if api.Debug != "" || api.Debug != "stop" {
 		switch api.Debug {
 		case model.All:
 			debugMsg := make(map[string]interface{})
@@ -100,7 +99,6 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 			}
 			if requestCollection != nil {
 				debugMsg["report_id"] = event.ReportId
-				log2.Logger.Debug("report_id", debugMsg["report_id"])
 				model.Insert(requestCollection, debugMsg)
 			}
 		case model.Success:

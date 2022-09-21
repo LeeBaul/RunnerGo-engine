@@ -33,7 +33,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			// 查询是否开启debug
 			_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
 			if debug != "" {
-				log.Logger.Info("debug...................", debug)
 				scene.Debug = debug
 			}
 			startCurrentTime := time.Now().UnixMilli()
