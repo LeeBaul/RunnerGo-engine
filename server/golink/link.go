@@ -64,6 +64,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 							debugMsg["uuid"] = event.Uuid.String()
 							debugMsg["event_id"] = event.Id
 							debugMsg["status"] = model.NotRun
+							debugMsg["type"] = event.Type
 							debugMsg["report_id"] = event.ReportId
 							debugMsg["next_list"] = event.NextList
 							if requestCollection != nil {
@@ -94,6 +95,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 								debugMsg["uuid"] = event.Uuid.String()
 								debugMsg["event_id"] = event.Id
 								debugMsg["status"] = model.NotRun
+								debugMsg["type"] = event.Type
 								debugMsg["report_id"] = event.ReportId
 								debugMsg["next_list"] = event.NextList
 								if requestCollection != nil {
@@ -110,6 +112,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 								debugMsg := make(map[string]interface{})
 								debugMsg["uuid"] = event.Uuid.String()
 								debugMsg["event_id"] = event.Id
+								debugMsg["type"] = event.Type
 								debugMsg["status"] = model.NotRun
 								debugMsg["report_id"] = event.ReportId
 								debugMsg["next_list"] = event.NextList
@@ -193,6 +196,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					debugMsg["event_id"] = event.Id
 					debugMsg["status"] = result
 					debugMsg["msg"] = msg
+					debugMsg["type"] = model.IfControllerType
 					debugMsg["report_id"] = event.ReportId
 					debugMsg["next_list"] = event.NextList
 					if requestCollection != nil {
@@ -221,7 +225,8 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					debugMsg["event_id"] = event.Id
 					debugMsg["report_id"] = event.ReportId
 					debugMsg["status"] = model.Success
-					debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "秒"
+					debugMsg["type"] = model.WaitControllerType
+					debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "毫秒"
 					debugMsg["next_list"] = event.NextList
 					if requestCollection != nil {
 						model.Insert(requestCollection, debugMsg)

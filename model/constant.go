@@ -37,7 +37,6 @@ const (
 // 事件类型
 const (
 	RequestType        = "api"                  // 接口请求
-	ControllerType     = "controller"           // 控制器
 	IfControllerType   = "condition_controller" // if控制器
 	WaitControllerType = "wait_controller"      // 等待控制器
 
