@@ -34,7 +34,7 @@ mongo:
   stressDebugTable: "stress_debug"
   sceneDebugTable: "scene_debug"
   apiDebugTable: "api_debug"
-  address: "dds-8vb14448e6c8d6241844-pub.mongodb.zhangbei.rds.aliyuncs.com:3717"
+  address: "172.17.18.255:27017"
 
 
 es:
