@@ -64,7 +64,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 	responseMsg, _ := json.Marshal(resp)
 	contentLength = uint(len(responseMsg))
 	// 开启debug模式后，将请求响应信息写入到mongodb中
-	if api.Debug != "" || api.Debug != "stop" {
+	if api.Debug != "" && api.Debug != "stop" {
 		switch api.Debug {
 		case model.All:
 			debugMsg := make(map[string]interface{})
@@ -72,6 +72,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 			debugMsg["event_id"] = event.Id
 			debugMsg["api_id"] = api.TargetId
 			debugMsg["api_name"] = api.Name
+			debugMsg["type"] = model.RequestType
 			debugMsg["request_time"] = requestTime
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
@@ -108,6 +109,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 				debugMsg["event_id"] = event.Id
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
+				debugMsg["type"] = model.RequestType
 				debugMsg["request_time"] = requestTime
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
@@ -140,6 +142,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 				debugMsg["event_id"] = event.Id
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
+				debugMsg["type"] = model.RequestType
 				debugMsg["request_time"] = requestTime
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
