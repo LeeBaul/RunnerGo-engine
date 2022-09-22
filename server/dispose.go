@@ -107,8 +107,8 @@ func ExecutionPlan(plan *model.Plan) {
 		log.Logger.Error("teamId不能为0")
 		return
 	}
-	topic := strconv.FormatInt(plan.TeamId, 10)
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic)
+	//topic := strconv.FormatInt(plan.TeamId, 10)
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, "stressReport")
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	scene := plan.Scene
