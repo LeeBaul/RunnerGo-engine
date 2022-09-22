@@ -102,7 +102,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 				debugMsg["report_id"] = event.ReportId
 				model.Insert(requestCollection, debugMsg)
 			}
-		case model.Success:
+		case model.OnlySuccess:
 			if isSucceed == true {
 				debugMsg := make(map[string]interface{})
 				debugMsg["uuid"] = api.Uuid.String()
