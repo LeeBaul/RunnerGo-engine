@@ -3,6 +3,7 @@ package client
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
 	"kp-runner/log"
@@ -71,7 +72,8 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		log.Logger.Error("请求错误", err)
 	}
 	requestTime = tools.TimeDifference(startTime)
-	sendBytes = uint(req.Header.ContentLength())
+	requestMsg, _ := json.Marshal(req)
+	sendBytes = uint(len(requestMsg))
 	timestamp = time.Now().UnixMilli()
 	return
 }
