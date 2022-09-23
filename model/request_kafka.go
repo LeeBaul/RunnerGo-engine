@@ -13,7 +13,6 @@ import (
 // SendKafkaMsg 发送消息到kafka
 func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string) {
 	defer kafkaProducer.Close()
-	reportId := ""
 	num := int64(0)
 	for {
 		if resultDataMsg, ok := <-resultDataMsgCh; ok {
@@ -22,15 +21,12 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 				log.Logger.Error("json转换失败", err)
 				break
 			}
-			if reportId == "" {
-				reportId = resultDataMsg.ReportId
-			}
 			if num == 0 {
 				num = resultDataMsg.MachineNum
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Key = sarama.StringEncoder(resultDataMsg.ReportId)
+			DataMsg.Key = sarama.StringEncoder(topic)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
@@ -40,7 +36,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 		} else {
 			// 发送结束消息
 			result := new(ResultDataMsg)
-			result.ReportId = reportId
+			result.ReportId = topic
 			result.End = true
 			result.MachineNum = num
 			msg, err := json.Marshal(result)
@@ -50,14 +46,14 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Key = sarama.StringEncoder(reportId)
+			DataMsg.Key = sarama.StringEncoder(topic)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
 				log.Logger.Error("向kafka发送消息失败", err)
 				break
 			}
-			log.Logger.Info(reportId, "报告消息发送结束")
+			log.Logger.Info(topic, "报告消息发送结束")
 			return
 
 		}
