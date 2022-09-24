@@ -60,9 +60,8 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 			}
 		}
 	}
-	req.SetRequestURI(url)
 
-	req.SetBodyString(body.ToString())
+	req.SetBodyString(body.ToString(req))
 
 	resp = fasthttp.AcquireResponse()
 

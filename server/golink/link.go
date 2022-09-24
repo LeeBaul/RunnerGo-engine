@@ -289,7 +289,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		api.ReplaceParameters(configuration)
 	}
 
-	// 请求中所有的变量替换未真正的值
+	// 请求中所有的变量替换成真正的值
 	api.ReplaceQueryParameterizes()
 
 	var (

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"github.com/valyala/fasthttp"
 	"kp-runner/tools"
 	"strconv"
 	"strings"
@@ -43,13 +44,14 @@ type Body struct {
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
 }
 
-func (b *Body) ToString() (s string) {
+func (b *Body) ToString(req *fasthttp.Request) (s string) {
 	if b == nil {
 		return s
 	}
 	switch b.Mode {
 	case NoneMode:
 	case FormMode:
+		req.Header.SetContentType("multipart/form-data")
 		body := make(map[string]interface{})
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {
@@ -60,6 +62,7 @@ func (b *Body) ToString() (s string) {
 		data, _ := json.Marshal(body)
 		s = string(data)
 	case UrlencodeMode:
+		req.Header.SetContentType("application/x-www-form-urlencoded")
 		body := make(map[string]interface{})
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {

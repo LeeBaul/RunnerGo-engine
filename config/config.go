@@ -17,6 +17,7 @@ type Config struct {
 	Es        Es        `yaml:"es"`
 	Grpc      Grpc      `yaml:"grpc"`
 	Heartbeat Heartbeat `yaml:"heartbeat"`
+	Oss       Oss       `yaml:"oss"`
 }
 
 type Heartbeat struct {
@@ -59,13 +60,24 @@ type Mongo struct {
 }
 
 type Es struct {
-	User     string `yaml:"user"`
+	UserName string `yaml:"username"`
 	Password string `yaml:"password"`
-	Address  string `yaml:"address"`
+	Host     string `yaml:"host"`
+	Index    string `yaml:"index"`
+	Size     int    `yaml:"size"`
 }
 
 type Grpc struct {
 	Port string `yaml:"port"`
+}
+
+type Oss struct {
+	Endpoint        string `yaml:"endpoint"`
+	Bucket          string `yaml:"bucket"`
+	AccessKeyID     string `yaml:"accessKeyID"`
+	AccessKeySecret string `yaml:"accessKeySecret"`
+	Split           string `yaml:"split"`
+	Down            string `yaml:"down"`
 }
 
 func InitConfig() {

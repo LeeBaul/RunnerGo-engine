@@ -38,6 +38,17 @@ mongo:
 
 
 es:
-  user: "kunpeng"
+  host: "http://172.17.101.191:9200"
+  username: "elastic"
   password: "ZSrfx4R6ICa3skGBpCdf"
-  address: "172.17.101.191:9200"
+  index: "report"
+  size: 10000000
+
+oss:
+  endpoint: "http://oss-cn-beijing.aliyuncs.com"
+  accessKeyID: "LTAI5tEAzFMCX559VD8mRDoZ"
+  accessKeySecret: "5IV7ZpVx95vBHZ3Y74jr9amaMtXpCQ"
+  bucket: "apipost"
+  split: "/kunpeng/"
+  down: "/data/parameter/"
+

@@ -1,8 +1,8 @@
 package execution
 
 import (
-	"github.com/olivere/elastic"
 	"go.mongodb.org/mongo-driver/mongo"
+	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
@@ -24,10 +24,6 @@ type RequestTimeApi struct {
 	Custom    int     `json:"custom"`
 }
 
-func GetRequestTime(esClient *elastic.Client, requestTimeData *RequestTimeData) {
-
-}
-
 // RTModel 响应时间模式
 func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
@@ -40,7 +36,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
-	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	//err, esClient := client.NewEsClient(config.Config["esHost"].(string))
 	//if err != nil {
@@ -59,6 +54,11 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	startCurrentTime := startTime
 	currentTime := startTime
 	index := 0
+
+	es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
+	if es == nil {
+		return
+	}
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > currentTime {
 
@@ -73,6 +73,17 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 			scene.Debug = ""
 		}
 		startConcurrentTime := time.Now().UnixMilli()
+
+		res := model.QueryReport(es, config.Conf.Es.Index, reportMsg.ReportId)
+		if res != nil && res.Results != nil {
+			for _, result := range res.Results {
+				if errRate > result.ErrorThreshold {
+					log.Logger.Info(result.Name, "接口：在", concurrent, "并发时,错误率", errRate, "大于所设阈值", result.ErrorThreshold)
+					log.Logger.Info("计划:", planId, "...............结束")
+					return
+				}
+			}
+		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64) {
@@ -114,15 +125,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 				} else {
 					concurrent = maxConcurrent
 					stepRunTime = stableDuration
-				}
-				apis := requestTimeData.Apis
-				for _, api := range apis {
-					if api.Threshold < api.Actual {
-						log.Logger.Info(api.ApiName, "接口：在", concurrent, "并发时", api.Custom, "线响应时间", api.Actual, "大于所设阈值", api.Threshold)
-						log.Logger.Info("计划:", planId, "...............结束")
-						return
-
-					}
 				}
 
 			}

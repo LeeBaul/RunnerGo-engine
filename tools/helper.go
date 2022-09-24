@@ -4,7 +4,9 @@ package tools
 
 import (
 	"encoding/json"
+	"kp-runner/log"
 	"math"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -72,4 +74,31 @@ func FindAllDestStr(str, rex string) (result [][]string) {
 	compileRegex := regexp.MustCompile(rex)
 	result = compileRegex.FindAllStringSubmatch(str, -1)
 	return
+}
+
+// 判断文件或文件夹是否存在
+func PathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		if os.IsNotExist(err) {
+			mkErr := os.MkdirAll(path, os.ModePerm)
+			if mkErr != nil {
+				log.Logger.Error("创建文件夹失败")
+				return false
+			}
+		}
+		return false
+	}
+	if os.IsNotExist(err) {
+		mkErr := os.MkdirAll(path, os.ModePerm)
+		if mkErr != nil {
+			log.Logger.Error("创建文件夹失败")
+			return false
+		}
+	}
+	return true
+
 }

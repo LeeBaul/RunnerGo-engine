@@ -2,6 +2,7 @@ package execution
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
@@ -22,7 +23,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
-	requestTimeData := new(RequestTimeData)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	//err, esClient := client.NewEsClient(config.Config["esHost"].(string))
 	//if err != nil {
@@ -41,6 +41,12 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	startCurrentTime := startTime
 	currentTime := startTime
 	index := 0
+
+	// 创建es客户端
+	es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
+	if es == nil {
+		return
+	}
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > currentTime {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -96,15 +102,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 				} else {
 					concurrent = maxConcurrent
 					stepRunTime = stableDuration
-				}
-				apis := requestTimeData.Apis
-				for _, api := range apis {
-					if api.Threshold < api.Actual {
-						log.Logger.Info(api.ApiName, "接口：在", concurrent, "并发时", api.Custom, "线响应时间", api.Actual, "大于所设阈值", api.Threshold)
-						log.Logger.Info("计划:", planId, "...............结束")
-						return
-
-					}
 				}
 
 			}

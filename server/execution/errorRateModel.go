@@ -2,6 +2,7 @@ package execution
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
@@ -34,13 +35,17 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
-	errorRateData := new(ErrorRateData)
 	startTime := time.Now().Unix()
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent
 	concurrent := startConcurrent
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	index := 0
+	// 创建es客户端，获取测试数据
+	es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
+	if es == nil {
+		return
+	}
 	for startTime+stepRunTime > time.Now().Unix() {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -56,14 +61,18 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 		// 查询当前错误率时多少
 		//GetErrorRate(planId+":"+sceneId+":"+"errorRate", errorRateData)
-		apis := errorRateData.Apis
-		for _, api := range apis {
-			if api.Threshold < api.Actual {
-				log.Logger.Info(api.ApiName, "接口：在", concurrent, "并发时,错误率", api.Actual, "大于所设阈值", api.Threshold)
-				log.Logger.Info("计划:", planId, "...............结束")
-				return
+		res := model.QueryReport(es, config.Conf.Es.Index, reportMsg.ReportId)
+		if res != nil && res.Results != nil {
+			for _, result := range res.Results {
+				errRate := float64(result.ErrorNum) / float64(result.TotalRequestNum)
+				if errRate > result.ErrorThreshold {
+					log.Logger.Info(result.Name, "接口：在", concurrent, "并发时,错误率", errRate, "大于所设阈值", result.ErrorThreshold)
+					log.Logger.Info("计划:", planId, "...............结束")
+					return
+				}
 			}
 		}
+
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64) {
