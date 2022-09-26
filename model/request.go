@@ -11,12 +11,6 @@ import (
 	"sync"
 )
 
-// api调试，结构体
-type RunApi struct {
-	Api      Api   `json:"api"`
-	Variable []*KV `json:"variable" bson:"variable"` // 全局变量
-}
-
 // Api 请求数据
 type Api struct {
 	TargetId   int64                `json:"target_id" bson:"target_id"`
@@ -32,6 +26,7 @@ type Api struct {
 	Regex      []*RegularExpression `json:"regex" bson:"regex"`           // 正则表达式
 	Debug      string               `json:"debug" bson:"debug"`           // 是否开启Debug模式
 	Connection int64                `json:"connection" bson:"connection"` // 0:websocket长连接
+	Variable   []*KV                `json:"variable" bson:"variable"`     // 全局变量
 }
 
 type Request struct {
