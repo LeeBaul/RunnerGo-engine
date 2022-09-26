@@ -11,6 +11,12 @@ import (
 	"sync"
 )
 
+//
+type RunApi struct {
+	Api      *Api  `json:"api"`
+	Variable []*KV `json:"variable" bson:"variable"` // 全局变量
+}
+
 // Api 请求数据
 type Api struct {
 	TargetId   int64                `json:"target_id" bson:"target_id"`
@@ -26,7 +32,6 @@ type Api struct {
 	Regex      []*RegularExpression `json:"regex" bson:"regex"`           // 正则表达式
 	Debug      string               `json:"debug" bson:"debug"`           // 是否开启Debug模式
 	Connection int64                `json:"connection" bson:"connection"` // 0:websocket长连接
-
 }
 
 type Request struct {
@@ -73,6 +78,19 @@ func (b *Body) ToString(req *fasthttp.Request) (s string) {
 		data, _ := json.Marshal(body)
 		s = string(data)
 	default:
+		switch b.Mode {
+
+		case XmlMode:
+			req.Header.SetContentType("application/xml")
+		case JSMode:
+			req.Header.SetContentType("application/javascript")
+		case PlainMode:
+			req.Header.SetContentType("text/plain")
+		case HtmlMode:
+			req.Header.SetContentType("text/html")
+		default:
+			req.Header.SetContentType("application/json")
+		}
 		s = b.Raw
 	}
 	return

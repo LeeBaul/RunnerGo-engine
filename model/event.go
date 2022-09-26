@@ -3,26 +3,28 @@ package model
 import uuid "github.com/satori/go.uuid"
 
 type Event struct {
-	Id                   string    `json:"id" bson:"id"`
-	ReportId             string    `json:"report_id" bson:"report_id"`
-	TeamId               int64     `json:"team_id" bson:"team_id"`
-	IsCheck              bool      `json:"is_check" bson:"is_check"`
-	Uuid                 uuid.UUID `json:"uuid" bson:"uuid"`
-	Type                 string    `json:"type" bson:"type"` //   事件类型 "request" "controller"
-	PreList              []string  `json:"pre_list" bson:"pre_list"`
-	NextList             []string  `json:"next_list"   bson:"next_list"`
-	Weight               int64     `json:"weight" bson:"weight"` // 权重，并发分配的比例
-	Tag                  bool      `json:"tag" bson:"tag"`       // Tps模式下，该标签代表以该接口为准
-	Debug                string    `json:"debug" bson:"debug"`
-	ErrorThreshold       float32   `json:"errorThreshold" bson:"errorThreshold"`             // 错误率阈值
-	CustomRequestTime    int64     `json:"customRequestTime" bson:"customRequestTime"`       // 自定义响应时间线
-	RequestTimeThreshold int64     `json:"requestTimeThreshold" bson:"requestTimeThreshold"` // 响应时间阈值
-	Api                  Api       `json:"api" bson:"api"`
-	Var                  string    `json:"var"`     // if控制器key，值某个变量
-	Compare              string    `json:"compare"` // 逻辑运算符
-	Val                  string    `json:"val"`     // key对应的值
-	Name                 string    `json:"name"`    // 控制器名称
-	WaitTime             int       `json:"wait_ms"` // 等待时长，ms
+	Id                string    `json:"id" bson:"id"`
+	ReportId          string    `json:"report_id" bson:"report_id"`
+	TeamId            int64     `json:"team_id" bson:"team_id"`
+	IsCheck           bool      `json:"is_check" bson:"is_check"`
+	Uuid              uuid.UUID `json:"uuid" bson:"uuid"`
+	Type              string    `json:"type" bson:"type"` //   事件类型 "request" "controller"
+	PreList           []string  `json:"pre_list" bson:"pre_list"`
+	NextList          []string  `json:"next_list"   bson:"next_list"`
+	Tag               bool      `json:"tag" bson:"tag"` // Tps模式下，该标签代表以该接口为准
+	Debug             string    `json:"debug" bson:"debug"`
+	Mode              int64     `json:"mode"`                 // 模式类型
+	ResponseThreshold int64     `json:"response_threshold"`   // 响应时间阈值
+	ErrorThreshold    float32   `json:"error_threshold"`      // 错误率阈值
+	PercentAge        int64     `json:"percent_age"`          // 响应时间线
+	Weight            int64     `json:"weight" bson:"weight"` // 权重，并发分配的比例
+	Api               Api       `json:"api"`
+	Var               string    `json:"var"`     // if控制器key，值某个变量
+	Compare           string    `json:"compare"` // 逻辑运算符
+	Val               string    `json:"val"`     // key对应的值
+	Name              string    `json:"name"`    // 控制器名称
+	WaitTime          int       `json:"wait_ms"` // 等待时长，ms
+
 }
 
 type EventStatus struct {

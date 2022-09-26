@@ -11,8 +11,6 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/execution"
 	"kp-runner/server/golink"
-	"kp-runner/server/heartbeat"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -168,7 +166,8 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	if scene.Configuration.ParameterizedFile != nil {
 		p := scene.Configuration.ParameterizedFile
 		p.VariableNames.Mu = sync.Mutex{}
-		p.ReadFile()
+		teamId := strconv.FormatInt(plan.TeamId, 10)
+		p.DownLoadFile(teamId, plan.ReportId)
 	}
 
 	var reportMsg = &model.ResultDataMsg{}
@@ -238,7 +237,8 @@ func DebugScene(scene *model.Scene) {
 			p.VariableNames = new(model.VariableNames)
 		}
 		p.VariableNames.Mu = sync.Mutex{}
-		p.ReadFile()
+		teamId := strconv.FormatInt(scene.TeamId, 10)
+		p.DownLoadFile(teamId, scene.ReportId)
 	}
 
 	scene.Debug = model.All
@@ -275,109 +275,6 @@ func DebugApi(Api model.Api) {
 	wg.Add(1)
 	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
-
-}
-
-// ReceivingResults 计算并发送测试结果,
-func ReceivingResults(resultDataMsgCh <-chan *model.ResultDataMsg, sceneTestResultDataMsgCh chan *model.SceneTestResultDataMsg) {
-	var (
-		sceneTestResultDataMsg = new(model.SceneTestResultDataMsg)
-		requestTimeMap         = make(map[interface{}]model.RequestTimeList)
-	)
-	sceneTestResultDataMsg.MachineIp = heartbeat.LocalIp
-	// 关闭通道
-	defer close(sceneTestResultDataMsgCh)
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case resultDataMsg, ok := <-resultDataMsgCh:
-			if !ok {
-				goto end
-			}
-			if sceneTestResultDataMsg.PlanId == 0 {
-				sceneTestResultDataMsg.PlanId = resultDataMsg.PlanId
-			}
-			if sceneTestResultDataMsg.PlanName == "" {
-				sceneTestResultDataMsg.PlanName = resultDataMsg.PlanName
-			}
-			if sceneTestResultDataMsg.SceneId == 0 {
-				sceneTestResultDataMsg.SceneId = resultDataMsg.SceneId
-			}
-			if sceneTestResultDataMsg.SceneName == "" {
-				sceneTestResultDataMsg.SceneName = resultDataMsg.SceneName
-			}
-			if sceneTestResultDataMsg.ReportId == "" {
-				sceneTestResultDataMsg.ReportId = resultDataMsg.ReportId
-			}
-			if sceneTestResultDataMsg.ReportName == "" {
-				sceneTestResultDataMsg.ReportName = resultDataMsg.ReportName
-			}
-
-			requestTimeMap[resultDataMsg.TargetId] = append(requestTimeMap[resultDataMsg.TargetId], resultDataMsg.RequestTime)
-			// 将各个接口的响应时间进行排序
-			sort.Sort(requestTimeMap[resultDataMsg.TargetId])
-			if sceneTestResultDataMsg.Results == nil {
-				sceneTestResultDataMsg.Results = make(map[interface{}]*model.ApiTestResultDataMsg)
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId] == nil {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId] = new(model.ApiTestResultDataMsg)
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId == 0 {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanId = resultDataMsg.PlanId
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].PlanName = resultDataMsg.PlanName
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId == 0 {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneId = resultDataMsg.SceneId
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SceneName = resultDataMsg.SceneName
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportId == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportId = resultDataMsg.ReportId
-			}
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportName == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReportName = resultDataMsg.ReportName
-			}
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TargetId = resultDataMsg.TargetId
-
-			if sceneTestResultDataMsg.Results[resultDataMsg.TargetId].Name == "" {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].Name = resultDataMsg.Name
-			}
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ReceivedBytes += resultDataMsg.ReceivedBytes
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SendBytes += resultDataMsg.SendBytes
-			if resultDataMsg.IsSucceed {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].SuccessNum += 1
-			} else {
-				sceneTestResultDataMsg.Results[resultDataMsg.TargetId].ErrorNum += 1
-			}
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TotalRequestNum += 1
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].TotalRequestTime += resultDataMsg.RequestTime
-			sceneTestResultDataMsg.Results[resultDataMsg.TargetId].CustomRequestTimeLineValue = resultDataMsg.CustomRequestTimeLine
-
-		// 定时每秒发送一次场景的测试结果
-		case <-ticker.C:
-			for k, v := range requestTimeMap {
-				if v != nil {
-					sort.Sort(v)
-					sceneTestResultDataMsg.Results[k].MinRequestTime = v[0]
-					sceneTestResultDataMsg.Results[k].MaxRequestTime = v[len(v)-1]
-					sceneTestResultDataMsg.Results[k].AvgRequestTime = sceneTestResultDataMsg.Results[k].TotalRequestTime / sceneTestResultDataMsg.Results[k].TotalRequestNum
-					sceneTestResultDataMsg.Results[k].NinetyRequestTimeLine = timeLineCalculate(90, v)
-					sceneTestResultDataMsg.Results[k].NinetyFiveRequestTimeLine = timeLineCalculate(95, v)
-					sceneTestResultDataMsg.Results[k].NinetyNineRequestTimeLine = timeLineCalculate(99, v)
-					sceneTestResultDataMsg.Results[k].CustomRequestTimeLine = timeLineCalculate(sceneTestResultDataMsg.Results[k].CustomRequestTimeLineValue, v)
-				}
-
-			}
-			sceneTestResultDataMsgCh <- sceneTestResultDataMsg
-		}
-	}
-end:
-	return
 
 }
 

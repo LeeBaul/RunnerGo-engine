@@ -26,7 +26,7 @@ type VariableNames struct {
 }
 
 // 从oss下载文件
-func (p *ParameterizedFile) DownLoadFile(teamId, reportId, fileName string) {
+func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 	if p.Paths == nil {
 		return
 	}
@@ -34,9 +34,17 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId, fileName string) {
 	if client == nil {
 		return
 	}
+	if p.RealPaths == nil {
+		p.RealPaths = []string{}
+	}
 	for _, path := range p.Paths {
 		names := strings.Split(path, config.Conf.Oss.Split)
 		name := config.Conf.Oss.Split + names[1]
+		files := strings.Split(name, "/")
+		fileName := ""
+		if len(files) > 0 {
+			fileName = files[len(files)-1]
+		}
 		toPath := ""
 		if tools.PathExists(config.Conf.Oss.Down + "/" + teamId + "/" + reportId) {
 			toPath = fmt.Sprintf("%s/%s/%s/%s", config.Conf.Oss.Down, teamId, reportId, fileName)
@@ -47,21 +55,18 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId, fileName string) {
 		if err != nil {
 			break
 		}
-
-		if err != nil {
-			break
-		}
-
+		p.RealPaths = append(p.RealPaths, toPath)
 	}
+	p.ReadFile()
 }
 
 // ReadFile 将参数化文件写入内存变量中
 func (p *ParameterizedFile) ReadFile() {
-	if p.Paths == nil {
+	if p.RealPaths == nil {
 		return
 	}
 
-	for _, file := range p.Paths {
+	for _, file := range p.RealPaths {
 		fs, err := os.Open(file)
 		if err != nil {
 			log.Logger.Error(file, "文件打开失败：", err)
@@ -73,8 +78,8 @@ func (p *ParameterizedFile) ReadFile() {
 
 		var keys []string
 		for {
-			line, err := buf.ReadString('\n')
-			if err == io.EOF {
+			line, readErr := buf.ReadString('\n')
+			if readErr == io.EOF {
 				break
 			}
 
@@ -89,7 +94,6 @@ func (p *ParameterizedFile) ReadFile() {
 				}
 			} else {
 				var value = strings.Split(line, ",")
-
 				for j := 0; j < len(keys); j++ {
 					p.VariableNames.VarMapList[keys[j]] = append(p.VariableNames.VarMapList[keys[j]], value[j])
 				}
@@ -97,6 +101,10 @@ func (p *ParameterizedFile) ReadFile() {
 			i++
 		}
 		fs.Close()
+		if err = os.Remove(file); err != nil {
+			log.Logger.Error("测试文件: " + file + " , 删除失败")
+			break
+		}
 	}
 	p.VariableNames.Index = 0
 

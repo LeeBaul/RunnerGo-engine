@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-type RequestTimeData struct {
-	PlanId  string           `json:"planId"`
-	SceneId string           `json:"sceneId"`
-	Apis    []RequestTimeApi `json:"apis"`
-}
-
-type RequestTimeApi struct {
-	ApiName   string  `json:"apiName"`
-	Threshold float64 `json:"threshold"`
-	Actual    float64 `json:"actual"`
-	Custom    int     `json:"custom"`
-}
-
 // RTModel 响应时间模式
 func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
 
@@ -77,8 +64,8 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		res := model.QueryReport(es, config.Conf.Es.Index, reportMsg.ReportId)
 		if res != nil && res.Results != nil {
 			for _, result := range res.Results {
-				if errRate > result.ErrorThreshold {
-					log.Logger.Info(result.Name, "接口：在", concurrent, "并发时,错误率", errRate, "大于所设阈值", result.ErrorThreshold)
+				if result.CustomRequestTimeLineValue > result.ResponseThreshold {
+					log.Logger.Info(result.Name, "接口：在", concurrent, "并发时", result.CustomRequestTimeLine, "响应时间线", result.CustomRequestTimeLineValue, "大于所设阈值", result.ResponseThreshold)
 					log.Logger.Info("计划:", planId, "...............结束")
 					return
 				}

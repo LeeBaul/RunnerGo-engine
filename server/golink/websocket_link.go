@@ -20,7 +20,9 @@ func webSocketSend(api model.Api) (bool, int64, uint64, uint, uint) {
 		}
 
 	}
-	resp, requestTime, sendBytes, err := client.WebSocketRequest(api.Request.URL, api.Request.Body.ToString(), headers, int(api.Timeout))
+	//  api.Request.Body.ToString()
+
+	resp, requestTime, sendBytes, err := client.WebSocketRequest(api.Request.URL, "api.Request.Body.ToString()", headers, int(api.Timeout))
 
 	if err != nil {
 		isSucceed = false
