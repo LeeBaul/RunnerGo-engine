@@ -39,6 +39,9 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 	}
 	for _, path := range p.Paths {
 		names := strings.Split(path, config.Conf.Oss.Split)
+		if names == nil || len(names) < 2 {
+			break
+		}
 		name := config.Conf.Oss.Split + names[1]
 		files := strings.Split(name, "/")
 		fileName := ""
