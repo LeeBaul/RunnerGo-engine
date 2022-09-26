@@ -11,9 +11,9 @@ import (
 	"sync"
 )
 
-//
+// api调试，结构体
 type RunApi struct {
-	Api      *Api  `json:"api"`
+	Api      Api   `json:"api"`
 	Variable []*KV `json:"variable" bson:"variable"` // 全局变量
 }
 
@@ -49,23 +49,32 @@ type Body struct {
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
 }
 
-func (b *Body) ToString(req *fasthttp.Request) (s string) {
-	if b == nil {
-		return s
+func (b *Body) SendBody(req *fasthttp.Request) {
+	if b == nil || b.Parameter == nil || len(b.Parameter) < 1 {
+		return
 	}
 	switch b.Mode {
 	case NoneMode:
 	case FormMode:
 		req.Header.SetContentType("multipart/form-data")
 		body := make(map[string]interface{})
+		boundary := []byte{}
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {
 				continue
 			}
+			if value.Type == FileType {
+				if value.FileBase64 == nil || len(value.FileBase64) < 1 {
+					break
+				}
+				for _, base64Str := range value.FileBase64 {
+					boundary = append(boundary, tools.Base64DeEncode(base64Str, "file")...)
+				}
+			}
 			body[value.Key] = value.Value
 		}
-		data, _ := json.Marshal(body)
-		s = string(data)
+		req.Header.SetMultipartFormBoundaryBytes(boundary)
+
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		body := make(map[string]interface{})
@@ -76,7 +85,7 @@ func (b *Body) ToString(req *fasthttp.Request) (s string) {
 			body[value.Key] = value.Value
 		}
 		data, _ := json.Marshal(body)
-		s = string(data)
+		req.SetBodyString(string(data))
 	default:
 		switch b.Mode {
 
@@ -91,7 +100,7 @@ func (b *Body) ToString(req *fasthttp.Request) (s string) {
 		default:
 			req.Header.SetContentType("application/json")
 		}
-		s = b.Raw
+		req.SetBodyString(b.Raw)
 	}
 	return
 }
@@ -132,6 +141,7 @@ func (re RegularExpression) Extract(str string, parameters []*KV) (value string)
 type VarForm struct {
 	IsChecked   int64       `json:"is_checked" bson:"is_checked"`
 	Type        string      `json:"type" bson:"type"`
+	FileBase64  []string    `json:"fileBase64"`
 	Key         string      `json:"key" bson:"key"`
 	Value       interface{} `json:"value" bson:"value"`
 	NotNull     int64       `json:"not_null" bson:"not_null"`

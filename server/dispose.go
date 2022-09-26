@@ -251,9 +251,18 @@ func DebugScene(scene *model.Scene) {
 }
 
 // DebugApi api调试
-func DebugApi(Api model.Api) {
+func DebugApi(runApi model.RunApi) {
+
+	if runApi.Variable != nil && len(runApi.Variable) > 0 {
+		for _, value := range runApi.Variable {
+			if runApi.Api.Parameters == nil {
+				runApi.Api.Parameters = new(sync.Map)
+			}
+			runApi.Api.Parameters.Store(value.Key, value.Value)
+		}
+	}
 	event := model.Event{}
-	event.Api = Api
+	event.Api = runApi.Api
 	event.Weight = 100
 	event.Id = "接口调试"
 	wg := &sync.WaitGroup{}

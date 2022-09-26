@@ -22,7 +22,7 @@ import (
 
 func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error, timestamp int64) {
 
-	client := fastClient(timeout)
+	client := fastClient(timeout, auth)
 	req = fasthttp.AcquireRequest()
 
 	req.Header.SetMethod(method)
@@ -61,7 +61,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		}
 	}
 
-	req.SetBodyString(body.ToString(req))
+	body.SendBody(req)
 
 	resp = fasthttp.AcquireResponse()
 
@@ -78,7 +78,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 }
 
 // 获取fasthttp客户端
-func fastClient(timeOut int64) *fasthttp.Client {
+func fastClient(timeOut int64, auth *model.Auth) *fasthttp.Client {
 	fc := &fasthttp.Client{
 		Name:                     config.Conf.Http.Name,
 		NoDefaultUserAgentHeader: config.Conf.Http.NoDefaultUserAgentHeader,
