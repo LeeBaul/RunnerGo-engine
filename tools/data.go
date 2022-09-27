@@ -7,15 +7,22 @@ import (
 )
 
 // base64解码
-func Base64DeEncode(str string, dataType string) (decoded []byte) {
-	if dataType == "file" {
-		str = strings.Split(str, ";base64,")[1]
+func Base64DeEncode(str string, dataType string) (decoded []byte, fileName string) {
+	if dataType != "file" {
+		return
 	}
+	strs := strings.Split(str, ";base64,")
+	if len(strs) < 2 {
+		return
+	}
+	str = strs[1]
+	fileName = strings.Split(strings.Split(strs[0], ";")[0], "/")[1]
 
+	fmt.Println("fileName", fileName)
 	decoded, err := base64.RawStdEncoding.DecodeString(str)
 	if err != nil {
 		fmt.Println("base64解码错误：", err)
-		return nil
+		return
 	}
 	return
 }

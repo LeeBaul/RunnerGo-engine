@@ -1,11 +1,15 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/valyala/fasthttp"
+	"io"
+	"kp-runner/log"
 	"kp-runner/tools"
+	"mime/multipart"
 	"strconv"
 	"strings"
 	"sync"
@@ -53,22 +57,43 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 	case FormMode:
 		req.Header.SetContentType("multipart/form-data")
 		body := make(map[string]interface{})
-		boundary := []byte{}
+		// 新建一个缓冲，用于存放文件内容
+		bodyBuffer := &bytes.Buffer{}
+
+		bodyWriter := multipart.NewWriter(bodyBuffer)
+
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {
 				continue
 			}
 			if value.Type == FileType {
 				if value.FileBase64 == nil || len(value.FileBase64) < 1 {
-					break
+					continue
 				}
 				for _, base64Str := range value.FileBase64 {
-					boundary = append(boundary, tools.Base64DeEncode(base64Str, "file")...)
+					by, fileName := tools.Base64DeEncode(base64Str, "file")
+					if by == nil {
+						continue
+					}
+					fileWriter, err := bodyWriter.CreateFormFile(value.Key, "abc."+fileName)
+					file := bytes.NewReader(by)
+					if err != nil {
+						log.Logger.Error("CreateFormFile失败： ", err)
+						continue
+					}
+					_, err = io.Copy(fileWriter, file)
+					contentType := bodyWriter.FormDataContentType()
+					req.Header.SetContentType(contentType)
 				}
+			} else {
+				body[value.Key] = value.Value
 			}
-			body[value.Key] = value.Value
 		}
-		req.Header.SetMultipartFormBoundaryBytes(boundary)
+		// 关闭bodyWriter
+		bodyWriter.Close()
+		req.SetBody(bodyBuffer.Bytes())
+		data, _ := json.Marshal(body)
+		req.SetBodyString(string(data))
 
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
