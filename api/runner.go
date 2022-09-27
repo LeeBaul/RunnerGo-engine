@@ -50,6 +50,8 @@ func RunScene(c *gin.Context) {
 func RunApi(c *gin.Context) {
 	var runApi = model.Api{}
 	err := c.ShouldBindJSON(&runApi)
+	//log.Logger.Error("body111111111111111", string(aaaa))
+
 	if err != nil {
 		global.ReturnMsg(c, http.StatusBadRequest, "数据格式不正确", err.Error())
 		return
@@ -58,8 +60,11 @@ func RunApi(c *gin.Context) {
 	uid := uuid.NewV4()
 	runApi.Uuid = uid
 	runApi.Debug = model.All
-	requestJson, _ := json.Marshal(runApi)
+
+	requestJson, _ := json.Marshal(&runApi)
+
 	log.Logger.Info("调试接口", string(requestJson))
+	_, _ = json.Marshal(runApi.Request.Body.Mode)
 	go server.DebugApi(runApi)
 	global.ReturnMsg(c, http.StatusOK, "调试接口", uid)
 }

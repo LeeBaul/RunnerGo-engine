@@ -282,6 +282,7 @@ func DebugApi(debugApi model.Api) {
 	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
 	wg.Add(1)
+
 	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
 

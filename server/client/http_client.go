@@ -62,8 +62,6 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	}
 	req.SetRequestURI(url)
 	str = body.SendBody(req)
-
-	log.Logger.Debug("debug:", string(req.Body()))
 	resp = fasthttp.AcquireResponse()
 
 	startTime := time.Now().UnixNano()

@@ -49,7 +49,7 @@ type Body struct {
 }
 
 func (b *Body) SendBody(req *fasthttp.Request) string {
-	if b == nil || b.Parameter == nil || len(b.Parameter) < 1 {
+	if b == nil {
 		return ""
 	}
 	switch b.Mode {
@@ -62,6 +62,9 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 
 		bodyWriter := multipart.NewWriter(bodyBuffer)
 
+		if b.Parameter == nil || len(b.Parameter) < 1 {
+			return ""
+		}
 		for _, value := range b.Parameter {
 
 			if value.IsChecked != 1 {
@@ -111,22 +114,29 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		data, _ := json.Marshal(body)
 		req.SetBodyString(string(data))
 		return string(data)
-	default:
-		switch b.Mode {
-		case XmlMode:
-			req.Header.SetContentType("application/xml")
-		case JSMode:
-			req.Header.SetContentType("application/javascript")
-		case PlainMode:
-			req.Header.SetContentType("text/plain")
-		case HtmlMode:
-			req.Header.SetContentType("text/html")
-		default:
-			req.Header.SetContentType("application/json")
-		}
+
+	case XmlMode:
+		req.Header.SetContentType("application/xml")
+		req.SetBodyString(b.Raw)
+		return b.Raw
+	case JSMode:
+		req.Header.SetContentType("application/javascript")
+		req.SetBodyString(b.Raw)
+		return b.Raw
+	case PlainMode:
+		req.Header.SetContentType("text/plain")
+		req.SetBodyString(b.Raw)
+		return b.Raw
+	case HtmlMode:
+		req.Header.SetContentType("text/html")
+		req.SetBodyString(b.Raw)
+		return b.Raw
+	case JsonMode:
+		req.Header.SetContentType("application/json")
 		req.SetBodyString(b.Raw)
 		return b.Raw
 	}
+
 	return ""
 }
 
