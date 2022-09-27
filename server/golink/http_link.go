@@ -20,7 +20,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 		timestamp     = int64(0)
 	)
 
-	resp, req, requestTime, sendBytes, err, timestamp := client.HTTPRequest(api.Method, api.Request.URL, api.Request.Body, api.Request.Query,
+	resp, req, requestTime, sendBytes, err, timestamp, str := client.HTTPRequest(api.Method, api.Request.URL, api.Request.Body, api.Request.Query,
 		api.Request.Header, api.Request.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
@@ -76,7 +76,12 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			debugMsg["request_time"] = requestTime
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
-			debugMsg["request_body"] = string(req.Body())
+			if string(req.Body()) != "" {
+				debugMsg["request_body"] = string(req.Body())
+			} else {
+				debugMsg["request_body"] = str
+			}
+
 			debugMsg["response_header"] = resp.Header.String()
 			debugMsg["response_body"] = string(resp.Body())
 			debugMsg["response_bytes"] = resp.Header.ContentLength()
@@ -113,7 +118,11 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["request_time"] = requestTime
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
-				debugMsg["request_body"] = string(req.Body())
+				if string(req.Body()) != "" {
+					debugMsg["request_body"] = string(req.Body())
+				} else {
+					debugMsg["request_body"] = str
+				}
 				debugMsg["response_header"] = resp.Header.String()
 				debugMsg["response_body"] = string(resp.Body())
 				debugMsg["response_bytes"] = resp.Header.ContentLength()
@@ -146,7 +155,11 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["request_time"] = requestTime
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
-				debugMsg["request_body"] = string(req.Body())
+				if string(req.Body()) != "" {
+					debugMsg["request_body"] = string(req.Body())
+				} else {
+					debugMsg["request_body"] = str
+				}
 				debugMsg["response_header"] = resp.Header.String()
 				debugMsg["response_body"] = string(resp.Body())
 				debugMsg["response_bytes"] = resp.Header.ContentLength()

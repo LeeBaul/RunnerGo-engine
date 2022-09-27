@@ -48,9 +48,9 @@ type Body struct {
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
 }
 
-func (b *Body) SendBody(req *fasthttp.Request) {
+func (b *Body) SendBody(req *fasthttp.Request) string {
 	if b == nil || b.Parameter == nil || len(b.Parameter) < 1 {
-		return
+		return ""
 	}
 	switch b.Mode {
 	case NoneMode:
@@ -98,6 +98,7 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 		req.SetBody(bodyBuffer.Bytes())
 		data, _ := json.Marshal(body)
 		req.SetBodyString(string(data))
+		return string(data) + "\r" + string(bodyBuffer.Bytes())
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		body := make(map[string]interface{})
@@ -109,6 +110,7 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 		}
 		data, _ := json.Marshal(body)
 		req.SetBodyString(string(data))
+		return string(data)
 	default:
 		switch b.Mode {
 		case XmlMode:
@@ -123,8 +125,9 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 			req.Header.SetContentType("application/json")
 		}
 		req.SetBodyString(b.Raw)
+		return b.Raw
 	}
-	return
+	return ""
 }
 
 type Header struct {

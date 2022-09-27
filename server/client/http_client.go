@@ -20,7 +20,7 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error, timestamp int64) {
+func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error, timestamp int64, str string) {
 
 	client := fastClient(timeout, auth)
 	req = fasthttp.AcquireRequest()
@@ -61,8 +61,9 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		}
 	}
 	req.SetRequestURI(url)
-	body.SendBody(req)
+	str = body.SendBody(req)
 
+	log.Logger.Debug("debug:", string(req.Body()))
 	resp = fasthttp.AcquireResponse()
 
 	startTime := time.Now().UnixNano()
