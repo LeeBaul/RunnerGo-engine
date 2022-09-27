@@ -83,7 +83,6 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 		req.SetBodyString(string(data))
 	default:
 		switch b.Mode {
-
 		case XmlMode:
 			req.Header.SetContentType("application/xml")
 		case JSMode:

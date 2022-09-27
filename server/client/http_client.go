@@ -26,7 +26,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	req = fasthttp.AcquireRequest()
 
 	req.Header.SetMethod(method)
-	if header.Parameter != nil {
+	if header != nil && header.Parameter != nil {
 		for _, v := range header.Parameter {
 			if v.IsChecked == 1 {
 				if strings.EqualFold(v.Key, "content-type") {
@@ -42,7 +42,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	}
 
 	if method == "GET" {
-		if query.Parameter != nil {
+		if query != nil && query.Parameter != nil {
 			var temp []*model.VarForm
 			for _, v := range query.Parameter {
 				if v.IsChecked == 1 {
@@ -60,7 +60,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 			}
 		}
 	}
-
+	req.SetRequestURI(url)
 	body.SendBody(req)
 
 	resp = fasthttp.AcquireResponse()
