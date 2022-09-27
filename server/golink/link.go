@@ -181,6 +181,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 
 				var temp = false
 				for _, kv := range scene.Configuration.Variable {
+
 					if kv.Key == event.Var {
 						temp = true
 						result, msg = event.PerForm(kv.Value)
@@ -305,7 +306,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg, timestamp = HttpSend(event, api, configuration.Variable, mongoCollection)
+		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg, timestamp = HttpSend(event, api, configuration, mongoCollection)
 	case model.FormTypeWebSocket:
 		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
 	case model.FormTypeGRPC:

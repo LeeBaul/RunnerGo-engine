@@ -11,7 +11,7 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string, int64) {
+func HttpSend(event model.Event, api model.Api, configuration *model.Configuration, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string, int64) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
@@ -28,7 +28,7 @@ func HttpSend(event model.Event, api model.Api, sceneVariable []*model.KV, reque
 	if api.Regex != nil {
 		for _, regular := range api.Regex {
 			reg := make(map[string]interface{})
-			value := regular.Extract(string(resp.Body()), sceneVariable)
+			value := regular.Extract(string(resp.Body()), configuration)
 			reg[regular.Var] = value
 			regex = append(regex, reg)
 		}

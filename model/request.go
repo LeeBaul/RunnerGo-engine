@@ -63,6 +63,7 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 		bodyWriter := multipart.NewWriter(bodyBuffer)
 
 		for _, value := range b.Parameter {
+
 			if value.IsChecked != 1 {
 				continue
 			}
@@ -71,7 +72,7 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 					continue
 				}
 				for _, base64Str := range value.FileBase64 {
-					by, fileName := tools.Base64DeEncode(base64Str, "file")
+					by, fileName := tools.Base64DeEncode(base64Str, FileType)
 					if by == nil {
 						continue
 					}
@@ -82,6 +83,9 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 						continue
 					}
 					_, err = io.Copy(fileWriter, file)
+					if err != nil {
+						continue
+					}
 					contentType := bodyWriter.FormDataContentType()
 					req.Header.SetContentType(contentType)
 				}
@@ -94,7 +98,6 @@ func (b *Body) SendBody(req *fasthttp.Request) {
 		req.SetBody(bodyBuffer.Bytes())
 		data, _ := json.Marshal(body)
 		req.SetBodyString(string(data))
-
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		body := make(map[string]interface{})
@@ -143,7 +146,7 @@ type RegularExpression struct {
 }
 
 // Extract 提取response 中的值
-func (re RegularExpression) Extract(str string, parameters []*KV) (value string) {
+func (re RegularExpression) Extract(str string, configuration *Configuration) (value string) {
 	name := tools.VariablesMatch(re.Var)
 	if value = tools.FindDestStr(str, re.Express); value != "" {
 		re.Val = value
@@ -151,7 +154,7 @@ func (re RegularExpression) Extract(str string, parameters []*KV) (value string)
 			Key:   name,
 			Value: value,
 		}
-		parameters = append(parameters, kv)
+		configuration.Variable = append(configuration.Variable, kv)
 	}
 	return
 }

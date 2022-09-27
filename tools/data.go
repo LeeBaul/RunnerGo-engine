@@ -8,7 +8,7 @@ import (
 
 // base64解码
 func Base64DeEncode(str string, dataType string) (decoded []byte, fileName string) {
-	if dataType != "file" {
+	if dataType != "File" {
 		return
 	}
 	strs := strings.Split(str, ";base64,")
