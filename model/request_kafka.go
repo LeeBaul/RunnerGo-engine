@@ -53,6 +53,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 				log.Logger.Error("向kafka发送消息失败", err)
 				break
 			}
+
 			log.Logger.Info(topic, "报告消息发送结束")
 			return
 
@@ -73,3 +74,34 @@ func NewKafkaProducer(addrs []string) (kafkaProducer sarama.SyncProducer, err er
 	}
 	return
 }
+
+// SendStopMsg 发送结束任务消息
+//func SendStopMsg(host, reportId string) {
+//	ctx := context.TODO()
+//
+//	systemRoots, err := x509.SystemCertPool()
+//	if err != nil {
+//		panic(errors.Wrap(err, "cannot load root CA certs"))
+//	}
+//	creds := credentials.NewTLS(&tls.Config{
+//		RootCAs: systemRoots,
+//	})
+//
+//	conn, err := grpc.Dial(host, grpc.WithTransportCredentials(creds))
+//	defer func() {
+//		grpcErr := conn.Close()
+//		if grpcErr != nil {
+//			log.Logger.Error("关闭grpc连接失败:", grpcErr)
+//		}
+//	}()
+//	grpcClient := services.NewKpControllerClient(conn)
+//	req := new(services.NotifyStopStressReq)
+//	req.ReportID, _ = strconv.ParseInt(reportId, 10, 64)
+//
+//	_, err = grpcClient.NotifyStopStress(ctx, req)
+//	if err != nil {
+//		log2.Logger.Error("发送停止任务失败", err)
+//		return
+//	}
+//	log2.Logger.Info(reportId, "任务结束， 消息已发送")
+//}
