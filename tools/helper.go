@@ -5,7 +5,6 @@ package tools
 import (
 	"encoding/json"
 	"kp-runner/log"
-	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -15,7 +14,7 @@ import (
 // TimeDifference 时间差，纳秒
 
 func TimeDifference(startTime int64) (difference uint64) {
-	difference = uint64(math.Round(float64(time.Now().UnixNano()-startTime) / 1000000))
+	difference = uint64(time.Now().UnixNano() - startTime)
 	return
 }
 
