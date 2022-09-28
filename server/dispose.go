@@ -222,6 +222,14 @@ func DebugScene(scene *model.Scene) {
 		log.Logger.Error("连接mongo错误：", err)
 		return
 	}
+	if scene.Variable != nil {
+		if scene.Configuration == nil {
+			scene.Configuration = new(model.Configuration)
+		}
+		if scene.Configuration.Variable == nil {
+			scene.Configuration.Variable = []*model.KV{}
+		}
+	}
 	if scene.Configuration == nil {
 		scene.Configuration = new(model.Configuration)
 		scene.Configuration.Variable = []*model.KV{}
@@ -285,16 +293,5 @@ func DebugApi(debugApi model.Api) {
 
 	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
-
-}
-
-// 根据响应时间线，计算该线的值
-func timeLineCalculate(line int64, requestTimeList model.RequestTimeList) (requestTime uint64) {
-	if line > 0 && line < 100 {
-		proportion := float64(line) / 100
-		value := proportion * float64(len(requestTimeList))
-		requestTime = requestTimeList[int(value)]
-	}
-	return
 
 }

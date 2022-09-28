@@ -18,6 +18,7 @@ type Scene struct {
 	Nodes                   []Event        `json:"nodes" bson:"nodes"`                                         // 事件列表
 	ConfigTask              *ConfigTask    `json:"config_task" bson:"config_task"`                             // 任务配置
 	Configuration           *Configuration `json:"configuration" bson:"configuration"`                         // 场景配置
+	Variable                []*KV          `json:"variable" bson:"variable"`                                   // 场景配置
 
 }
 
