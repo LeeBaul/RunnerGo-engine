@@ -474,7 +474,7 @@ func (r *Api) ReplaceParameters(configuration *Configuration) {
 		if configuration.Variable != nil {
 			for _, kv := range configuration.Variable {
 				if kv.Key == k {
-					if kv.Value == fmt.Sprintf("{{%s}}", k) {
+					if v == fmt.Sprintf("{{%s}}", k) {
 						r.Parameters.Store(k, kv.Value)
 					}
 				}
