@@ -162,6 +162,7 @@ type RegularExpression struct {
 func (re RegularExpression) Extract(str string, configuration *Configuration) (value string) {
 	name := tools.VariablesMatch(re.Var)
 	if value = tools.FindDestStr(str, re.Express); value != "" {
+		log.Logger.Debug("value:         ", value)
 		re.Val = value
 		kv := &KV{
 			Key:   name,

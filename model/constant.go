@@ -5,8 +5,8 @@ const (
 	FormTypeHTTP      = "api"       // http协议
 	FormTypeWebSocket = "websocket" // webSocket协议
 	FormTypeGRPC      = "grpc"      // grpc协议
-	HTTP              = "http://"
-	HTTPS             = "https://"
+	HTTP              = "http:"
+	HTTPS             = "https:"
 )
 
 // 返回 code 码

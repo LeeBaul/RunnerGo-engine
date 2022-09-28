@@ -96,7 +96,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			distance := time.Now().UnixMilli() - currentTime
 			if distance < 1000 {
 				sleepTime := time.Duration(1000-distance) * time.Millisecond
-				log.Logger.Info("睡眠", distance)
 				time.Sleep(sleepTime)
 			}
 
