@@ -2,7 +2,7 @@ package tools
 
 import (
 	"encoding/base64"
-	"fmt"
+	"kp-runner/log"
 	"strings"
 )
 
@@ -18,10 +18,9 @@ func Base64DeEncode(str string, dataType string) (decoded []byte, fileName strin
 	str = strs[1]
 	fileName = strings.Split(strings.Split(strs[0], ";")[0], "/")[1]
 
-	fmt.Println("fileName", fileName)
 	decoded, err := base64.RawStdEncoding.DecodeString(str)
 	if err != nil {
-		fmt.Println("base64解码错误：", err)
+		log.Logger.Error("base64解码错误：", err)
 		return
 	}
 	return
