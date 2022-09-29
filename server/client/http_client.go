@@ -61,10 +61,11 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		}
 	}
 	urls := strings.Split(url, "//")
-	if urls[0] == "" || !strings.EqualFold(urls[0], model.HTTP) || !strings.EqualFold(urls[0], model.HTTPS) {
+	if !strings.EqualFold(urls[0], model.HTTP) && !strings.EqualFold(urls[0], model.HTTPS) && urls[0] == "" {
 		url = model.HTTP + "//" + url
 
 	}
+	log.Logger.Debug("url  111          ", url)
 	req.SetRequestURI(url)
 	str = body.SendBody(req)
 	resp = fasthttp.AcquireResponse()
