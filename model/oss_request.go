@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	log2 "kp-runner/log"
 )
@@ -24,6 +25,7 @@ func DownLoad(client *oss.Client, formPath, toPath, bucketName string) (err erro
 	}
 	err = bucket.GetObjectToFile(formPath, toPath)
 	if err != nil {
+		fmt.Println("111111111111", err)
 		log2.Logger.Error(err)
 	}
 	return

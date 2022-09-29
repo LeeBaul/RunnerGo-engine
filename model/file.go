@@ -49,7 +49,7 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 			fileName = files[len(files)-1]
 		}
 		toPath := ""
-		if tools.PathExists(config.Conf.Oss.Down + "/" + teamId + "/" + reportId) {
+		if tools.PathExists(config.Conf.Oss.Down + teamId + "/" + reportId) {
 			toPath = fmt.Sprintf("%s/%s/%s/%s", config.Conf.Oss.Down, teamId, reportId, fileName)
 		} else {
 			toPath = fmt.Sprintf("/data/%s", fileName)
@@ -109,6 +109,7 @@ func (p *ParameterizedFile) ReadFile() {
 			break
 		}
 	}
+	log.Logger.Debug("参数化：", p.VariableNames.VarMapList)
 	p.VariableNames.Index = 0
 
 }
