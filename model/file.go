@@ -50,7 +50,7 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 		}
 		toPath := ""
 		if tools.PathExists(config.Conf.Oss.Down + teamId + "/" + reportId) {
-			toPath = fmt.Sprintf("%s/%s/%s/%s", config.Conf.Oss.Down, teamId, reportId, fileName)
+			toPath = fmt.Sprintf("%s%s/%s/%s", config.Conf.Oss.Down, teamId, reportId, fileName)
 		} else {
 			toPath = fmt.Sprintf("/data/%s", fileName)
 		}
