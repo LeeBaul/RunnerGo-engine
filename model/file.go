@@ -49,15 +49,11 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 			fileName = files[len(files)-1]
 		}
 		toPath := ""
-		log.Logger.Debug("config.Conf.Oss.Down + \"/\" + teamId.............", config.Conf.Oss.Down+"/"+teamId)
-		if tools.PathExists(config.Conf.Oss.Down + "/" + teamId) {
+		if tools.PathExists(config.Conf.Oss.Down + "/" + teamId + reportId) {
 			toPath = fmt.Sprintf("%s/%s/%s/%s", config.Conf.Oss.Down, teamId, reportId, fileName)
 		} else {
 			toPath = fmt.Sprintf("/data/%s", fileName)
 		}
-		log.Logger.Debug("name................", name)
-		log.Logger.Debug("topath................", toPath)
-		log.Logger.Debug("config.Conf.Oss.Bucket................", config.Conf.Oss.Bucket)
 		err := DownLoad(client, name, toPath, config.Conf.Oss.Bucket)
 		if err != nil {
 			break
