@@ -49,6 +49,6 @@ oss:
   accessKeyID: "LTAI5tEAzFMCX559VD8mRDoZ"
   accessKeySecret: "5IV7ZpVx95vBHZ3Y74jr9amaMtXpCQ"
   bucket: "apipost"
-  split: "/kunpeng/"
+  split: "kunpeng/"
   down: "/data/parameter"
 

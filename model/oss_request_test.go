@@ -12,5 +12,5 @@ func TestDownLoad(t *testing.T) {
 	//bucket.GetConfig()
 	list, _ := bucket.ListObjects()
 	fmt.Println("1231231", list.Objects)
-	DownLoad(client, "kunpeng/test/5dd5aa9d-12ef-4510-95fe-fd915aca8dac.csv", "D:\\123\\report.csv", "apipost")
+	DownLoad(client, "kunpeng/test/9f07f4e6-2539-475b-bc3f-3c3ea188eeea.txt", "D:\\123\\9f07f4e6-2539-475b-bc3f-3c3ea188eeea.txt", "apipost")
 }
