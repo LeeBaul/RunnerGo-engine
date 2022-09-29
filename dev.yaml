@@ -50,5 +50,5 @@ oss:
   accessKeySecret: "5IV7ZpVx95vBHZ3Y74jr9amaMtXpCQ"
   bucket: "apipost"
   split: "/kunpeng/"
-  down: "/data/parameter/"
+  down: "/data/parameter"
 
