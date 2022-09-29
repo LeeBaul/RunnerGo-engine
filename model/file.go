@@ -109,7 +109,6 @@ func (p *ParameterizedFile) ReadFile() {
 			break
 		}
 	}
-	log.Logger.Debug("参数化：", p.VariableNames.VarMapList)
 	p.VariableNames.Index = 0
 
 }

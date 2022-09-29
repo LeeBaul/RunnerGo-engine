@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	log2 "kp-runner/log"
 )
@@ -23,13 +22,8 @@ func DownLoad(client *oss.Client, formPath, toPath, bucketName string) (err erro
 		log2.Logger.Error("获取储存空间失败", err)
 		return
 	}
-	//log2.Logger.Debug("formPath............", formPath)
-	//log2.Logger.Debug("topath.............", toPath)
-	fmt.Println("formPath............", formPath)
-	fmt.Println("topath.............", toPath)
 	err = bucket.GetObjectToFile(formPath, toPath)
 	if err != nil {
-		fmt.Println("111111111111", err)
 		log2.Logger.Error(err)
 	}
 	return
