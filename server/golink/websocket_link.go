@@ -2,16 +2,17 @@
 package golink
 
 import (
+	"github.com/shopspring/decimal"
 	"kp-runner/model"
 	"kp-runner/server/client"
 )
 
-func webSocketSend(api model.Api) (bool, int64, uint64, uint, uint) {
+func webSocketSend(api model.Api) (bool, int64, uint64, float64, float64) {
 	var (
 		// startTime = time.Now()
 		isSucceed     = true
 		errCode       = model.NoError
-		contentLength = uint(0)
+		receivedBytes = float64(0)
 	)
 	headers := map[string][]string{}
 	for _, header := range api.Request.Header.Parameter {
@@ -29,7 +30,7 @@ func webSocketSend(api model.Api) (bool, int64, uint64, uint, uint) {
 		errCode = model.RequestError // 请求错误
 	} else {
 		// 接收到的字节长度
-		contentLength = uint(len(resp))
+		receivedBytes, _ = decimal.NewFromFloat(float64(len(resp)) / 1024).Round(2).Float64()
 	}
-	return isSucceed, errCode, requestTime, sendBytes, contentLength
+	return isSucceed, errCode, requestTime, float64(sendBytes), receivedBytes
 }

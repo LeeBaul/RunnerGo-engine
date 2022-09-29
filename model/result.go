@@ -80,8 +80,8 @@ type ResultDataMsg struct {
 	ErrorType         int64   `json:"error_type" bson:"error_type"`           // 错误类型：1. 请求错误；2. 断言错误
 	IsSucceed         bool    `json:"is_succeed" bson:"is_succeed"`           // 请求是否有错：true / false   为了计数
 	ErrorMsg          string  `json:"error_msg" bson:"error_msg"`             // 错误信息
-	SendBytes         uint64  `json:"send_bytes" bson:"send_bytes"`           // 发送字节数
-	ReceivedBytes     uint64  `json:"received_bytes" bson:"received_bytes"`   // 接收字节数
+	SendBytes         float64 `json:"send_bytes" bson:"send_bytes"`           // 发送字节数
+	ReceivedBytes     float64 `json:"received_bytes" bson:"received_bytes"`   // 接收字节数
 	Timestamp         int64   `json:"timestamp" bson:"timestamp"`
 }
 

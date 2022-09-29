@@ -300,16 +300,16 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		isSucceed     = false
 		errCode       = int64(0)
 		requestTime   = uint64(0)
-		sendBytes     = uint(0)
-		contentLength = uint(0)
+		sendBytes     = float64(0)
+		receivedBytes = float64(0)
 		errMsg        = ""
 		timestamp     = int64(0)
 	)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg, timestamp = HttpSend(event, api, configuration, mongoCollection)
+		isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg, timestamp = HttpSend(event, api, configuration, mongoCollection)
 	case model.FormTypeWebSocket:
-		isSucceed, errCode, requestTime, sendBytes, contentLength = webSocketSend(api)
+		isSucceed, errCode, requestTime, sendBytes, receivedBytes = webSocketSend(api)
 	case model.FormTypeGRPC:
 		//isSucceed, errCode, requestTime, sendBytes, contentLength := rpcSend(request)
 	default:
@@ -321,8 +321,8 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.RequestTime = requestTime
 		requestResults.ErrorType = errCode
 		requestResults.IsSucceed = isSucceed
-		requestResults.SendBytes = uint64(sendBytes)
-		requestResults.ReceivedBytes = uint64(contentLength)
+		requestResults.SendBytes = sendBytes
+		requestResults.ReceivedBytes = receivedBytes
 		requestResults.ErrorMsg = errMsg
 		requestResults.Timestamp = timestamp
 		resultDataMsgCh <- requestResults

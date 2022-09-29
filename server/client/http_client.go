@@ -3,7 +3,7 @@ package client
 
 import (
 	"crypto/tls"
-	"encoding/json"
+	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
 	"kp-runner/log"
@@ -20,7 +20,7 @@ import (
 // headers 请求头信息
 // timeout 请求超时时间
 
-func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes uint, err error, timestamp int64, str string) {
+func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes float64, err error, timestamp int64, str string) {
 
 	client := fastClient(timeout, auth)
 	req = fasthttp.AcquireRequest()
@@ -75,8 +75,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		log.Logger.Error("请求错误", err)
 	}
 	requestTime = tools.TimeDifference(startTime)
-	requestMsg, _ := json.Marshal(req)
-	sendBytes = uint(len(requestMsg))
+	sendBytes, _ = decimal.NewFromFloat(float64(req.Header.ContentLength()) / 1024).Round(2).Float64()
 	timestamp = time.Now().UnixMilli()
 	return
 }

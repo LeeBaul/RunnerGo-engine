@@ -67,7 +67,19 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 	case ResponseHeaders:
 		switch assertionText.Compare {
 		case Includes:
-
+			if strings.Contains(response.String(), assertionText.Val) {
+				return NoError, true, "响应头中包含：" + assertionText.Val + " 断言: 成功"
+			} else {
+				return AssertError, false, "响应头中不包含：" + assertionText.Val + " 断言: 失败"
+			}
+		case Equal:
+			rex := fmt.Sprintf("%s:(.*?)", assertionText.Var)
+			str := tools.FindDestStr(response.String(), rex)
+			if assertionText.Val == str {
+				return NoError, true, "响应头中，" + assertionText.Var + " = " + assertionText.Val + " 断言: 成功"
+			} else {
+				return AssertError, false, "响应头中," + assertionText.Var + " = " + assertionText.Val + " 断言: 失败"
+			}
 		}
 	case ResponseData:
 		switch assertionText.Compare {

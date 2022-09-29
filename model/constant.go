@@ -117,3 +117,11 @@ const (
 	SceneType = "scene"
 	PlanType  = "plan"
 )
+
+// 响应头中的类型
+const (
+	ContentEncoding = "content-encoding"
+	ContentLength   = "content-length"
+	ContentLanguage = "content-language"
+	ContentType     = "content-type"
+)

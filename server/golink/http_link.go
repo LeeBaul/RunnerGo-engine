@@ -2,7 +2,7 @@
 package golink
 
 import (
-	"encoding/json"
+	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	log2 "kp-runner/log"
@@ -11,11 +11,11 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(event model.Event, api model.Api, configuration *model.Configuration, requestCollection *mongo.Collection) (bool, int64, uint64, uint, uint, string, int64) {
+func HttpSend(event model.Event, api model.Api, configuration *model.Configuration, requestCollection *mongo.Collection) (bool, int64, uint64, float64, float64, string, int64) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
-		contentLength = uint(0)
+		receivedBytes = float64(0)
 		errMsg        = ""
 		timestamp     = int64(0)
 	)
@@ -61,8 +61,8 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 	}
 	// 接收到的字节长度
 	//contentLength = uint(resp.Header.ContentLength())
-	responseMsg, _ := json.Marshal(resp)
-	contentLength = uint(len(responseMsg))
+
+	receivedBytes, _ = decimal.NewFromFloat(float64(resp.Header.ContentLength()) / 1024).Round(2).Float64()
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug != "" && api.Debug != "stop" {
 		switch api.Debug {
@@ -73,7 +73,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			debugMsg["api_id"] = api.TargetId
 			debugMsg["api_name"] = api.Name
 			debugMsg["type"] = model.RequestType
-			debugMsg["request_time"] = requestTime
+			debugMsg["request_time"] = requestTime / 1000000
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
 			if string(req.Body()) != "" {
@@ -84,7 +84,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 
 			debugMsg["response_header"] = resp.Header.String()
 			debugMsg["response_body"] = string(resp.Body())
-			debugMsg["response_bytes"] = resp.Header.ContentLength()
+			debugMsg["response_bytes"] = receivedBytes
 			if err != nil {
 				debugMsg["response_body"] = err.Error()
 			}
@@ -115,7 +115,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
 				debugMsg["type"] = model.RequestType
-				debugMsg["request_time"] = requestTime
+				debugMsg["request_time"] = requestTime / 1000000
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
 				if string(req.Body()) != "" {
@@ -125,7 +125,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				}
 				debugMsg["response_header"] = resp.Header.String()
 				debugMsg["response_body"] = string(resp.Body())
-				debugMsg["response_bytes"] = resp.Header.ContentLength()
+				debugMsg["response_bytes"] = receivedBytes
 				debugMsg["status"] = model.Success
 				debugMsg["next_list"] = event.NextList
 				if err != nil {
@@ -152,7 +152,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
 				debugMsg["type"] = model.RequestType
-				debugMsg["request_time"] = requestTime
+				debugMsg["request_time"] = requestTime / 1000000
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
 				if string(req.Body()) != "" {
@@ -162,7 +162,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				}
 				debugMsg["response_header"] = resp.Header.String()
 				debugMsg["response_body"] = string(resp.Body())
-				debugMsg["response_bytes"] = resp.Header.ContentLength()
+				debugMsg["response_bytes"] = receivedBytes
 				debugMsg["status"] = model.Failed
 				debugMsg["next_list"] = event.NextList
 				if api.Assert != nil {
@@ -179,5 +179,5 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 
 		}
 	}
-	return isSucceed, errCode, requestTime, sendBytes, contentLength, errMsg, timestamp
+	return isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg, timestamp
 }
