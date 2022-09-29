@@ -54,6 +54,9 @@ func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 		} else {
 			toPath = fmt.Sprintf("/data/%s", fileName)
 		}
+		log.Logger.Debug("name................", name)
+		log.Logger.Debug("topath................", toPath)
+		log.Logger.Debug("config.Conf.Oss.Bucket................", config.Conf.Oss.Bucket)
 		err := DownLoad(client, name, toPath, config.Conf.Oss.Bucket)
 		if err != nil {
 			break
