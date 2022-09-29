@@ -229,7 +229,19 @@ func DebugScene(scene *model.Scene) {
 		if scene.Configuration.Variable == nil {
 			scene.Configuration.Variable = []*model.KV{}
 		}
+		for _, v := range scene.Variable {
+			target := false
+			for _, sv := range scene.Configuration.Variable {
+				if v.Key == sv.Key {
+					target = true
+				}
+			}
+			if !target {
+				scene.Configuration.Variable = append(scene.Configuration.Variable, v)
+			}
+		}
 	}
+
 	if scene.Configuration == nil {
 		scene.Configuration = new(model.Configuration)
 		scene.Configuration.Variable = []*model.KV{}
