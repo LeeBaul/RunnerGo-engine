@@ -74,7 +74,9 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	if err = client.Do(req, resp); err != nil {
 		log.Logger.Error("请求错误", err)
 	}
+	log.Logger.Debug("startTime             ", startTime)
 	requestTime = tools.TimeDifference(startTime)
+	log.Logger.Debug("requestTime             ", requestTime)
 	sendBytes, _ = decimal.NewFromFloat(float64(req.Header.ContentLength()) / 1024).Round(2).Float64()
 	timestamp = time.Now().UnixMilli()
 	return

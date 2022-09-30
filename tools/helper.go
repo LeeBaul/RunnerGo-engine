@@ -16,6 +16,7 @@ import (
 
 func TimeDifference(startTime int64) (difference uint64) {
 	difference = uint64(time.Now().UnixNano() - startTime)
+	log.Logger.Debug("time.Now().UnixNano()             ", time.Now().UnixNano())
 	return
 }
 
