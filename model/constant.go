@@ -81,7 +81,7 @@ const (
 const (
 	NoneMode      = "none"
 	FormMode      = "form-data"
-	UrlencodeMode = "x-www-form-urlencoded"
+	UrlencodeMode = "urlencoded"
 	JsonMode      = "json"
 	XmlMode       = "xml"
 	JSMode        = "javascript"
