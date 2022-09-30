@@ -77,8 +77,13 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
 			debugMsg["response_body"] = string(resp.Body())
+			if string(req.Body()) != "" {
+				debugMsg["request_body"] = string(req.Body())
+			} else {
+				debugMsg["request_body"] = str
+			}
 			if string(resp.Body()) == "" && errMsg != "" {
-				debugMsg["request_body"] = errMsg
+				debugMsg["response_body"] = errMsg
 			}
 
 			debugMsg["response_header"] = resp.Header.String()
@@ -125,7 +130,9 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 					debugMsg["request_body"] = str
 				}
 				debugMsg["response_header"] = resp.Header.String()
-				debugMsg["response_body"] = string(resp.Body())
+				if string(resp.Body()) == "" && errMsg != "" {
+					debugMsg["response_body"] = errMsg
+				}
 				debugMsg["response_bytes"] = receivedBytes
 				debugMsg["status"] = model.Success
 				debugMsg["next_list"] = event.NextList
@@ -162,10 +169,8 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 					debugMsg["request_body"] = str
 				}
 				debugMsg["response_header"] = resp.Header.String()
-				if string(resp.Body()) == "" {
+				if string(resp.Body()) == "" && errMsg != "" {
 					debugMsg["response_body"] = errMsg
-				} else {
-					debugMsg["response_body"] = string(resp.Body())
 				}
 
 				debugMsg["response_bytes"] = receivedBytes
