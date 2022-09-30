@@ -20,6 +20,12 @@ func TimeDifference(startTime int64) (difference uint64) {
 	return
 }
 
+func TimeDifference1(startTime int64) (difference uint64) {
+	difference = uint64(time.Now().UnixMilli() - startTime)
+	log.Logger.Debug("time.Now().UnixMilli()             ", time.Now().UnixMilli())
+	return
+}
+
 // InArrayStr 判断字符串是否在数组内
 func InArrayStr(str string, arr []string) (inArray bool) {
 	for _, s := range arr {
