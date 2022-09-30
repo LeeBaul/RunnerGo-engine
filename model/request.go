@@ -56,7 +56,7 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 	case NoneMode:
 	case FormMode:
 		req.Header.SetContentType("multipart/form-data")
-		body := make(map[string]interface{})
+		var body []Form
 		// 新建一个缓冲，用于存放文件内容
 		bodyBuffer := &bytes.Buffer{}
 
@@ -68,6 +68,9 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		for _, value := range b.Parameter {
 
 			if value.IsChecked != 1 {
+				continue
+			}
+			if value.Key == "" {
 				continue
 			}
 			if value.Type == FileType {
@@ -93,7 +96,18 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 					req.Header.SetContentType(contentType)
 				}
 			} else {
-				body[value.Key] = value.Value
+				var form = Form{}
+				form.Key = value.Key
+				form.Value = value.Value
+				formBody, _ := json.Marshal(form)
+				if formBody != nil {
+					req.SetBodyRaw(formBody)
+				}
+			}
+
+			data, _ := json.Marshal(body)
+			if data != nil {
+				return string(data)
 			}
 		}
 		// 关闭bodyWriter
@@ -104,13 +118,21 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		return string(data) + "\r" + string(bodyBuffer.Bytes())
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
-		body := make(map[string]interface{})
+		var body []Form
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {
 				continue
 			}
-			body[value.Key] = value.Value
-
+			if value.Key == "" {
+				continue
+			}
+			var form = Form{}
+			form.Key = value.Key
+			form.Value = value.Value
+			formBody, _ := json.Marshal(form)
+			if formBody != nil {
+				req.SetBodyRaw(formBody)
+			}
 		}
 		data, _ := json.Marshal(body)
 		if data != nil {
@@ -189,6 +211,11 @@ type VarForm struct {
 type KV struct {
 	Key   string `json:"key" bson:"key"`
 	Value string `json:"value" bson:"value"`
+}
+
+type Form struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
 }
 
 type Bearer struct {
