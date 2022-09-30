@@ -74,7 +74,6 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	}
 
 	requestTime = uint64(time.Now().UnixNano() - startTime)
-	log.Logger.Debug("requestTime              ", requestTime)
 	sendBytes, _ = decimal.NewFromFloat(float64(req.Header.ContentLength()) / 1024).Round(2).Float64()
 	timestamp = time.Now().UnixMilli()
 	return
