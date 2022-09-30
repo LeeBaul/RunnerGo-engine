@@ -15,13 +15,15 @@ import (
 // TimeDifference 时间差，纳秒
 
 func TimeDifference(startTime int64) (difference uint64) {
-	difference = uint64(time.Now().UnixNano() - startTime)
+	endTime := time.Now().UnixNano()
+	difference = uint64(endTime - startTime)
 	log.Logger.Debug("time.Now().UnixNano()             ", time.Now().UnixNano())
 	return
 }
 
 func TimeDifference1(startTime int64) (difference uint64) {
-	difference = uint64(time.Now().UnixMilli() - startTime)
+	endTime := time.Now().UnixMilli()
+	difference = uint64(endTime - startTime)
 	log.Logger.Debug("time.Now().UnixMilli()             ", time.Now().UnixMilli())
 	return
 }
