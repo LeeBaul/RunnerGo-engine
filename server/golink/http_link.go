@@ -161,7 +161,12 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 					debugMsg["request_body"] = str
 				}
 				debugMsg["response_header"] = resp.Header.String()
-				debugMsg["response_body"] = string(resp.Body())
+				if string(resp.Body()) == "" {
+					debugMsg["response_body"] = errMsg
+				} else {
+					debugMsg["response_body"] = string(resp.Body())
+				}
+
 				debugMsg["response_bytes"] = receivedBytes
 				debugMsg["status"] = model.Failed
 				debugMsg["next_list"] = event.NextList
