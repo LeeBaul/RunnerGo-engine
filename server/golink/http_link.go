@@ -76,17 +76,18 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			debugMsg["request_time"] = requestTime / 1000000
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
-			if string(req.Body()) != "" {
-				debugMsg["request_body"] = string(req.Body())
-			} else {
-				debugMsg["request_body"] = str
+			debugMsg["response_body"] = string(resp.Body())
+			if string(resp.Body()) == "" && errMsg != "" {
+				debugMsg["request_body"] = errMsg
 			}
 
 			debugMsg["response_header"] = resp.Header.String()
-			debugMsg["response_body"] = string(resp.Body())
+
 			debugMsg["response_bytes"] = receivedBytes
 			if err != nil {
 				debugMsg["response_body"] = err.Error()
+			} else {
+
 			}
 			switch isSucceed {
 			case false:
