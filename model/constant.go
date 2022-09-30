@@ -79,12 +79,6 @@ const (
 )
 
 const (
-	KVType     = "kv"
-	BearerType = "bearer"
-	BasicType  = "basic"
-)
-
-const (
 	NoneMode      = "none"
 	FormMode      = "form-data"
 	UrlencodeMode = "x-www-form-urlencoded"
@@ -118,10 +112,10 @@ const (
 	PlanType  = "plan"
 )
 
-// 响应头中的类型
+// 认证类型
 const (
-	ContentEncoding = "content-encoding"
-	ContentLength   = "content-length"
-	ContentLanguage = "content-language"
-	ContentType     = "content-type"
+	NoAuth = "noauth"
+	Kv     = "kv"
+	BEarer = "bearer"
+	BAsic  = "basic"
 )

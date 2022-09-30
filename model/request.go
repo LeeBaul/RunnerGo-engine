@@ -396,7 +396,7 @@ func (r *Api) ReplaceQueryVarForm() {
 func (r *Api) ReplaceAuthVarForm() {
 	if r.Request.Auth != nil {
 		switch r.Request.Auth.Type {
-		case KVType:
+		case Kv:
 
 			if r.Request.Auth.KV != nil && r.Request.Auth.KV.Key != "" {
 				values := tools.FindAllDestStr(r.Request.Auth.KV.Value, "{{(.*?)}}")
@@ -409,7 +409,7 @@ func (r *Api) ReplaceAuthVarForm() {
 				}
 			}
 
-		case BearerType:
+		case BEarer:
 			if r.Request.Auth.Bearer != nil && r.Request.Auth.Bearer.Key != "" {
 				values := tools.FindAllDestStr(r.Request.Auth.Bearer.Key, "{{(.*?)}}")
 				if values != nil {
@@ -420,7 +420,7 @@ func (r *Api) ReplaceAuthVarForm() {
 					}
 				}
 			}
-		case BasicType:
+		case BAsic:
 			if r.Request.Auth.Basic != nil && r.Request.Auth.Basic.UserName != "" {
 				names := tools.FindAllDestStr(r.Request.Auth.Basic.UserName, "{{(.*?)}}")
 				if names != nil {
@@ -617,7 +617,7 @@ func (r *Api) findHeaderParameters() {
 func (r *Api) findAuthParameters() {
 	if r.Request.Auth != nil {
 		switch r.Request.Auth.Type {
-		case KVType:
+		case Kv:
 			if r.Request.Auth.KV.Key == "" {
 				return
 			}
@@ -636,7 +636,7 @@ func (r *Api) findAuthParameters() {
 					r.Parameters.Store(value[1], value[0])
 				}
 			}
-		case BearerType:
+		case BEarer:
 			if r.Request.Auth.Bearer.Key == "" {
 				return
 			}
@@ -646,7 +646,7 @@ func (r *Api) findAuthParameters() {
 					r.Parameters.Store(key[1], key[0])
 				}
 			}
-		case BasicType:
+		case BAsic:
 			if r.Request.Auth.Basic.UserName == "" {
 				return
 			}

@@ -8,6 +8,7 @@ import (
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
+	"kp-runner/tools"
 	"strings"
 	"time"
 )
@@ -21,7 +22,7 @@ import (
 
 func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes float64, err error, timestamp int64, str string) {
 
-	client := fastClient(timeout, auth)
+	client := fastClient(timeout)
 	req = fasthttp.AcquireRequest()
 
 	req.Header.SetMethod(method)
@@ -40,6 +41,18 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 
 	}
 
+	if auth != nil {
+		if auth.Type != model.NoAuth {
+			switch auth.Type {
+			case model.Kv:
+				req.Header.Add(auth.KV.Key, auth.KV.Value)
+			case model.BEarer:
+				req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
+			case model.BAsic:
+				req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
+			}
+		}
+	}
 	if method == "GET" {
 		if query != nil && query.Parameter != nil {
 			var temp []*model.VarForm
@@ -80,7 +93,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 }
 
 // 获取fasthttp客户端
-func fastClient(timeOut int64, auth *model.Auth) *fasthttp.Client {
+func fastClient(timeOut int64) *fasthttp.Client {
 	fc := &fasthttp.Client{
 		Name:                     config.Conf.Http.Name,
 		NoDefaultUserAgentHeader: config.Conf.Http.NoDefaultUserAgentHeader,
