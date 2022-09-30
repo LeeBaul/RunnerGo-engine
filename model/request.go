@@ -110,10 +110,13 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 				continue
 			}
 			body[value.Key] = value.Value
+
 		}
 		data, _ := json.Marshal(body)
-		req.SetBodyString(string(data))
-		return string(data)
+		if data != nil {
+			req.SetBodyRaw(data)
+			return string(data)
+		}
 
 	case XmlMode:
 		req.Header.SetContentType("application/xml")
