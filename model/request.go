@@ -118,7 +118,7 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		return string(data) + "\r" + string(bodyBuffer.Bytes())
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
-		var body []Form
+		args := req.PostArgs()
 		for _, value := range b.Parameter {
 			if value.IsChecked != 1 {
 				continue
@@ -126,19 +126,11 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 			if value.Key == "" {
 				continue
 			}
-			var form = Form{}
-			form.Key = value.Key
-			form.Value = value.Value
-			formBody, _ := json.Marshal(form)
-			if formBody != nil {
-				req.SetBodyRaw(formBody)
-			}
+			args.Add(value.Key, value.Value.(string))
+
 		}
-		data, _ := json.Marshal(body)
-		if data != nil {
-			req.SetBodyRaw(data)
-			return string(data)
-		}
+		req.SetBodyString(args.String())
+		return args.String()
 
 	case XmlMode:
 		req.Header.SetContentType("application/xml")

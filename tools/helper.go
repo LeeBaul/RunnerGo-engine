@@ -4,7 +4,6 @@ package tools
 
 import (
 	"encoding/json"
-	"fmt"
 	"kp-runner/log"
 	"os"
 	"regexp"
@@ -71,7 +70,6 @@ func VariablesMatch(str string) (value string) {
 func FindDestStr(str string, rex string) string {
 	compileRegex := regexp.MustCompile(rex)
 	matchArr := compileRegex.FindStringSubmatch(str)
-	fmt.Println(matchArr)
 	if len(matchArr) > 0 {
 		return matchArr[len(matchArr)-1]
 	}
