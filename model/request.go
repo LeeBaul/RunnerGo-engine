@@ -2,7 +2,6 @@ package model
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/valyala/fasthttp"
@@ -56,15 +55,15 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 	case NoneMode:
 	case FormMode:
 		req.Header.SetContentType("multipart/form-data")
-		var body []Form
 		// 新建一个缓冲，用于存放文件内容
 		bodyBuffer := &bytes.Buffer{}
-
 		bodyWriter := multipart.NewWriter(bodyBuffer)
 
 		if b.Parameter == nil || len(b.Parameter) < 1 {
 			return ""
 		}
+		args := req.PostArgs()
+
 		for _, value := range b.Parameter {
 
 			if value.IsChecked != 1 {
@@ -96,26 +95,16 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 					req.Header.SetContentType(contentType)
 				}
 			} else {
-				var form = Form{}
-				form.Key = value.Key
-				form.Value = value.Value
-				formBody, _ := json.Marshal(form)
-				if formBody != nil {
-					req.SetBodyRaw(formBody)
-				}
+				args.Add(value.Key, value.Value.(string))
 			}
 
-			data, _ := json.Marshal(body)
-			if data != nil {
-				return string(data)
-			}
 		}
+		req.SetBodyString(args.String())
 		// 关闭bodyWriter
 		bodyWriter.Close()
 		req.SetBody(bodyBuffer.Bytes())
-		data, _ := json.Marshal(body)
-		req.SetBodyString(string(data))
-		return string(data) + "\r" + string(bodyBuffer.Bytes())
+
+		return args.String()
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		args := req.PostArgs()
@@ -131,7 +120,6 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		}
 		req.SetBodyString(args.String())
 		return args.String()
-
 	case XmlMode:
 		req.Header.SetContentType("application/xml")
 		req.SetBodyString(b.Raw)
