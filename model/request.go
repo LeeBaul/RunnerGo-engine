@@ -56,8 +56,6 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 	case FormMode:
 		req.Header.SetContentType("multipart/form-data")
 		// 新建一个缓冲，用于存放文件内容
-		bodyBuffer := &bytes.Buffer{}
-		bodyWriter := multipart.NewWriter(bodyBuffer)
 
 		if b.Parameter == nil || len(b.Parameter) < 1 {
 			return ""
@@ -76,6 +74,8 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 				if value.FileBase64 == nil || len(value.FileBase64) < 1 {
 					continue
 				}
+				bodyBuffer := &bytes.Buffer{}
+				bodyWriter := multipart.NewWriter(bodyBuffer)
 				for _, base64Str := range value.FileBase64 {
 					by, fileName := tools.Base64DeEncode(base64Str, FileType)
 					if by == nil {
@@ -91,19 +91,18 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 					if err != nil {
 						continue
 					}
-					contentType := bodyWriter.FormDataContentType()
-					req.Header.SetContentType(contentType)
 				}
+				contentType := bodyWriter.FormDataContentType()
+				req.Header.SetContentType(contentType)
+				bodyWriter.Close()
+				req.AppendBody(bodyBuffer.Bytes())
 			} else {
 				args.Add(value.Key, value.Value.(string))
 			}
 
 		}
-		req.SetBodyString(args.String())
+		req.AppendBodyString(args.String())
 		// 关闭bodyWriter
-		bodyWriter.Close()
-		req.SetBody(bodyBuffer.Bytes())
-
 		return args.String()
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
