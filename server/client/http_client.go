@@ -3,7 +3,6 @@ package client
 
 import (
 	"crypto/tls"
-	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
@@ -72,7 +71,6 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	str = body.SendBody(req)
 	resp = fasthttp.AcquireResponse()
 
-	fmt.Println(req.String())
 	startTime := time.Now()
 	if err = client.Do(req, resp); err != nil {
 		log.Logger.Error("请求错误", err)
