@@ -73,12 +73,12 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	resp = fasthttp.AcquireResponse()
 
 	fmt.Println(req.String())
-	startTime := time.Now().UnixNano()
+	startTime := time.Now()
 	if err = client.Do(req, resp); err != nil {
 		log.Logger.Error("请求错误", err)
 	}
 
-	requestTime = uint64(time.Now().UnixNano() - startTime)
+	requestTime = uint64(time.Since(startTime))
 	sendBytes, _ = decimal.NewFromFloat(float64(req.Header.ContentLength()) / 1024).Round(2).Float64()
 	timestamp = time.Now().UnixMilli()
 	return

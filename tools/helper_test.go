@@ -2,8 +2,8 @@ package tools
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
+	"time"
 )
 
 func TestFindDestStr(t *testing.T) {
@@ -19,7 +19,15 @@ func TestFindDestStr(t *testing.T) {
 }
 
 func TestFindAllDestStr(t *testing.T) {
-	compileRegex := regexp.MustCompile("{{(.*?)}}")
-	result := compileRegex.FindAllStringSubmatch("{{token}}", -1)
-	fmt.Println(result)
+	//compileRegex := regexp.MustCompile("{{(.*?)}}")
+	//result := compileRegex.FindAllStringSubmatch("{{token}}", -1)
+	//fmt.Println(result)
+	start := time.Now()
+	time.Sleep(3 * time.Millisecond)
+	start2 := time.Now()
+	end := time.Since(start)
+	fmt.Println(uint64(end))
+	fmt.Println(end)
+	fmt.Println(start)
+	fmt.Println(start2)
 }
