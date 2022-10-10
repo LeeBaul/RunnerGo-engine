@@ -95,13 +95,13 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 				contentType := bodyWriter.FormDataContentType()
 				req.Header.SetContentType(contentType)
 				bodyWriter.Close()
-				req.AppendBody(bodyBuffer.Bytes())
+				req.SetBody(bodyBuffer.Bytes())
 			} else {
 				args.Add(value.Key, value.Value.(string))
 			}
 
 		}
-		req.AppendBodyString(args.String())
+		req.SetBodyString(args.String())
 		// 关闭bodyWriter
 		return args.String()
 	case UrlencodeMode:
