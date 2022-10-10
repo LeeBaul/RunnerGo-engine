@@ -76,8 +76,20 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 				}
 				bodyBuffer := &bytes.Buffer{}
 				bodyWriter := multipart.NewWriter(bodyBuffer)
+				contentType := bodyWriter.FormDataContentType()
+				fmt.Println("contentType..................", contentType)
+				req.Header.SetContentType(contentType)
+				defer bodyWriter.Close()
+				//fileWriter, err := bodyWriter.CreateFormFile("value", "abc."+"yaml")
+				//file1, err := os.Open("./dev.yaml")
+				//if err != nil {
+				//	log.Logger.Error("文件打开失败：", err)
+				//}
+				//defer file1.Close()
+				//_, err = io.Copy(fileWriter, file1)
 				for _, base64Str := range value.FileBase64 {
 					by, fileName := tools.Base64DeEncode(base64Str, FileType)
+
 					if by == nil {
 						continue
 					}
@@ -88,20 +100,18 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 						continue
 					}
 					_, err = io.Copy(fileWriter, file)
+					fmt.Println("....................:                   ", fileWriter)
 					if err != nil {
 						continue
 					}
 				}
-				contentType := bodyWriter.FormDataContentType()
-				req.Header.SetContentType(contentType)
-				bodyWriter.Close()
-				req.SetBody(bodyBuffer.Bytes())
+				req.AppendBody(bodyBuffer.Bytes())
 			} else {
 				args.Add(value.Key, value.Value.(string))
 			}
 
 		}
-		req.SetBodyString(args.String())
+		req.AppendBodyString(args.String())
 		// 关闭bodyWriter
 		return args.String()
 	case UrlencodeMode:
@@ -210,6 +220,21 @@ type Auth struct {
 	KV     *KV     `json:"kv" bson:"kv"`
 	Bearer *Bearer `json:"bearer" bson:"bearer"`
 	Basic  *Basic  `json:"basic" bson:"basic"`
+}
+
+func (auth *Auth) Auth(req *fasthttp.Request) {
+	if auth.Type != NoAuth {
+		switch auth.Type {
+		case Kv:
+			req.Header.Add(auth.KV.Key, auth.KV.Value)
+		case BEarer:
+			req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
+		case BAsic:
+			req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
+		case Digest:
+
+		}
+	}
 }
 
 // Conversion 将string转换为其他类型

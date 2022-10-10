@@ -8,6 +8,7 @@ import (
 	log2 "kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/client"
+	"time"
 )
 
 // HttpSend 发送http请求
@@ -73,7 +74,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			debugMsg["api_id"] = api.TargetId
 			debugMsg["api_name"] = api.Name
 			debugMsg["type"] = model.RequestType
-			debugMsg["request_time"] = requestTime / 1000000
+			debugMsg["request_time"] = requestTime / uint64(time.Millisecond)
 			debugMsg["request_code"] = resp.StatusCode()
 			debugMsg["request_header"] = req.Header.String()
 			debugMsg["response_body"] = string(resp.Body())
@@ -121,7 +122,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
 				debugMsg["type"] = model.RequestType
-				debugMsg["request_time"] = requestTime / 1000000
+				debugMsg["request_time"] = requestTime / uint64(time.Millisecond)
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
 				if string(req.Body()) != "" {
@@ -160,7 +161,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 				debugMsg["api_id"] = api.TargetId
 				debugMsg["api_name"] = api.Name
 				debugMsg["type"] = model.RequestType
-				debugMsg["request_time"] = requestTime / 1000000
+				debugMsg["request_time"] = requestTime / uint64(time.Millisecond)
 				debugMsg["request_code"] = resp.StatusCode()
 				debugMsg["request_header"] = req.Header.String()
 				if string(req.Body()) != "" {

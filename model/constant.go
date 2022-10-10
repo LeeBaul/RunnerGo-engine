@@ -118,4 +118,5 @@ const (
 	Kv     = "kv"
 	BEarer = "bearer"
 	BAsic  = "basic"
+	Digest = "digest"
 )

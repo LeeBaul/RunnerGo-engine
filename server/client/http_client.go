@@ -3,12 +3,12 @@ package client
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
-	"kp-runner/tools"
 	"strings"
 	"time"
 )
@@ -42,16 +42,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	}
 
 	if auth != nil {
-		if auth.Type != model.NoAuth {
-			switch auth.Type {
-			case model.Kv:
-				req.Header.Add(auth.KV.Key, auth.KV.Value)
-			case model.BEarer:
-				req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
-			case model.BAsic:
-				req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
-			}
-		}
+		auth.Auth(req)
 	}
 	if method == "GET" {
 		if query != nil && query.Parameter != nil {
@@ -81,6 +72,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	str = body.SendBody(req)
 	resp = fasthttp.AcquireResponse()
 
+	fmt.Println(req.String())
 	startTime := time.Now().UnixNano()
 	if err = client.Do(req, resp); err != nil {
 		log.Logger.Error("请求错误", err)
