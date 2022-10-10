@@ -9,6 +9,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/tools"
 	"mime/multipart"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -60,8 +61,8 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		if b.Parameter == nil || len(b.Parameter) < 1 {
 			return ""
 		}
-		args := req.PostArgs()
 
+		formValues := url.Values{}
 		for _, value := range b.Parameter {
 
 			if value.IsChecked != 1 {
@@ -107,13 +108,51 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 				}
 				req.AppendBody(bodyBuffer.Bytes())
 			} else {
-				args.Add(value.Key, value.Value.(string))
+				formValues.Set(value.Key, value.Value.(string))
 			}
 
+			//if value.Type == FileType {
+			//	if value.FileBase64 == nil || len(value.FileBase64) < 1 {
+			//		continue
+			//	}
+			//	bodyBuffer := &bytes.Buffer{}
+			//	bodyWriter := multipart.NewWriter(bodyBuffer)
+			//	contentType := bodyWriter.FormDataContentType()
+			//	fmt.Println("contentType..................", contentType)
+			//	req.Header.SetContentType(contentType)
+			//	defer bodyWriter.Close()
+			//	//fileWriter, err := bodyWriter.CreateFormFile("value", "abc."+"yaml")
+			//	//file1, err := os.Open("./dev.yaml")
+			//	//if err != nil {
+			//	//	log.Logger.Error("文件打开失败：", err)
+			//	//}
+			//	//defer file1.Close()
+			//	//_, err = io.Copy(fileWriter, file1)
+			//	for _, base64Str := range value.FileBase64 {
+			//		by, fileName := tools.Base64DeEncode(base64Str, FileType)
+			//
+			//		if by == nil {
+			//			continue
+			//		}
+			//		fileWriter, err := bodyWriter.CreateFormFile(value.Key, "abc."+fileName)
+			//		file := bytes.NewReader(by)
+			//		if err != nil {
+			//			log.Logger.Error("CreateFormFile失败： ", err)
+			//			continue
+			//		}
+			//		_, err = io.Copy(fileWriter, file)
+			//		fmt.Println("....................:                   ", fileWriter)
+			//		if err != nil {
+			//			continue
+			//		}
+			//	}
+			//	req.AppendBody(bodyBuffer.Bytes())
+			//}
+
 		}
-		req.AppendBodyString(args.String())
-		// 关闭bodyWriter
-		return args.String()
+		//formBytesReader := bytes.NewReader([]byte(formValues.Encode()))
+		req.SetBody([]byte(formValues.Encode()))
+		return ""
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		args := req.PostArgs()
