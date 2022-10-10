@@ -20,10 +20,11 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 		node.Uuid = scene.Uuid
 		wg.Add(1)
 		go func(event model.Event, wgTemp *sync.WaitGroup) {
-			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，知道上一级所有事件全部完成
+			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
 				if options != nil && len(options) > 1 {
+					// 上级事件的最大并发数
 					var preMaxCon = int64(0)
 					for _, request := range nodes {
 						for _, tempEvent := range event.PreList {
@@ -260,6 +261,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 	if event.Weight < 100 && event.Weight > 0 {
 		if options != nil && len(options) > 0 {
 			if float64(options[0]) < float64(options[1])*(float64(100-event.Weight)/100) {
+				log.Logger.Info("eventId xiaoyu:", event.Id)
 				return
 			}
 		}
