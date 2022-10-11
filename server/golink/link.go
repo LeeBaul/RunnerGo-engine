@@ -138,7 +138,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 
 				}
 			}
-			if disOptions[1] == 0 {
+			if disOptions != nil && disOptions[1] == 0 {
 				return
 			}
 			event.TeamId = scene.TeamId
@@ -245,7 +245,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				wgTemp.Done()
 			}
 
-		}(node, wg, options[0], options[1])
+		}(node, wg, options...)
 	}
 }
 
