@@ -132,7 +132,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				}
 			} else {
 				if event.Weight > 0 && event.Weight < 100 {
-					if disOptions != nil && len(disOptions) > 0 && event.Id == "ef3b18c4-8219-4fa5-b687-bb2b48a2b411" {
+					if disOptions != nil && len(disOptions) > 0 {
 						disOptions[1] = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
 					}
 
