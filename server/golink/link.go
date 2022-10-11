@@ -266,7 +266,7 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 			}
 		}
 	}
-
+	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1])
 	if requestResults != nil {
 		requestResults.PlanId = reportMsg.PlanId
 		requestResults.PlanName = reportMsg.PlanName
