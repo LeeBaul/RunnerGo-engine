@@ -5,6 +5,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/tools"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,11 +20,11 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
-		go func(event model.Event, wgTemp *sync.WaitGroup) {
+		go func(event model.Event, wgTemp *sync.WaitGroup, disOptions ...int64) {
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
-				if options != nil && len(options) > 1 {
+				if disOptions != nil && len(disOptions) > 1 {
 					// 上级事件的最大并发数
 					var preMaxCon = int64(0)
 					for _, request := range nodes {
@@ -40,10 +41,10 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					}
 
 					if preMaxCon != 0 {
-						options[1] = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
+						disOptions[1] = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
 					} else {
 						if event.Weight > 0 && event.Weight < 100 {
-							options[1] = int64(float64(options[1]) * (float64(event.Weight) / 100))
+							disOptions[1] = int64(float64(disOptions[1]) * (float64(event.Weight) / 100))
 						}
 					}
 				}
@@ -131,22 +132,24 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				}
 			} else {
 				if event.Weight > 0 && event.Weight < 100 {
-					if options != nil && len(options) > 0 {
-						options[1] = int64(float64(options[1]) * (float64(event.Weight) / 100))
+					if disOptions != nil && len(disOptions) > 0 && event.Id == "ef3b18c4-8219-4fa5-b687-bb2b48a2b411" {
+						disOptions[1] = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
 					}
 
 				}
 			}
-
+			if disOptions[1] == 0 {
+				return
+			}
 			event.TeamId = scene.TeamId
 			event.Debug = scene.Debug
 			event.ReportId = scene.ReportId
 			switch event.Type {
 			case model.RequestType:
 				event.Api.Uuid = scene.Uuid
-				if options != nil && len(options) > 0 {
+				if disOptions != nil && len(disOptions) > 0 {
 					var requestResults = &model.ResultDataMsg{}
-					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, options[0], options[1])
+					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, disOptions[0], disOptions[1])
 				} else {
 					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
@@ -242,7 +245,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				wgTemp.Done()
 			}
 
-		}(node, wg)
+		}(node, wg, options[0], options[1])
 	}
 }
 
