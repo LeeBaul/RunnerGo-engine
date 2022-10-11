@@ -258,15 +258,14 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		api.Debug = event.Debug
 	}
 	// 计算接口权重，不通过此接口的比例 = 并发数 /（100 - 权重） 比如：150并发，权重为20， 那么不通过此接口口的比例
-	if event.Weight < 100 && event.Weight > 0 {
-		if options != nil && len(options) > 0 {
-			if float64(options[0]) < float64(options[1])*(float64(100-event.Weight)/100) {
-				log.Logger.Info("eventId xiaoyu:", event.Id)
+	if event.Weight < 100 && event.Weight > 0 || event.Weight == 100 || event.Weight == 0 {
+		if options != nil && len(options) > 1 {
+			if float64(options[0]) < float64(options[1])*(float64(100-event.Weight)/100) || options[1] == 0 {
 				return
 			}
 		}
 	}
-	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1])
+	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1], "                       并发数1：        ", options[0])
 	if requestResults != nil {
 		requestResults.PlanId = reportMsg.PlanId
 		requestResults.PlanName = reportMsg.PlanName
