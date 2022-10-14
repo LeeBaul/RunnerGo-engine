@@ -32,13 +32,15 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		if debug != "" {
 			scene.Debug = debug
 		}
+		currentWg := &sync.WaitGroup{}
 		for startTime+duration > currentTime {
 			startCurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
+				wg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
-					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 
@@ -49,6 +51,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					}
 				}
 			}
+			currentWg.Wait()
 			index++
 			// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
 			distance := time.Now().UnixMilli() - startCurrentTime
@@ -62,8 +65,8 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 	} else {
 		index := 0
 		rounds := scene.ConfigTask.ModeConf.RoundNum
+		currentWg := &sync.WaitGroup{}
 		for i := int64(0); i < rounds; i++ {
-
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
 				return
@@ -77,9 +80,10 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			currentTime := time.Now().UnixMilli()
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
+				currentWg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
-					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
 				if reheatTime > 0 && index == 0 {
@@ -89,6 +93,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					}
 				}
 			}
+			currentWg.Wait()
 			index++
 
 			distance := time.Now().UnixMilli() - currentTime

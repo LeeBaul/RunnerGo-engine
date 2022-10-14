@@ -125,3 +125,12 @@ const (
 	EdgegridType = "edgegrid"
 	Oauth1Type   = "oauth1"
 )
+
+const (
+	Md5           = "MD5"
+	MD5Sess       = "MD5-sess"
+	SHA256        = "SHA-256"
+	SHA256Sess    = "SHA-256-sess"
+	SHA512256     = "SHA-512-256"
+	SHA512256Sess = "SHA-512-256-sess"
+)

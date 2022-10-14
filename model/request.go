@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Api 请求数据
@@ -307,12 +308,56 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 		case BAsic:
 			req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
 		case DigestType:
+			uri := string(req.URI().RequestURI())
+			response := ""
+			switch auth.Digest.Algorithm {
+			case Md5:
+				response = tools.Md5(auth.Digest.Password)
+			case MD5Sess:
+				response = tools.Md5(auth.Digest.Password)
+			case SHA256:
+				response = tools.Sha256(auth.Digest.Password)
+			case SHA256Sess:
+				response = tools.Sha256(auth.Digest.Password)
+			case SHA512256:
+				response = tools.Sha256(auth.Digest.Password)
+			case SHA512256Sess:
+				response = tools.Sha256(auth.Digest.Password)
+			}
+			digest := fmt.Sprintf("username=%s, realm=%s, nonce=%s, uri=%s, algorithm=%s, qop=%s, nc=%s, cnonce=%s, response=%s, opaque=%s",
+				auth.Digest.Username, auth.Digest.Realm, auth.Digest.Nonce, uri, auth.Digest.Algorithm, auth.Digest.Qop,
+				auth.Digest.Nc, auth.Digest.Cnonce, response, auth.Digest.Opaque)
+			req.Header.Add("Authorization", digest)
 		case HawkType:
+			mac := ""
+			hawk := fmt.Sprintf("Hawk id=%s, ts=%s, nonce=%s, ext=%s, mac=%s, app=%s, dlg=%s",
+				auth.Hawk.AuthID, auth.Hawk.Timestamp, auth.Hawk.Nonce, auth.Hawk.ExtraData, mac, auth.Hawk.App, auth.Hawk.Delegation)
+			req.Header.Add("Authorization", hawk)
 		case Awsv4Type:
+			signature := ""
+			date := strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
+			awsv := fmt.Sprintf("AWS4-HMAC-SHA256 Credential=%s/2022%s/%s/%s/aws4_request, SignedHeaders=content-length;content-type;host;x-amz-date;x-amz-security-token, Signature=%s",
+				auth.Awsv4.AccessKey, date,
+				auth.Awsv4.Region, auth.Awsv4.Service, signature)
+			currentTime := strconv.Itoa(time.Now().Hour()) + strconv.Itoa(time.Now().Minute()) + strconv.Itoa(time.Now().Second())
+			req.Header.Add("X-Amz-Security-Token", auth.Awsv4.SessionToken)
+			req.Header.Add("X-Amz-Date", date+"T"+currentTime+"Z")
+			req.Header.Add("Authorization", awsv)
 		case NtlmType:
+			authorization := ""
+			req.Header.Add("Authorization", "NTLM "+authorization)
 		case EdgegridType:
+			ed := ""
+			eg := fmt.Sprintf("EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;signature=%s",
+				auth.Edgegrid.ClientToken, auth.Edgegrid.AccessToken, auth.Edgegrid.Timestamp, auth.Edgegrid.Nonce, ed)
+			req.Header.Add("Authorization", eg)
 		case Oauth1Type:
-
+			signature := ""
+			token := ""
+			version := ""
+			oauth := fmt.Sprintf("OAuth oauth_consumer_key=%s, oauth_nonce=%s, oauth_signature=%s, oauth_signature_method=%s, oauth_timestamp=%s, oauth_token=%s, oauth_version=%s",
+				auth.Oauth1.ConsumerKey, auth.Oauth1.Nonce, signature, auth.Oauth1.SignatureMethod, auth.Oauth1.Timestamp, token, version)
+			req.Header.Add("Authorization", oauth)
 		}
 	}
 }

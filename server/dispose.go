@@ -214,6 +214,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 func DebugScene(scene *model.Scene) {
 	gid := tools.GetGid()
 	wg := &sync.WaitGroup{}
+	currentWg := &sync.WaitGroup{}
 	mongoClient, err := model.NewMongoClient(
 		config.Conf.Mongo.User,
 		config.Conf.Mongo.Password,
@@ -265,7 +266,7 @@ func DebugScene(scene *model.Scene) {
 	scene.Debug = model.All
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
-	golink.DisposeScene(wg, gid, model.SceneType, scene, nil, nil, mongoCollection)
+	golink.DisposeScene(wg, currentWg, gid, model.SceneType, scene, nil, nil, mongoCollection)
 
 	wg.Wait()
 
@@ -304,7 +305,7 @@ func DebugApi(debugApi model.Api) {
 	configuration.Mu = sync.Mutex{}
 	wg.Add(1)
 
-	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
+	go golink.DisposeRequest(wg, nil, nil, nil, nil, configuration, event, mongoCollection)
 	wg.Wait()
 
 }

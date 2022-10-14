@@ -40,6 +40,13 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 
 	}
 
+	urls := strings.Split(url, "//")
+	if !strings.EqualFold(urls[0], model.HTTP) && !strings.EqualFold(urls[0], model.HTTPS) {
+		url = model.HTTP + "//" + url
+
+	}
+	req.SetRequestURI(url)
+
 	if auth != nil {
 		auth.Auth(req)
 	}
@@ -62,12 +69,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 			}
 		}
 	}
-	urls := strings.Split(url, "//")
-	if !strings.EqualFold(urls[0], model.HTTP) && !strings.EqualFold(urls[0], model.HTTPS) {
-		url = model.HTTP + "//" + url
 
-	}
-	req.SetRequestURI(url)
 	str = body.SendBody(req)
 	resp = fasthttp.AcquireResponse()
 

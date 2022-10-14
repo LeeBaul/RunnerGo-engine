@@ -30,6 +30,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 
 	concurrent := startConcurrent
 	index := 0
+	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > time.Now().Unix() {
 
@@ -46,9 +47,10 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
+			currentWg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
 				gid := tools.GetGid()
-				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent, wg)
 
@@ -60,6 +62,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 				}
 			}
 		}
+		currentWg.Wait()
 		index++
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().Unix() {
 			log.Logger.Info("计划: ", planId, "..................结束")

@@ -48,6 +48,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	if es == nil {
 		return
 	}
+	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > currentTime {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -64,9 +65,10 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
+			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
@@ -78,6 +80,8 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 			}
 		}
+		index++
+		currentWg.Wait()
 		// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
 		distance := time.Now().UnixMilli() - startCurrentTime
 		if distance < 1000 {

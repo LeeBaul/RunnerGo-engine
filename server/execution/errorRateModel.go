@@ -47,6 +47,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	if es == nil {
 		return
 	}
+	currentWg := &sync.WaitGroup{}
 	for startTime+stepRunTime > time.Now().Unix() {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -76,9 +77,10 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
+			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
@@ -89,6 +91,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 				}
 			}
 		}
+		currentWg.Wait()
 		index++
 
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().Unix() {

@@ -13,14 +13,14 @@ import (
 )
 
 // DisposeScene 对场景进行处理
-func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
+func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 
 	nodes := scene.Nodes
 	sceneId := strconv.FormatInt(scene.SceneId, 10)
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
-		go func(event model.Event, wgTemp *sync.WaitGroup, disOptions ...int64) {
+		go func(event model.Event, wgTemp, concurrentWg *sync.WaitGroup, disOptions ...int64) {
 			gid1 := tools.GetGid()
 			log.Logger.Debug("gid: ", gid1, "           disOptions", disOptions)
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
@@ -75,6 +75,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 								model.Insert(requestCollection, debugMsg)
 							}
 							wgTemp.Done()
+							currentWg.Done()
 							return
 						}
 					}
@@ -105,6 +106,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 									model.Insert(requestCollection, debugMsg)
 								}
 								wgTemp.Done()
+								currentWg.Done()
 								return
 							case model.NotHit:
 								expiration := 60 * time.Second
@@ -123,6 +125,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 									model.Insert(requestCollection, debugMsg)
 								}
 								wgTemp.Done()
+								currentWg.Done()
 								return
 							}
 						}
@@ -160,9 +163,9 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 				event.Api.Uuid = scene.Uuid
 				if disOptions != nil && len(disOptions) > 0 {
 					var requestResults = &model.ResultDataMsg{}
-					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, disOptions[0], disOptions[1])
+					DisposeRequest(wgTemp, currentWg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, disOptions[0], disOptions[1])
 				} else {
-					DisposeRequest(wgTemp, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
+					DisposeRequest(wgTemp, nil, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
 
 				expiration := 60 * time.Second
@@ -233,6 +236,7 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					}
 				}
 				wgTemp.Done()
+				currentWg.Done()
 			case model.WaitControllerType:
 				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
 				if scene.Debug != "" {
@@ -254,17 +258,21 @@ func DisposeScene(wg *sync.WaitGroup, gid string, runType string, scene *model.S
 					log.Logger.Error("事件状态写入数据库失败", err)
 				}
 				wgTemp.Done()
+				currentWg.Done()
 			}
 
-		}(node, wg, options...)
+		}(node, wg, currentWg, options...)
 	}
 }
 
 // DisposeRequest 开始对请求进行处理
-func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
+func DisposeRequest(wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
 	event model.Event, mongoCollection *mongo.Collection, options ...int64) {
 	if wg != nil {
 		defer wg.Done()
+	}
+	if currentWg != nil {
+		defer currentWg.Done()
 	}
 
 	api := event.Api
