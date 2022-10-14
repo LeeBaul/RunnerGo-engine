@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"kp-runner/log"
@@ -37,4 +38,24 @@ func Insert(collection *mongo.Collection, msg interface{}) {
 	if err != nil {
 		log.Logger.Error("向mongo写入数据错误:", err)
 	}
+}
+
+func QueryDebugStatus(collection *mongo.Collection, reportId string) string {
+
+	filter := bson.D{{"report_id", reportId}}
+	singleResult := collection.FindOne(context.TODO(), filter)
+	cur, err := singleResult.DecodeBytes()
+	if err != nil {
+		return StopDebug
+	}
+	list, err := cur.Elements()
+	if err != nil {
+		return StopDebug
+	}
+	for _, value := range list {
+		if value.Key() == "debug" {
+			return string(value.Value().Value)
+		}
+	}
+	return StopDebug
 }

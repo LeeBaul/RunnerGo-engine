@@ -53,7 +53,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		if status == "stop" {
 			return
 		}
-		_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
 		if debug != "" {
 			scene.Debug = debug
 		} else {

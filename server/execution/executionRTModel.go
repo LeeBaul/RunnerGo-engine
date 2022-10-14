@@ -54,11 +54,9 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if status == "stop" {
 			return
 		}
-		_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
 		if debug != "" {
 			scene.Debug = debug
-		} else {
-			scene.Debug = ""
 		}
 		startConcurrentTime := time.Now().UnixMilli()
 
