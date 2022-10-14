@@ -3,10 +3,12 @@
 package tools
 
 import (
+	"bytes"
 	"encoding/json"
 	"kp-runner/log"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -108,4 +110,13 @@ func PathExists(path string) bool {
 	}
 	return true
 
+}
+
+func GetGid() (gid string) {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	gid = string(b)
+	return
 }

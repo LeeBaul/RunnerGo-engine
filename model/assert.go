@@ -58,7 +58,7 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				return AssertError, false, strconv.Itoa(response.StatusCode()) + "不等于" + strconv.Itoa(value) + "断言：失败"
 			}
 		case UNEqual:
-			if value == response.StatusCode() {
+			if value != response.StatusCode() {
 				return NoError, true, strconv.Itoa(response.StatusCode()) + UNEqual + strconv.Itoa(value) + "断言:成功"
 			} else {
 				return AssertError, false, strconv.Itoa(response.StatusCode()) + Equal + strconv.Itoa(value) + "断言:失败"
@@ -84,7 +84,6 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 	case ResponseData:
 		switch assertionText.Compare {
 		case Equal:
-
 			rex := fmt.Sprintf("%s:(.*?)", assertionText.Var)
 			str := tools.FindDestStr(response.String(), rex)
 			if assertionText.Val == str {

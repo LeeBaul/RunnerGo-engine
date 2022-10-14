@@ -1,12 +1,11 @@
 package execution
 
 import (
-	"bytes"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
-	"runtime"
+	"kp-runner/tools"
 	"sync"
 	"time"
 )
@@ -39,7 +38,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				go func(i, concurrent int64) {
-					gid := GetGid()
+					gid := tools.GetGid()
 					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
@@ -80,7 +79,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				go func(i, concurrent int64) {
-					gid := GetGid()
+					gid := tools.GetGid()
 					golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 				}(i, concurrent)
@@ -103,13 +102,4 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 	}
 
-}
-
-func GetGid() (gid string) {
-	b := make([]byte, 64)
-	b = b[:runtime.Stack(b, false)]
-	b = bytes.TrimPrefix(b, []byte("goroutine "))
-	b = b[:bytes.IndexByte(b, ' ')]
-	gid = string(b)
-	return
 }

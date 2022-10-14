@@ -11,6 +11,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/execution"
 	"kp-runner/server/golink"
+	"kp-runner/tools"
 	"strconv"
 	"sync"
 	"time"
@@ -211,7 +212,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 
 // DebugScene 场景调试
 func DebugScene(scene *model.Scene) {
-	gid := execution.GetGid()
+	gid := tools.GetGid()
 	wg := &sync.WaitGroup{}
 	mongoClient, err := model.NewMongoClient(
 		config.Conf.Mongo.User,

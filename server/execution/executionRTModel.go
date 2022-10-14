@@ -6,6 +6,7 @@ import (
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
+	"kp-runner/tools"
 	"strconv"
 	"sync"
 	"time"
@@ -74,7 +75,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			go func(i, concurrent int64) {
-				gid := GetGid()
+				gid := tools.GetGid()
 				golink.DisposeScene(wg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 			}(i, concurrent)
