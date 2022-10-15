@@ -70,11 +70,27 @@ func VariablesMatch(str string) (value string) {
 
 // FindDestStr 匹配规则
 func FindDestStr(str string, rex string) string {
-	compileRegex := regexp.MustCompile(rex)
-	matchArr := compileRegex.FindStringSubmatch(str)
-	if len(matchArr) > 0 {
-		return matchArr[len(matchArr)-1]
+	if strings.Contains(rex, "(.*?)") {
+		compileRegex := regexp.MustCompile(rex)
+		matchArr := compileRegex.FindStringSubmatch(str)
+		if len(matchArr) > 0 {
+			return matchArr[len(matchArr)-1]
+		}
+	} else if strings.Contains(rex, "[0-9]+") {
+		result := ""
+		compileRegex := regexp.MustCompile(rex)
+		matchArr := compileRegex.FindStringSubmatch(str)
+		if len(matchArr) > 0 {
+			result = matchArr[len(matchArr)-1]
+		}
+		rex = "[0-9]+"
+		compileRegex = regexp.MustCompile(rex)
+		matchArr = compileRegex.FindStringSubmatch(result)
+		if len(matchArr) > 0 {
+			return matchArr[len(matchArr)-1]
+		}
 	}
+
 	return ""
 }
 

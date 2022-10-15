@@ -1,4 +1,3 @@
-// Package client http 客户端
 package client
 
 import (
@@ -11,13 +10,6 @@ import (
 	"strings"
 	"time"
 )
-
-// HTTPRequest HTTP 请求
-// method 方法 GET POST
-// url 请求的url
-// body 请求的body
-// headers 请求头信息
-// timeout 请求超时时间
 
 func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes float64, err error, timestamp int64, str string) {
 

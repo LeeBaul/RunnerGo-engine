@@ -86,10 +86,12 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 						continue
 					}
 					fileWriter, err := bodyWriter.CreateFormFile(value.Key, value.Value.(string))
+					//fileType := strings.Split(value.Value.(string), ".")[1]
 					if err != nil {
 						log.Logger.Error("CreateFormFile失败： ", err)
 						continue
 					}
+
 					file := bytes.NewReader(by)
 					_, err = io.Copy(fileWriter, file)
 					if err != nil {
