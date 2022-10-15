@@ -110,10 +110,9 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 		}
 		bodyWriter.Close()
 		req.Header.SetContentType(contentType)
-		if bodyBuffer.Bytes() != nil {
+		if bodyBuffer.Bytes() != nil && bodyBuffer.Len() != 68 {
 			req.SetBody(bodyBuffer.Bytes())
 		}
-
 		return bodyBuffer.String()
 	case UrlencodeMode:
 		req.Header.SetContentType("application/x-www-form-urlencoded")
