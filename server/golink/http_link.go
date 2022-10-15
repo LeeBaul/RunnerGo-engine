@@ -38,6 +38,10 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 		isSucceed = false
 		errMsg = err.Error()
 	}
+	if resp.StatusCode() != 200 {
+		isSucceed = false
+		errMsg = string(resp.Body())
+	}
 	var assertionMsgList []model.AssertionMsg
 	// 断言验证
 	if api.Assert != nil {

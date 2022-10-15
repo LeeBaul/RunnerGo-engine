@@ -20,14 +20,19 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
+		currentWg.Add(1)
 		go func(event model.Event, wgTemp, concurrentWg *sync.WaitGroup, disOptions ...int64) {
-			gid1 := tools.GetGid()
-			log.Logger.Debug("gid: ", gid1, "           disOptions", disOptions)
+			var (
+				goroutineId int64 // 启动的第几个协程
+				current     int64 // 并发数
+			)
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
 				if disOptions != nil && len(disOptions) > 1 {
 					// 上级事件的最大并发数
+					goroutineId = disOptions[0]
+					current = disOptions[1]
 					var preMaxCon = int64(0)
 					for _, request := range nodes {
 						for _, tempEvent := range event.PreList {
@@ -43,10 +48,10 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					}
 
 					if preMaxCon != 0 {
-						disOptions[1] = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
+						current = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
 					} else {
 						if event.Weight > 0 && event.Weight < 100 {
-							disOptions[1] = int64(float64(disOptions[1]) * (float64(event.Weight) / 100))
+							current = int64(float64(disOptions[1]) * (float64(event.Weight) / 100))
 						}
 					}
 				}
@@ -136,10 +141,8 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 				}
 			} else {
 				if event.Weight > 0 && event.Weight < 100 {
-					if disOptions != nil && len(disOptions) > 0 && event.Id == "07f9822c-4fbb-4453-8bbc-9e90276b23ce" {
-						log.Logger.Debug("gid: ", gid1, "event:          ", event.Id, "             前             ", disOptions)
-						disOptions[1] = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
-						log.Logger.Debug("gid: ", gid1, "event:          ", event.Id, "后            ", disOptions)
+					if disOptions != nil && len(disOptions) > 0 {
+						current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
 					}
 
 				}
@@ -163,7 +166,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 				event.Api.Uuid = scene.Uuid
 				if disOptions != nil && len(disOptions) > 0 {
 					var requestResults = &model.ResultDataMsg{}
-					DisposeRequest(wgTemp, currentWg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, disOptions[0], disOptions[1])
+					DisposeRequest(wgTemp, currentWg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, current)
 				} else {
 					DisposeRequest(wgTemp, nil, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
