@@ -11,6 +11,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/execution"
 	"kp-runner/server/golink"
+	"kp-runner/server/heartbeat"
 	"kp-runner/tools"
 	"strconv"
 	"sync"
@@ -183,6 +184,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.ReportId = plan.ReportId
 	reportMsg.ReportName = plan.ReportName
 	reportMsg.MachineNum = plan.MachineNum
+	reportMsg.MachineIp = heartbeat.LocalIp
 	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
 	log.Logger.Info("plan.scene.Config:", string(testModelJson))
 	switch scene.ConfigTask.Mode {
