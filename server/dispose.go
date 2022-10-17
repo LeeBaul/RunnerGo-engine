@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
@@ -147,6 +148,7 @@ func ExecutionPlan(plan *model.Plan) {
 // TaskDecomposition 分解任务
 func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
 	defer close(resultDataMsgCh)
+	defer fmt.Println("1231231231231231")
 	scene := plan.Scene
 	scene.TeamId = plan.TeamId
 	scene.ReportId = plan.ReportId

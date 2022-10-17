@@ -65,7 +65,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if res != nil && res.Results != nil {
 			for _, result := range res.Results {
 				if result.CustomRequestTimeLineValue > result.ResponseThreshold {
-					log.Logger.Info(result.Name, "接口：在", concurrent, "并发时", result.CustomRequestTimeLine, "响应时间线", result.CustomRequestTimeLineValue, "大于所设阈值", result.ResponseThreshold)
 					log.Logger.Info("计划:", planId, "...............结束")
 					return
 				}
@@ -73,11 +72,12 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		}
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
-			wg.Add(1)
+			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
 				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
+				currentWg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
 			if index == 0 && timeUp != 0 && i%(startConcurrent/timeUp) == 0 && i != 0 {

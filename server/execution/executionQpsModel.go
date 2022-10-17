@@ -70,6 +70,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 				gid := tools.GetGid()
 				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
+				currentWg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
 			if index == 0 && timeUp != 0 && i%(startConcurrent/timeUp) == 0 && i != 0 {

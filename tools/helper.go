@@ -5,6 +5,7 @@ package tools
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"kp-runner/log"
 	"os"
 	"regexp"
@@ -70,6 +71,7 @@ func VariablesMatch(str string) (value string) {
 
 // FindDestStr 匹配规则
 func FindDestStr(str string, rex string) string {
+
 	if strings.Contains(rex, "(.*?)") {
 		compileRegex := regexp.MustCompile(rex)
 		matchArr := compileRegex.FindStringSubmatch(str)
@@ -83,6 +85,7 @@ func FindDestStr(str string, rex string) string {
 		if len(matchArr) > 0 {
 			result = matchArr[len(matchArr)-1]
 		}
+		fmt.Println("result            ", result)
 		rex = "[0-9]+"
 		compileRegex = regexp.MustCompile(rex)
 		matchArr = compileRegex.FindStringSubmatch(result)

@@ -32,16 +32,18 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		if debug != "" {
 			scene.Debug = debug
 		}
+		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
 		for startTime+duration > currentTime {
 			startCurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
-				wg.Add(1)
+				currentWg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
 					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
+					currentWg.Done()
 				}(i, concurrent)
 
 				if reheatTime > 0 && index == 0 {
@@ -85,6 +87,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					gid := tools.GetGid()
 					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
+					currentWg.Done()
 				}(i, concurrent)
 				if reheatTime > 0 && index == 0 {
 					durationTime := time.Now().UnixMilli() - startTime
