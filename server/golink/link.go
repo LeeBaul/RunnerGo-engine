@@ -148,14 +148,8 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 				}
 			}
 
-			if disOptions != nil {
-				if disOptions[1] <= 0 {
-					return
-				} else if disOptions[1] < 100 {
-					if disOptions[1] != options[1] && disOptions[0] > disOptions[1] {
-						return
-					}
-				}
+			if current <= 0 {
+				return
 			}
 
 			event.TeamId = scene.TeamId
