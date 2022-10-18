@@ -23,19 +23,20 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		index := 0
 		duration := scene.ConfigTask.ModeConf.Duration * 1000
 		currentTime := time.Now().UnixMilli()
-		// 查询是否停止
-		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
-		if status == "stop" {
-			return
-		}
-		// 查询是否开启debug
-		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
-		if debug != "" {
-			scene.Debug = debug
-		}
+
 		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
 		for startTime+duration > currentTime {
+			// 查询是否停止
+			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+			if status == "stop" {
+				return
+			}
+			// 查询是否开启debug
+			debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
+			if debug != "" {
+				scene.Debug = debug
+			}
 			startCurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
