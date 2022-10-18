@@ -188,7 +188,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.MachineNum = plan.MachineNum
 	reportMsg.MachineIp = heartbeat.LocalIp
 	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
-	log.Logger.Info("plan.scene.Config:", string(testModelJson))
+	log.Logger.Info("任务配置：    ", string(testModelJson))
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)

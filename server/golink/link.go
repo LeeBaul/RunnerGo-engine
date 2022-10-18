@@ -14,7 +14,6 @@ import (
 
 // DisposeScene 对场景进行处理
 func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
-
 	nodes := scene.Nodes
 	sceneId := strconv.FormatInt(scene.SceneId, 10)
 	for _, node := range nodes {
@@ -22,6 +21,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 		wg.Add(1)
 		currentWg.Add(1)
 		go func(event model.Event, wgTemp, concurrentWg *sync.WaitGroup, disOptions ...int64) {
+
 			var (
 				goroutineId int64 // 启动的第几个协程
 				current     int64 // 并发数
@@ -139,7 +139,11 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 						break
 					}
 				}
-			} else {
+			}
+			if event.PreList == nil || len(event.PreList) <= 0 {
+				if event.Weight == 100 {
+					current = options[1]
+				}
 				if event.Weight > 0 && event.Weight < 100 {
 					if disOptions != nil && len(disOptions) > 0 {
 						current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
@@ -147,11 +151,11 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 
 				}
 			}
-
-			if current <= 0 {
-				return
+			if disOptions != nil && len(disOptions) > 1 {
+				if current <= 0 {
+					return
+				}
 			}
-
 			event.TeamId = scene.TeamId
 			event.Debug = scene.Debug
 			event.ReportId = scene.ReportId
@@ -277,11 +281,9 @@ func DisposeRequest(wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMs
 		api.Debug = event.Debug
 	}
 	// 计算接口权重，只要并发id大于并发数则直接返回
-	if event.Weight < 100 && event.Weight > 0 || event.Weight == 100 || event.Weight == 0 {
-		if options != nil && len(options) > 1 {
-			if float64(options[0]) >= float64(options[1]) || options[1] == 0 {
-				return
-			}
+	if options != nil && len(options) > 1 {
+		if options[0] > options[1] {
+			return
 		}
 	}
 	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1], "                       并发数1：        ", options[0])
