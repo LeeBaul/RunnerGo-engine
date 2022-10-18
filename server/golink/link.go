@@ -289,6 +289,7 @@ func DisposeRequest(wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMs
 			return
 		}
 	}
+
 	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1], "                       并发数1：        ", options[0])
 	if requestResults != nil {
 		requestResults.PlanId = reportMsg.PlanId
