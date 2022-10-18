@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -57,7 +56,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 			currentWg.Wait()
-			fmt.Println("第一波并发：         ", startTime+duration, "                    ", currentTime)
 			index++
 			// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
 			distance := time.Now().UnixMilli() - startCurrentTime

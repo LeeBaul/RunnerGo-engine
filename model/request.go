@@ -460,6 +460,9 @@ func (r *Api) ReplaceQueryParameterizes() {
 	if urls != nil {
 		for _, v := range urls {
 			if r.Parameters != nil {
+				r.Parameters.Range(func(key, value any) bool {
+					return true
+				})
 				if value, ok := r.Parameters.Load(v[1]); ok {
 					r.Request.URL = strings.Replace(r.Request.URL, v[0], value.(string), -1)
 				}
@@ -658,7 +661,12 @@ func (r *Api) FindParameterizes() {
 		r.Parameters = new(sync.Map)
 	}
 	urls := tools.FindAllDestStr(r.Request.URL, "{{(.*?)}}")
+
 	for _, name := range urls {
+
+		r.Parameters.Range(func(key, value any) bool {
+			return true
+		})
 		if _, ok := r.Parameters.Load(name[1]); !ok {
 			r.Parameters.Store(name[1], name[0])
 		}
@@ -676,6 +684,7 @@ func (r *Api) ReplaceParameters(configuration *Configuration) {
 	}
 
 	r.Parameters.Range(func(k, v any) bool {
+
 		if configuration.Variable != nil {
 			for _, kv := range configuration.Variable {
 				if kv.Key == k {

@@ -122,6 +122,7 @@ func ExecutionPlan(plan *model.Plan) {
 		log.Logger.Error("任务配置不能为空", plan)
 		return
 	}
+
 	// 循环读全局变量，如果场景变量不存在则将添加到场景变量中，如果有参数化数据则，将其替换
 	if plan.Variable != nil {
 		if scene.Configuration.Variable == nil {
