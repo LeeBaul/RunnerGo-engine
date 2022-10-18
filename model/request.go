@@ -204,6 +204,11 @@ type KV struct {
 	Value string `json:"value" bson:"value"`
 }
 
+type PlanKv struct {
+	Var string `json:"Var"`
+	Val string `json:"Val"`
+}
+
 type Form struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`

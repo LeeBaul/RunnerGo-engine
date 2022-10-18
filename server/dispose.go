@@ -131,13 +131,16 @@ func ExecutionPlan(plan *model.Plan) {
 		for _, value := range plan.Variable {
 			var target = false
 			for _, kv := range scene.Configuration.Variable {
-				if value == kv {
+				if value.Var == kv.Key {
 					target = true
-					break
+					continue
 				}
 			}
-			if target == false {
-				scene.Configuration.Variable = append(scene.Configuration.Variable, value)
+			if !target {
+				var variable = new(model.KV)
+				variable.Key = value.Var
+				variable.Value = value.Val
+				scene.Configuration.Variable = append(scene.Configuration.Variable, variable)
 			}
 		}
 	}

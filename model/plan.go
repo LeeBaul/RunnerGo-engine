@@ -9,7 +9,7 @@ type Plan struct {
 	ReportName    string         `json:"report_name" bson:"report_name"`     // 报告名称
 	MachineNum    int64          `json:"machine_num" bson:"machine_num"`     // 使用的机器数量
 	ConfigTask    *ConfigTask    `json:"config_task" bson:"config_task"`     // 任务配置
-	Variable      []*KV          `json:"variable" bson:"variable"`           // 全局变量
+	Variable      []*PlanKv      `json:"variable" bson:"variable"`           // 全局变量
 	Scene         *Scene         `json:"scene" bson:"scene"`                 // 场景
 	Configuration *Configuration `json:"configuration" bson:"configuration"` // 场景配置
 }
