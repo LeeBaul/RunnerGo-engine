@@ -299,6 +299,21 @@ type Auth struct {
 	Oauth1   *Oauth1   `json:"oauth1"`
 }
 
+type Token struct {
+	Key    string `json:"key"`
+	Secret string `json:"secret"`
+}
+
+type RequestData struct {
+	Url           string `json:"url"`
+	Method        string `json:"method"`
+	Data          string `json:"data"`
+	OauthCallback string `json:"oauth_callback"`
+}
+
+type Consumer struct {
+}
+
 func (auth *Auth) Auth(req *fasthttp.Request) {
 	if auth.Type != NoAuth {
 		switch auth.Type {
@@ -309,30 +324,47 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 		case BAsic:
 			req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
 		case DigestType:
-			uri := string(req.URI().RequestURI())
-			response := ""
-			switch auth.Digest.Algorithm {
-			case Md5:
-				response = tools.Md5(auth.Digest.Password)
-			case MD5Sess:
-				response = tools.Md5(auth.Digest.Password)
-			case SHA256:
-				response = tools.Sha256(auth.Digest.Password)
-			case SHA256Sess:
-				response = tools.Sha256(auth.Digest.Password)
-			case SHA512256:
-				response = tools.Sha256(auth.Digest.Password)
-			case SHA512256Sess:
-				response = tools.Sha256(auth.Digest.Password)
+
+			encryption := tools.GetEncryption(auth.Digest.Algorithm)
+			if encryption != nil {
+				uri := string(req.URI().RequestURI())
+				ha1 := ""
+				ha2 := ""
+				response := ""
+				if auth.Digest.Cnonce == "" {
+					auth.Digest.Cnonce = "apipost"
+				}
+				if auth.Digest.Nc == "" {
+					auth.Digest.Nc = "00000001"
+				}
+				if strings.HasSuffix(auth.Digest.Algorithm, "-sess") {
+					ha1 = encryption.HashFunc(encryption.HashFunc(auth.Digest.Username+":"+auth.Digest.Realm+":"+
+						auth.Digest.Password) + ":" + auth.Digest.Nonce + ":" + auth.Digest.Cnonce)
+				} else {
+					ha1 = encryption.HashFunc(auth.Digest.Username + ":" + auth.Digest.Realm + ":" + auth.Digest.Password)
+				}
+				if auth.Digest.Qop != "auth-int" {
+					ha2 = encryption.HashFunc(string(req.Header.Method()) + req.URI().String())
+				} else {
+					ha2 = encryption.HashFunc(string(req.Header.Method()) + uri + encryption.HashFunc(string(req.Body())))
+				}
+				if auth.Digest.Qop == "auth" || auth.Digest.Qop == "authn-int" {
+					response = encryption.HashFunc(ha1 + ":" + auth.Digest.Nonce + ":" + auth.Digest.Nc +
+						auth.Digest.Cnonce + ":" + auth.Digest.Qop + ":" + ha2)
+				} else {
+					response = encryption.HashFunc(ha1 + ":" + auth.Digest.Nonce + ":" + ha2)
+				}
+				digest := fmt.Sprintf("username=%s, realm=%s, nonce=%s, uri=%s, algorithm=%s, qop=%s, nc=%s, cnonce=%s, response=%s, opaque=%s",
+					auth.Digest.Username, auth.Digest.Realm, auth.Digest.Nonce, uri, auth.Digest.Algorithm, auth.Digest.Qop,
+					auth.Digest.Nc, auth.Digest.Cnonce, response, auth.Digest.Opaque)
+				req.Header.Add("Authorization", digest)
 			}
-			digest := fmt.Sprintf("username=%s, realm=%s, nonce=%s, uri=%s, algorithm=%s, qop=%s, nc=%s, cnonce=%s, response=%s, opaque=%s",
-				auth.Digest.Username, auth.Digest.Realm, auth.Digest.Nonce, uri, auth.Digest.Algorithm, auth.Digest.Qop,
-				auth.Digest.Nc, auth.Digest.Cnonce, response, auth.Digest.Opaque)
-			req.Header.Add("Authorization", digest)
+
 		case HawkType:
 			mac := ""
 			hawk := fmt.Sprintf("Hawk id=%s, ts=%s, nonce=%s, ext=%s, mac=%s, app=%s, dlg=%s",
 				auth.Hawk.AuthID, auth.Hawk.Timestamp, auth.Hawk.Nonce, auth.Hawk.ExtraData, mac, auth.Hawk.App, auth.Hawk.Delegation)
+
 			req.Header.Add("Authorization", hawk)
 		case Awsv4Type:
 			signature := ""
@@ -353,9 +385,22 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 				auth.Edgegrid.ClientToken, auth.Edgegrid.AccessToken, auth.Edgegrid.Timestamp, auth.Edgegrid.Nonce, ed)
 			req.Header.Add("Authorization", eg)
 		case Oauth1Type:
+
 			signature := ""
-			token := ""
 			version := ""
+			token := Token{
+				Key:    auth.Oauth1.Token,
+				Secret: auth.Oauth1.Callback,
+			}
+			requestData := RequestData{}
+			requestData.Url = string(req.URI().RequestURI())
+			requestData.Method = string(req.Header.Method())
+			requestData.OauthCallback = auth.Oauth1.Callback
+			if auth.Oauth1.IncludeBodyHash == 1 {
+				requestData.Data = string(req.Body())
+			} else {
+				requestData.Data = ""
+			}
 			oauth := fmt.Sprintf("OAuth oauth_consumer_key=%s, oauth_nonce=%s, oauth_signature=%s, oauth_signature_method=%s, oauth_timestamp=%s, oauth_token=%s, oauth_version=%s",
 				auth.Oauth1.ConsumerKey, auth.Oauth1.Nonce, signature, auth.Oauth1.SignatureMethod, auth.Oauth1.Timestamp, token, version)
 			req.Header.Add("Authorization", oauth)

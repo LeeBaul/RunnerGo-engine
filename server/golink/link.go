@@ -139,17 +139,19 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 						break
 					}
 				}
-			}
-			if event.PreList == nil || len(event.PreList) <= 0 {
-				if event.Weight == 100 {
-					current = options[1]
-				}
-				if event.Weight > 0 && event.Weight < 100 {
-					if disOptions != nil && len(disOptions) > 0 {
-						current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
+			} else {
+				if disOptions != nil && len(disOptions) > 1 {
+					if event.Weight == 100 {
+						current = options[1]
 					}
+					if event.Weight > 0 && event.Weight < 100 {
+						if disOptions != nil && len(disOptions) > 0 {
+							current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
+						}
 
+					}
 				}
+
 			}
 			if disOptions != nil && len(disOptions) > 1 {
 				if current <= 0 {
