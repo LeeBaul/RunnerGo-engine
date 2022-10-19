@@ -12,7 +12,7 @@ import (
 )
 
 // LadderModel 阶梯模式
-func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
+func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
 
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
@@ -39,7 +39,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		if status == "stop" {
 			return
 		}
-		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
+		debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
 		if debug != "" {
 			scene.Debug = debug
 		} else {

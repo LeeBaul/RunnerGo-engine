@@ -12,7 +12,7 @@ import (
 )
 
 // ConcurrentModel 并发模式
-func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
+func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
 
 	startTime := time.Now().UnixMilli()
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
@@ -33,9 +33,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				return
 			}
 			// 查询是否开启debug
-			fmt.Println("reportId:                     ", reportMsg.ReportId)
-			debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
-			log.Logger.Debug("debug:                        ", debug)
+			debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
 			if debug != "" {
 				scene.Debug = debug
 			}

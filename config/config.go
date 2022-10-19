@@ -55,6 +55,7 @@ type Mongo struct {
 	Address          string `yaml:"address"`
 	DB               string `yaml:"db"`
 	StressDebugTable string `yaml:"stressDebugTable"`
+	DebugTable       string `yaml:"debugTable"`
 	SceneDebugTable  string `yaml:"sceneDebugTable"`
 	ApiDebugTable    string `yaml:"apiDebugTable"`
 }

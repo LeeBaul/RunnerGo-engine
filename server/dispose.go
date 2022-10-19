@@ -112,6 +112,7 @@ func ExecutionPlan(plan *model.Plan) {
 	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic)
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
+	debugCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.DebugTable, mongoClient)
 	scene := plan.Scene
 
 	// 如果场景中的任务配置勾选了全局任务配置，那么使用全局任务配置
@@ -146,11 +147,11 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 分解任务
-	TaskDecomposition(plan, wg, resultDataMsgCh, requestCollection)
+	TaskDecomposition(plan, wg, resultDataMsgCh, debugCollection, requestCollection)
 }
 
 // TaskDecomposition 分解任务
-func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, mongoCollection *mongo.Collection) {
+func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, mongoCollection *mongo.Collection) {
 	defer close(resultDataMsgCh)
 	defer fmt.Println("1231231231231231")
 	scene := plan.Scene
@@ -196,17 +197,17 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	log.Logger.Info("任务配置：    ", string(testModelJson))
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
-		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
 	case model.ErrorRateModel:
-		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
 	case model.LadderModel:
-		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
-		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
 	case model.QpsModel:
-		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, mongoCollection)
+		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
 
 	}
 	wg.Wait()

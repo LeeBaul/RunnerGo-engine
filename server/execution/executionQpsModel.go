@@ -13,7 +13,7 @@ import (
 )
 
 // QPSModel 响应时间模式
-func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
+func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
 
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
@@ -55,7 +55,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		if status == "stop" {
 			return
 		}
-		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
+		debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
 		if debug != "" {
 			scene.Debug = debug
 		} else {

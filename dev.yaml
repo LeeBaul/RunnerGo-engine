@@ -34,6 +34,7 @@ mongo:
   stressDebugTable: "stress_debug"
   sceneDebugTable: "scene_debug"
   apiDebugTable: "api_debug"
+  debugTable: "debug_status"
   address: "172.17.18.255:27017"
 
 

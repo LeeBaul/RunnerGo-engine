@@ -13,7 +13,7 @@ import (
 )
 
 // RTModel 响应时间模式
-func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection) {
+func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
 
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
@@ -55,7 +55,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if status == "stop" {
 			return
 		}
-		debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
+		debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
 		if debug != "" {
 			scene.Debug = debug
 		}
