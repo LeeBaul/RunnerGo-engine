@@ -39,27 +39,31 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 				if disOptions != nil && len(disOptions) > 1 {
 					// 上级事件的最大并发数
 					goroutineId = disOptions[0]
-					current = disOptions[1]
-					var preMaxCon = int64(0)
+					var preMaxCurrent = int64(0)
+					// 从redis获取到上一级事件中的最大并发数
 					for _, request := range nodes {
 						for _, tempEvent := range event.PreList {
 							if request.Id == tempEvent {
-								if request.Weight < 100 && request.Weight > 0 {
-									tempWeight := request.Weight
-									if tempWeight > preMaxCon {
-										preMaxCon = tempWeight
-									}
+								err, result := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + event.Id + ":" + "current")
+								if err != nil {
+									break
+								}
+								tempMaxCurrent, err := strconv.ParseInt(result, 10, 64)
+								if err != nil {
+									break
+								}
+								if preMaxCurrent <= tempMaxCurrent {
+									preMaxCurrent = tempMaxCurrent
 								}
 							}
 						}
 					}
+					if event.Weight == 100 {
+						current = preMaxCurrent
+					}
 
-					if preMaxCon != 0 {
-						current = int64(float64(preMaxCon) * (float64(event.Weight) / 100))
-					} else {
-						if event.Weight > 0 && event.Weight < 100 {
-							current = int64(float64(disOptions[1]) * (float64(event.Weight) / 100))
-						}
+					if event.Weight > 0 && event.Weight < 100 {
+						current = int64(float64(preMaxCurrent) * (float64(event.Weight) / 100))
 					}
 				}
 
@@ -166,7 +170,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					// 将该接口的并发数写入到redis当中，由nextList中的接口去查询并计算自己的并发数
 					result := fmt.Sprintf("%d", current)
 					expiration := 60 * time.Second
-					err := model.InsertStatus(machineIp+":"+reportId+":"+event.Id+":"+"current:", result, expiration)
+					err := model.InsertStatus(machineIp+":"+reportId+":"+event.Id+":"+"current", result, expiration)
 					if err != nil {
 						log.Logger.Error(event.Id, " ：并发数状态写入redis失败：  ", err)
 					}
