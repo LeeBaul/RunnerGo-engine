@@ -144,17 +144,18 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 			} else {
 				if disOptions != nil && len(disOptions) > 1 {
 					if event.Weight == 100 {
-						current = options[1]
+						current = disOptions[1]
 					}
 					if event.Weight > 0 && event.Weight < 100 {
-						if disOptions != nil && len(disOptions) > 0 {
-							current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
-						}
-
+						current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
+					}
+					if event.Weight == 100 {
+						current = disOptions[1]
 					}
 				}
 
 			}
+
 			if disOptions != nil && len(disOptions) > 1 {
 				if event.NextList != nil && len(event.NextList) > 0 {
 					// 将该接口的并发数写入到redis当中，由nextList中的接口去查询并计算自己的并发数
@@ -298,6 +299,7 @@ func DisposeRequest(wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMs
 			return
 		}
 	}
+
 	//fmt.Println("event:          ", event.Id, "           并发数：        ", options[1], "                       并发数1：        ", options[0])
 	if requestResults != nil {
 		requestResults.PlanId = reportMsg.PlanId
