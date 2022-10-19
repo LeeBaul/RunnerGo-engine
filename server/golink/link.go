@@ -41,23 +41,31 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					goroutineId = disOptions[0]
 					var preMaxCurrent = int64(0)
 					// 从redis获取到上一级事件中的最大并发数
-					for _, request := range nodes {
-						for _, tempEvent := range event.PreList {
-							if request.Id == tempEvent {
-								err, result := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + event.Id + ":" + "current")
-								if err != nil {
-									break
-								}
-								tempMaxCurrent, err := strconv.ParseInt(result, 10, 64)
-								if err != nil {
-									break
-								}
-								if preMaxCurrent <= tempMaxCurrent {
-									preMaxCurrent = tempMaxCurrent
+					var s = false
+					for !s {
+						for _, request := range nodes {
+							for _, tempEvent := range event.PreList {
+								if request.Id == tempEvent {
+									err, result := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + tempEvent + ":" + "current")
+
+									if err != nil {
+										s = false
+										break
+									}
+									tempMaxCurrent, err := strconv.ParseInt(result, 10, 64)
+									if err != nil {
+										s = false
+										break
+									}
+									if preMaxCurrent <= tempMaxCurrent {
+										preMaxCurrent = tempMaxCurrent
+									}
+									s = true
 								}
 							}
 						}
 					}
+
 					if event.Weight == 100 {
 						current = preMaxCurrent
 					}
@@ -65,6 +73,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					if event.Weight > 0 && event.Weight < 100 {
 						current = int64(float64(preMaxCurrent) * (float64(event.Weight) / 100))
 					}
+
 				}
 
 				var preMap = make(map[string]bool)

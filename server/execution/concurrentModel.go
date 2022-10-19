@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -99,6 +100,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				}
 			}
 			currentWg.Wait()
+			fmt.Println(fmt.Sprintf("第%d次并发", i))
 			index++
 
 			distance := time.Now().UnixMilli() - currentTime
