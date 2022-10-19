@@ -26,8 +26,13 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 			var (
 				goroutineId int64 // 启动的第几个协程
 				current     int64 // 并发数
-				machineIp   = reportMsg.MachineIp
+				machineIp   = ""
+				reportId    = ""
 			)
+			if reportMsg != nil {
+				machineIp = reportMsg.MachineIp
+				reportId = reportMsg.ReportId
+			}
 			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
 			if event.PreList != nil && len(event.PreList) > 0 {
 				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
@@ -89,7 +94,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					for eventId, _ := range preMap {
 						if eventId != "" {
 							// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
-							err, preEventStatus := model.QueryPlanStatus(machineIp + ":" + reportMsg.ReportId + ":" + gid + ":" + sceneId + ":" + eventId + ":status")
+							err, preEventStatus := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + gid + ":" + sceneId + ":" + eventId + ":status")
 							if err != nil {
 								break
 							}
@@ -98,7 +103,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 								delete(preMap, eventId)
 							case model.NotRun:
 								expiration := 60 * time.Second
-								err = model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+								err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
 								if err != nil {
 									log.Logger.Error("事件状态写入数据库失败", err)
 								}
@@ -117,7 +122,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 								return
 							case model.NotHit:
 								expiration := 60 * time.Second
-								err = model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+								err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
 								if err != nil {
 									log.Logger.Error("事件状态写入数据库失败", err)
 								}
@@ -161,7 +166,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					// 将该接口的并发数写入到redis当中，由nextList中的接口去查询并计算自己的并发数
 					result := fmt.Sprintf("%d", current)
 					expiration := 60 * time.Second
-					err := model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+event.Id+":"+"current:", result, expiration)
+					err := model.InsertStatus(machineIp+":"+reportId+":"+event.Id+":"+"current:", result, expiration)
 					if err != nil {
 						log.Logger.Error(event.Id, " ：并发数状态写入redis失败：  ", err)
 					}
@@ -183,7 +188,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					DisposeRequest(wgTemp, nil, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 				}
 				expiration := 60 * time.Second
-				err := model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+				err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 				if err != nil {
 					log.Logger.Error("事件状态写入redis数据库失败", err)
 				}
@@ -239,12 +244,12 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 
 				expiration := 60 * time.Second
 				if result == model.Failed {
-					err := model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
+					err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
 					if err != nil {
 						log.Logger.Error("事件状态写入redis数据库失败", err)
 					}
 				} else {
-					err := model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+					err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 					if err != nil {
 						log.Logger.Error("事件状态写入redis数据库失败", err)
 					}
@@ -267,7 +272,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 					}
 				}
 				expiration := 60 * time.Second
-				err := model.InsertStatus(machineIp+":"+reportMsg.ReportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+				err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 				if err != nil {
 					log.Logger.Error("事件状态写入数据库失败", err)
 				}
