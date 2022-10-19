@@ -33,6 +33,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				return
 			}
 			// 查询是否开启debug
+			fmt.Println("reportId:                     ", reportMsg.ReportId)
 			debug := model.QueryDebugStatus(requestCollection, reportMsg.ReportId)
 			log.Logger.Debug("debug:                        ", debug)
 			if debug != "" {

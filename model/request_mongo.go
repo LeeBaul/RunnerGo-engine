@@ -40,16 +40,19 @@ func Insert(collection *mongo.Collection, msg interface{}) {
 	}
 }
 
+// 查询debug状态
 func QueryDebugStatus(collection *mongo.Collection, reportId string) string {
 
 	filter := bson.D{{"report_id", reportId}}
 	singleResult := collection.FindOne(context.TODO(), filter)
 	cur, err := singleResult.DecodeBytes()
 	if err != nil {
+		fmt.Println("mongo查询错误:                     ", err)
 		return StopDebug
 	}
 	list, err := cur.Elements()
 	if err != nil {
+		fmt.Println("mongo查询错误22222222222222:                     ", err)
 		return StopDebug
 	}
 	for _, value := range list {

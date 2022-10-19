@@ -156,7 +156,7 @@ func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, sce
 						}
 					}
 					if startTime+60000 < time.Now().UnixMilli() {
-						break
+						return
 					}
 				}
 			} else {
