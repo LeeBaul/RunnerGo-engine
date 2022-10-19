@@ -39,7 +39,8 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		if status == "stop" {
 			return
 		}
-		debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
+		reportId, _ := strconv.Atoi(reportMsg.ReportId)
+		debug := model.QueryDebugStatus(debugCollection, reportId)
 		if debug != "" {
 			scene.Debug = debug
 		} else {

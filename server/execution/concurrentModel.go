@@ -7,6 +7,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"kp-runner/tools"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -33,7 +34,8 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				return
 			}
 			// 查询是否开启debug
-			debug := model.QueryDebugStatus(debugCollection, reportMsg.ReportId)
+			reportId, _ := strconv.Atoi(reportMsg.ReportId)
+			debug := model.QueryDebugStatus(debugCollection, reportId)
 			if debug != "" {
 				scene.Debug = debug
 			}
@@ -76,7 +78,8 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			if status == "stop" {
 				return
 			}
-			_, debug := model.QueryPlanStatus(reportMsg.ReportId + ":debug")
+			reportId, _ := strconv.Atoi(reportMsg.ReportId)
+			debug := model.QueryDebugStatus(debugCollection, reportId)
 			if debug != "" {
 				scene.Debug = debug
 			} else {

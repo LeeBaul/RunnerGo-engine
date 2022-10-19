@@ -24,7 +24,7 @@ func NewMongoClient(user, password, host, db string) (mongoClient *mongo.Client,
 		return
 	}
 
-	log.Logger.Info("mongo数据库建连成功")
+	//log.Logger.Info("mongo数据库建连成功")
 	return
 }
 
@@ -41,23 +41,21 @@ func Insert(collection *mongo.Collection, msg interface{}) {
 }
 
 // 查询debug状态
-func QueryDebugStatus(collection *mongo.Collection, reportId string) string {
+func QueryDebugStatus(collection *mongo.Collection, reportId int) string {
 
 	filter := bson.D{{"report_id", reportId}}
 	singleResult := collection.FindOne(context.TODO(), filter)
 	cur, err := singleResult.DecodeBytes()
 	if err != nil {
-		fmt.Println("mongo查询错误:                     ", err)
 		return StopDebug
 	}
 	list, err := cur.Elements()
 	if err != nil {
-		fmt.Println("mongo查询错误22222222222222:                     ", err)
 		return StopDebug
 	}
 	for _, value := range list {
 		if value.Key() == "debug" {
-			return string(value.Value().Value)
+			return value.Value().StringValue()
 		}
 	}
 	return StopDebug
