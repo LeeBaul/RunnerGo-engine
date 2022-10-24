@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/comcast/go-edgegrid/edgegrid"
+	hawk "github.com/hiyosi/hawk"
+	"github.com/lixiangyun/go-ntlm"
+	"github.com/lixiangyun/go-ntlm/messages"
 	uuid "github.com/satori/go.uuid"
 	"github.com/valyala/fasthttp"
 	"io"
 	"kp-runner/log"
 	"kp-runner/tools"
 	"mime/multipart"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,7 +54,7 @@ type Body struct {
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
 }
 
-func (b *Body) SendBody(req *fasthttp.Request) string {
+func (b *Body) SetBody(req *fasthttp.Request) string {
 	if b == nil {
 		return ""
 	}
@@ -158,6 +163,23 @@ func (b *Body) SendBody(req *fasthttp.Request) string {
 
 type Header struct {
 	Parameter []*VarForm `json:"parameter" bson:"parameter"`
+}
+
+func (header *Header) SetHeader(req *fasthttp.Request) {
+	if header != nil && header.Parameter != nil {
+		for _, v := range header.Parameter {
+			if v.IsChecked == 1 {
+				if strings.EqualFold(v.Key, "content-type") {
+					req.Header.SetContentType(v.Value.(string))
+				}
+				if strings.EqualFold(v.Key, "host") {
+					req.Header.SetHost(v.Value.(string))
+				}
+				req.Header.Set(v.Key, v.Value.(string))
+			}
+		}
+
+	}
 }
 
 type Query struct {
@@ -319,8 +341,8 @@ type RequestData struct {
 type Consumer struct {
 }
 
-func (auth *Auth) Auth(req *fasthttp.Request) {
-	if auth.Type != NoAuth {
+func (auth *Auth) SetAuth(req *fasthttp.Request) {
+	if auth != nil && auth.Type != NoAuth {
 		switch auth.Type {
 		case Kv:
 			req.Header.Add(auth.KV.Key, auth.KV.Value)
@@ -329,7 +351,6 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 		case BAsic:
 			req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
 		case DigestType:
-
 			encryption := tools.GetEncryption(auth.Digest.Algorithm)
 			if encryption != nil {
 				uri := string(req.URI().RequestURI())
@@ -364,13 +385,56 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 					auth.Digest.Nc, auth.Digest.Cnonce, response, auth.Digest.Opaque)
 				req.Header.Add("Authorization", digest)
 			}
-
 		case HawkType:
-			mac := ""
-			hawk := fmt.Sprintf("Hawk id=%s, ts=%s, nonce=%s, ext=%s, mac=%s, app=%s, dlg=%s",
-				auth.Hawk.AuthID, auth.Hawk.Timestamp, auth.Hawk.Nonce, auth.Hawk.ExtraData, mac, auth.Hawk.App, auth.Hawk.Delegation)
+			var alg hawk.Alg
+			if strings.Contains(auth.Hawk.Algorithm, "SHA512") {
+				alg = 2
+			} else {
+				alg = 1
+			}
+			credential := &hawk.Credential{
+				ID:  auth.Hawk.AuthID,
+				Key: auth.Hawk.AuthKey,
+				Alg: alg,
+			}
+			timestamp, err := strconv.ParseInt(auth.Hawk.Timestamp, 10, 64)
+			if err != nil {
+				timestamp = time.Now().Unix()
+			}
+			option := &hawk.Option{
+				TimeStamp: timestamp,
+				Nonce:     auth.Hawk.Nonce,
+				Ext:       auth.Hawk.ExtraData,
+			}
+			c := hawk.NewClient(credential, option)
+			hawk, _ := c.Header(string(req.Header.Method()), string(req.Host())+string(req.Header.RequestURI()))
 
 			req.Header.Add("Authorization", hawk)
+		case EdgegridType:
+			reader := bytes.NewReader(req.Body())
+			reqNew, err := http.NewRequest(string(req.Header.Method()), req.URI().String(), reader)
+			if err != nil {
+				return
+			}
+			params := edgegrid.NewAuthParams(reqNew, auth.Edgegrid.AccessToken, auth.Edgegrid.ClientToken, auth.Edgegrid.ClientSecret)
+			authorization := edgegrid.Auth(params)
+			req.Header.Add("Authorization", authorization)
+		case NtlmType:
+			session, err := ntlm.CreateClientSession(ntlm.Version1, ntlm.ConnectionlessMode)
+			if err != nil {
+				return
+			}
+			session.SetUserInfo(auth.Ntlm.Username, auth.Ntlm.Password, auth.Ntlm.Domain)
+			negotiate, err := session.GenerateNegotiateMessage()
+			if err != nil {
+				return
+			}
+			challenge, err := messages.ParseAuthenticateMessage(negotiate.Bytes, 2)
+			if err != nil {
+				return
+			}
+			req.Header.Add("Connection", "keep-alive")
+			req.Header.Add("Authorization", challenge.String())
 		case Awsv4Type:
 			signature := ""
 			date := strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
@@ -381,34 +445,21 @@ func (auth *Auth) Auth(req *fasthttp.Request) {
 			req.Header.Add("X-Amz-Security-Token", auth.Awsv4.SessionToken)
 			req.Header.Add("X-Amz-Date", date+"T"+currentTime+"Z")
 			req.Header.Add("Authorization", awsv)
-		case NtlmType:
-			authorization := ""
-			req.Header.Add("Authorization", "NTLM "+authorization)
-		case EdgegridType:
-			ed := ""
-			eg := fmt.Sprintf("EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;signature=%s",
-				auth.Edgegrid.ClientToken, auth.Edgegrid.AccessToken, auth.Edgegrid.Timestamp, auth.Edgegrid.Nonce, ed)
-			req.Header.Add("Authorization", eg)
+
 		case Oauth1Type:
 
-			signature := ""
-			version := ""
-			token := Token{
-				Key:    auth.Oauth1.Token,
-				Secret: auth.Oauth1.Callback,
-			}
-			requestData := RequestData{}
-			requestData.Url = string(req.URI().RequestURI())
-			requestData.Method = string(req.Header.Method())
-			requestData.OauthCallback = auth.Oauth1.Callback
-			if auth.Oauth1.IncludeBodyHash == 1 {
-				requestData.Data = string(req.Body())
-			} else {
-				requestData.Data = ""
-			}
-			oauth := fmt.Sprintf("OAuth oauth_consumer_key=%s, oauth_nonce=%s, oauth_signature=%s, oauth_signature_method=%s, oauth_timestamp=%s, oauth_token=%s, oauth_version=%s",
-				auth.Oauth1.ConsumerKey, auth.Oauth1.Nonce, signature, auth.Oauth1.SignatureMethod, auth.Oauth1.Timestamp, token, version)
-			req.Header.Add("Authorization", oauth)
+			//config := oauth1.Config{
+			//	ConsumerKey:    auth.Oauth1.ConsumerKey,
+			//	ConsumerSecret: auth.Oauth1.ConsumerSecret,
+			//	CallbackURL:    req.URI().String(),
+			//	Endpoint:       twitter.AuthorizeEndpoint,
+			//	Realm:          auth.Oauth1.Realm,
+			//}
+			//
+			//token := oauth1.NewToken(auth.Oauth1.Token, auth.Oauth1.Callback)
+			//
+			//authorization :=
+			//	req.Header.Add("Authorization", authorization)
 		}
 	}
 }

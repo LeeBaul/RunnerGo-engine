@@ -7,9 +7,9 @@ import (
 )
 
 func TestFindDestStr(t *testing.T) {
-	str := "{\"code\": 0,\"data\":123, \"abc\": {\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2JpbGUiOiIxNTM3Mjg3NjA5MiIsInZlcl9jb2RlIjoiMTIzNCIsImV4cCI6MTY2MDY1MTY4OCwiaXNzIjoicHJvOTExIn0.D73rBvMuFiM030UyF5Mveayhe1ahpAHOtEMMwsmfN78\"},\"msg\":\"success\"}"
+	str := "{\"code\":0,\"data\":123, \"abc\": {\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2JpbGUiOiIxNTM3Mjg3NjA5MiIsInZlcl9jb2RlIjoiMTIzNCIsImV4cCI6MTY2MDY1MTY4OCwiaXNzIjoicHJvOTExIn0.D73rBvMuFiM030UyF5Mveayhe1ahpAHOtEMMwsmfN78\"},\"msg\":\"success\"}"
 	//rex := "{\"code\": 0,{\"data\":[0-9]+,"
-	rex := "{\"code\": 0,\"data\":[0-9]+,"
+	rex := "\"data\":[0-9]+,"
 	result := FindDestStr(str, rex)
 	//re := regexp.MustCompile(rex)
 	//fmt.Println(re.FindAllString(str, -1))

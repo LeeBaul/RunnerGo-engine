@@ -16,32 +16,18 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	client := fastClient(timeout)
 	req = fasthttp.AcquireRequest()
 
+	// set methon
 	req.Header.SetMethod(method)
-	if header != nil && header.Parameter != nil {
-		for _, v := range header.Parameter {
-			if v.IsChecked == 1 {
-				if strings.EqualFold(v.Key, "content-type") {
-					req.Header.SetContentType(v.Value.(string))
-				}
-				if strings.EqualFold(v.Key, "host") {
-					req.Header.SetHost(v.Value.(string))
-				}
-				req.Header.Set(v.Key, v.Value.(string))
-			}
-		}
 
-	}
+	// set header
+	header.SetHeader(req)
 
 	urls := strings.Split(url, "//")
 	if !strings.EqualFold(urls[0], model.HTTP) && !strings.EqualFold(urls[0], model.HTTPS) {
 		url = model.HTTP + "//" + url
 
 	}
-	req.SetRequestURI(url)
 
-	if auth != nil {
-		auth.Auth(req)
-	}
 	if method == "GET" {
 		if query != nil && query.Parameter != nil {
 			var temp []*model.VarForm
@@ -62,7 +48,15 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 		}
 	}
 
-	str = body.SendBody(req)
+	// set url
+	req.SetRequestURI(url)
+
+	// set body
+	str = body.SetBody(req)
+
+	// set auth
+	auth.SetAuth(req)
+
 	resp = fasthttp.AcquireResponse()
 
 	startTime := time.Now()

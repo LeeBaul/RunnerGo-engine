@@ -5,6 +5,8 @@ go 1.18
 require (
 	github.com/Shopify/sarama v1.37.2
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
+	github.com/comcast/go-edgegrid v0.0.1
+	github.com/dghubble/oauth1 v0.7.1
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
@@ -13,6 +15,8 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-hclog v1.3.1
 	github.com/hashicorp/go-plugin v1.4.5
+	github.com/hiyosi/hawk v1.0.1
+	github.com/lixiangyun/go-ntlm v1.0.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olivere/elastic v6.2.37+incompatible
 	github.com/olivere/elastic/v7 v7.0.32
@@ -33,7 +37,6 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dghubble/oauth1 v0.7.1 // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
@@ -41,6 +44,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/gobs/pretty v0.0.0-20180724170744-09732c25a95b // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect

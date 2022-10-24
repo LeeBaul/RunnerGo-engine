@@ -52,7 +52,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 				if reheatTime > 0 && index == 0 {
 					durationTime := time.Now().UnixMilli() - startTime
-					if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
+					if (concurrent/reheatTime) > 0 && i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
 						time.Sleep(time.Duration(durationTime) * time.Millisecond)
 					}
 				}
