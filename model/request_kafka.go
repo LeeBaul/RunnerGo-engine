@@ -35,27 +35,27 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 				break
 			}
 		} else {
-			// 发送结束消息
-			result := new(ResultDataMsg)
-			result.ReportId = reportId
-			result.End = true
-			result.MachineNum = num
-			msg, err := json.Marshal(result)
-			if err != nil {
-				log.Logger.Error("json转换失败", err)
-				break
-			}
-			DataMsg := &sarama.ProducerMessage{}
-			DataMsg.Topic = topic
-			DataMsg.Partition = partition
-			DataMsg.Value = sarama.StringEncoder(msg)
-			_, _, err = kafkaProducer.SendMessage(DataMsg)
-			if err != nil {
-				log.Logger.Error("向kafka发送消息失败", err)
-				break
-			}
-
-			log.Logger.Info(result.ReportId, " 报告消息发送结束")
+			//// 发送结束消息
+			//result := new(ResultDataMsg)
+			//result.ReportId = reportId
+			//result.End = true
+			//result.MachineNum = num
+			//msg, err := json.Marshal(result)
+			//if err != nil {
+			//	log.Logger.Error("json转换失败", err)
+			//	break
+			//}
+			//DataMsg := &sarama.ProducerMessage{}
+			//DataMsg.Topic = topic
+			//DataMsg.Partition = partition
+			//DataMsg.Value = sarama.StringEncoder(msg)
+			//_, _, err = kafkaProducer.SendMessage(DataMsg)
+			//if err != nil {
+			//	log.Logger.Error("向kafka发送消息失败", err)
+			//	break
+			//}
+			//
+			//log.Logger.Info(result.ReportId, " 报告消息发送结束")
 
 			return
 
