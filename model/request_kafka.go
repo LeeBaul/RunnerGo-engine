@@ -37,7 +37,6 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 		} else {
 			// 发送结束消息
 			result := new(ResultDataMsg)
-			log.Logger.Debug("reportId", reportId)
 			result.ReportId = reportId
 			result.End = true
 			result.MachineNum = num
