@@ -11,7 +11,7 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, partition int32) {
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, partition int32, reportId string) {
 	defer kafkaProducer.Close()
 	num := int64(0)
 	for {
@@ -37,7 +37,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 		} else {
 			// 发送结束消息
 			result := new(ResultDataMsg)
-			result.ReportId = topic
+			result.ReportId = reportId
 			result.End = true
 			result.MachineNum = num
 			msg, err := json.Marshal(result)

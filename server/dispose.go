@@ -110,7 +110,7 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 	topic := config.Conf.Kafka.TopIc
 	partition := plan.Partition
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic, partition)
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic, partition, plan.ReportId)
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	debugCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.DebugTable, mongoClient)
