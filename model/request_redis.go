@@ -66,3 +66,12 @@ func QuerySceneStatus(key string) (err error, value string) {
 	}
 	return
 }
+
+func QueryReportData(key string) (value string) {
+	values := RDB.LRange(key, 0, -1).Val()
+	if len(values) <= 0 {
+		return
+	}
+	value = values[len(values)-1]
+	return
+}

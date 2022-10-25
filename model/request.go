@@ -407,9 +407,8 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 				Ext:       auth.Hawk.ExtraData,
 			}
 			c := hawk.NewClient(credential, option)
-			hawk, _ := c.Header(string(req.Header.Method()), string(req.Host())+string(req.Header.RequestURI()))
-
-			req.Header.Add("Authorization", hawk)
+			authorization, _ := c.Header(string(req.Header.Method()), string(req.Host())+string(req.Header.RequestURI()))
+			req.Header.Add("Authorization", authorization)
 		case EdgegridType:
 			reader := bytes.NewReader(req.Body())
 			reqNew, err := http.NewRequest(string(req.Header.Method()), req.URI().String(), reader)

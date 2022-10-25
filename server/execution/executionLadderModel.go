@@ -32,6 +32,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	index := 0
 	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
+
 	for startTime+stepRunTime > time.Now().Unix() {
 
 		// 查询任务是否结束

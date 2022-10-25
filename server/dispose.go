@@ -108,8 +108,9 @@ func ExecutionPlan(plan *model.Plan) {
 		log.Logger.Error("reportId 不能为空")
 		return
 	}
-	topic := plan.ReportId
-	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic)
+	topic := config.Conf.Kafka.TopIc
+	partition := plan.Partition
+	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic, partition)
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	debugCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.DebugTable, mongoClient)

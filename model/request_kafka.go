@@ -11,7 +11,7 @@ import (
 */
 
 // SendKafkaMsg 发送消息到kafka
-func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string) {
+func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, partition int32) {
 	defer kafkaProducer.Close()
 	num := int64(0)
 	for {
@@ -26,7 +26,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Partition = 0
+			DataMsg.Partition = partition
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
@@ -46,7 +46,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			}
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
-			DataMsg.Partition = 0
+			DataMsg.Partition = partition
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {

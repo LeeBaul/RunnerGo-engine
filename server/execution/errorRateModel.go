@@ -1,8 +1,9 @@
 package execution
 
 import (
+	"encoding/json"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
@@ -43,10 +44,11 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	index := 0
 	// 创建es客户端，获取测试数据
-	es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
-	if es == nil {
-		return
-	}
+	//es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
+	//if es == nil {
+	//	return
+	//}
+	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
 	for startTime+stepRunTime > time.Now().Unix() {
 		// 查询任务是否结束
@@ -64,11 +66,16 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 		// 查询当前错误率时多少
 		//GetErrorRate(planId+":"+sceneId+":"+"errorRate", errorRateData)
-		res := model.QueryReport(es, config.Conf.Es.Index, reportMsg.ReportId)
-		if res != nil && res.Results != nil {
-			for _, result := range res.Results {
-				errRate := float64(result.ErrorNum) / float64(result.TotalRequestNum)
-				if errRate > result.ErrorThreshold {
+		res := model.QueryReportData(key)
+		if res != "" {
+			var result = new(model.RedisSceneTestResultDataMsg)
+			err := json.Unmarshal([]byte(res), result)
+			if err != nil {
+				break
+			}
+			for _, resultData := range result.Results {
+				errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
+				if errRate > resultData.ErrorThreshold {
 					log.Logger.Info("计划:", planId, "...............结束")
 					return
 				}

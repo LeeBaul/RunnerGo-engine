@@ -1,8 +1,9 @@
 package execution
 
 import (
+	"encoding/json"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/golink"
@@ -43,11 +44,12 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	currentTime := startTime
 	index := 0
 
+	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	// 创建es客户端
-	es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
-	if es == nil {
-		return
-	}
+	//es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
+	//if es == nil {
+	//	return
+	//}
 	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > currentTime {
@@ -62,6 +64,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		} else {
 			scene.Debug = ""
 		}
+
 		startConcurrentTime := time.Now().UnixMilli()
 
 		for i := int64(0); i < concurrent; i++ {
@@ -100,6 +103,22 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 		// 如果当前并发数小于最大并发数，
 		if concurrent <= maxConcurrent {
+
+			res := model.QueryReportData(key)
+			if res != "" {
+				var result = new(model.RedisSceneTestResultDataMsg)
+				err := json.Unmarshal([]byte(res), result)
+				if err != nil {
+					break
+				}
+				for _, resultData := range result.Results {
+					if resultData.Qps >= resultData.ErrorThreshold {
+						log.Logger.Info("计划:", planId, "...............结束")
+						maxConcurrent = concurrent
+					}
+				}
+			}
+
 			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
 			if startTime+stepRunTime >= time.Now().UnixMilli() {
 				startTime = time.Now().UnixMilli()
@@ -113,6 +132,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 			}
 		}
+
 		index++
 
 	}

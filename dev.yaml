@@ -24,7 +24,7 @@ redis:
 
 kafka:
   address: "172.17.101.188:9092"
-  topIc: "StressTestData"
+  topIc: "report"
 
 
 mongo:
