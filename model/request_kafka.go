@@ -14,8 +14,11 @@ import (
 func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, partition int32, reportId string) {
 	defer kafkaProducer.Close()
 	num := int64(0)
+	a := 0
 	for {
 		if resultDataMsg, ok := <-resultDataMsgCh; ok {
+			a++
+			log.Logger.Debug("a===============         ", a)
 			msg, err := json.Marshal(resultDataMsg)
 			if err != nil {
 				log.Logger.Error("json转换失败", err)
