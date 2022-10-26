@@ -276,8 +276,9 @@ func DebugScene(scene *model.Scene) {
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
 	golink.DisposeScene(wg, currentWg, gid, model.SceneType, scene, nil, nil, mongoCollection)
-
+	currentWg.Wait()
 	wg.Wait()
+	log.Logger.Info("场景：    ", scene.SceneName, "        调试结束！")
 
 }
 
@@ -296,7 +297,6 @@ func DebugApi(debugApi model.Api) {
 	event.Api = debugApi
 	event.Weight = 100
 	event.Id = "接口调试"
-	wg := &sync.WaitGroup{}
 	// 新建mongo客户端连接，用于发送debug数据
 	mongoClient, err := model.NewMongoClient(
 		config.Conf.Mongo.User,
@@ -312,9 +312,7 @@ func DebugApi(debugApi model.Api) {
 	configuration := new(model.Configuration)
 	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
-	wg.Add(1)
 
-	go golink.DisposeRequest(wg, nil, nil, nil, nil, configuration, event, mongoCollection)
-	wg.Wait()
+	go golink.DisposeRequest(nil, nil, nil, configuration, event, mongoCollection)
 
 }

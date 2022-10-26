@@ -16,296 +16,287 @@ import (
 // DisposeScene 对场景进行处理
 func DisposeScene(wg, currentWg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 	nodes := scene.Nodes
-	sceneId := strconv.FormatInt(scene.SceneId, 10)
+	sceneId := fmt.Sprintf("%d", scene.SceneId)
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
 		currentWg.Add(1)
-		go func(event model.Event, wgTemp, concurrentWg *sync.WaitGroup, disOptions ...int64) {
-
-			var (
-				goroutineId int64 // 启动的第几个协程
-				current     int64 // 并发数
-				machineIp   = ""
-				reportId    = ""
-			)
-			if reportMsg != nil {
-				machineIp = reportMsg.MachineIp
-				reportId = reportMsg.ReportId
-			}
-			// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
-			if event.PreList != nil && len(event.PreList) > 0 {
-				// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
-				if disOptions != nil && len(disOptions) > 1 {
-					// 上级事件的最大并发数
-					goroutineId = disOptions[0]
-					var preMaxCurrent = int64(0)
-					// 从redis获取到上一级事件中的最大并发数
-					var s = false
-					for !s {
-						for _, request := range nodes {
-							for _, tempEvent := range event.PreList {
-								if request.Id == tempEvent {
-									err, result := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + tempEvent + ":" + "current")
-
-									if err != nil {
-										s = false
-										break
-									}
-									tempMaxCurrent, err := strconv.ParseInt(result, 10, 64)
-									if err != nil {
-										s = false
-										break
-									}
-									if preMaxCurrent <= tempMaxCurrent {
-										preMaxCurrent = tempMaxCurrent
-									}
-									s = true
-								}
-							}
-						}
-					}
-
-					if event.Weight == 100 {
-						current = preMaxCurrent
-					}
-
-					if event.Weight > 0 && event.Weight < 100 {
-						current = int64(float64(preMaxCurrent) * (float64(event.Weight) / 100))
-					}
-
-				}
-
-				var preMap = make(map[string]bool)
-				for _, eventId := range event.PreList {
-					if eventId != "" {
-						preMap[eventId] = false
-					}
-				}
-
-				startTime := time.Now().UnixMilli()
-
-				for len(preMap) > 0 {
-					if runType == "scene" {
-						err, sceneStatus := model.QuerySceneStatus(sceneId + ":status")
-						if err == nil && sceneStatus == "stop" {
-							debugMsg := make(map[string]interface{})
-							debugMsg["uuid"] = event.Uuid.String()
-							debugMsg["event_id"] = event.Id
-							debugMsg["status"] = model.NotRun
-							debugMsg["type"] = event.Type
-							debugMsg["report_id"] = event.ReportId
-							debugMsg["next_list"] = event.NextList
-							if requestCollection != nil {
-								model.Insert(requestCollection, debugMsg)
-							}
-							wgTemp.Done()
-							currentWg.Done()
-							return
-						}
-					}
-					for eventId, _ := range preMap {
-						if eventId != "" {
-							// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
-							err, preEventStatus := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + gid + ":" + sceneId + ":" + eventId + ":status")
-							if err != nil {
-								break
-							}
-							switch preEventStatus {
-							case model.End:
-								delete(preMap, eventId)
-							case model.NotRun:
-								expiration := 60 * time.Second
-								err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
-								if err != nil {
-									log.Logger.Error("事件状态写入数据库失败", err)
-								}
-								debugMsg := make(map[string]interface{})
-								debugMsg["uuid"] = event.Uuid.String()
-								debugMsg["event_id"] = event.Id
-								debugMsg["status"] = model.NotRun
-								debugMsg["type"] = event.Type
-								debugMsg["report_id"] = event.ReportId
-								debugMsg["next_list"] = event.NextList
-								if requestCollection != nil {
-									model.Insert(requestCollection, debugMsg)
-								}
-								wgTemp.Done()
-								currentWg.Done()
-								return
-							case model.NotHit:
-								expiration := 60 * time.Second
-								err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
-								if err != nil {
-									log.Logger.Error("事件状态写入数据库失败", err)
-								}
-								debugMsg := make(map[string]interface{})
-								debugMsg["uuid"] = event.Uuid.String()
-								debugMsg["event_id"] = event.Id
-								debugMsg["type"] = event.Type
-								debugMsg["status"] = model.NotRun
-								debugMsg["report_id"] = event.ReportId
-								debugMsg["next_list"] = event.NextList
-								if requestCollection != nil {
-									model.Insert(requestCollection, debugMsg)
-								}
-								wgTemp.Done()
-								currentWg.Done()
-								return
-							}
-						}
-					}
-					if startTime+60000 < time.Now().UnixMilli() {
-						return
-					}
-				}
-			} else {
-				if disOptions != nil && len(disOptions) > 1 {
-					if event.Weight == 100 {
-						current = disOptions[1]
-					}
-					if event.Weight > 0 && event.Weight < 100 {
-						current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
-					}
-					if event.Weight == 100 {
-						current = disOptions[1]
-					}
-				}
-
-			}
-
-			if disOptions != nil && len(disOptions) > 1 {
-				if event.NextList != nil && len(event.NextList) > 0 {
-					// 将该接口的并发数写入到redis当中，由nextList中的接口去查询并计算自己的并发数
-					result := fmt.Sprintf("%d", current)
-					expiration := 60 * time.Second
-					err := model.InsertStatus(machineIp+":"+reportId+":"+event.Id+":"+"current", result, expiration)
-					if err != nil {
-						log.Logger.Error(event.Id, " ：并发数状态写入redis失败：  ", err)
-					}
-				}
-				if current <= 0 {
-					return
-				}
-			}
-			event.TeamId = scene.TeamId
-			event.Debug = scene.Debug
-			event.ReportId = scene.ReportId
-			switch event.Type {
-			case model.RequestType:
-				event.Api.Uuid = scene.Uuid
-				if disOptions != nil && len(disOptions) > 0 {
-					var requestResults = &model.ResultDataMsg{}
-					DisposeRequest(wgTemp, currentWg, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, current)
-				} else {
-					DisposeRequest(wgTemp, nil, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
-				}
-				expiration := 60 * time.Second
-				err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-				if err != nil {
-					log.Logger.Error("事件状态写入redis数据库失败", err)
-				}
-			case model.IfControllerType:
-				keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
-				if len(keys) > 0 {
-					for _, val := range keys {
-						for _, kv := range scene.Configuration.Variable {
-							if kv.Key == val[1] {
-								event.Var = strings.Replace(event.Var, val[0], kv.Value, -1)
-							}
-						}
-					}
-				}
-				values := tools.FindAllDestStr(event.Val, "{{(.*?)}}")
-				if len(values) > 0 {
-					for _, val := range values {
-						for _, kv := range scene.Configuration.Variable {
-							if kv.Key == val[1] {
-								event.Val = strings.Replace(event.Val, val[0], kv.Value, -1)
-							}
-						}
-					}
-				}
-				var result = model.Failed
-				var msg = ""
-
-				var temp = false
-				for _, kv := range scene.Configuration.Variable {
-
-					if kv.Key == event.Var {
-						temp = true
-						result, msg = event.PerForm(kv.Value)
-						break
-					}
-				}
-				if temp == false {
-					result, msg = event.PerForm(event.Var)
-				}
-				if event.Debug != "" {
-					debugMsg := make(map[string]interface{})
-					debugMsg["uuid"] = event.Uuid.String()
-					debugMsg["event_id"] = event.Id
-					debugMsg["status"] = result
-					debugMsg["msg"] = msg
-					debugMsg["type"] = model.IfControllerType
-					debugMsg["report_id"] = event.ReportId
-					debugMsg["next_list"] = event.NextList
-					if requestCollection != nil {
-						model.Insert(requestCollection, debugMsg)
-					}
-				}
-
-				expiration := 60 * time.Second
-				if result == model.Failed {
-					err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
-					if err != nil {
-						log.Logger.Error("事件状态写入redis数据库失败", err)
-					}
-				} else {
-					err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-					if err != nil {
-						log.Logger.Error("事件状态写入redis数据库失败", err)
-					}
-				}
-				wgTemp.Done()
-				currentWg.Done()
-			case model.WaitControllerType:
-				time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
-				if scene.Debug != "" {
-					debugMsg := make(map[string]interface{})
-					debugMsg["uuid"] = event.Uuid.String()
-					debugMsg["event_id"] = event.Id
-					debugMsg["report_id"] = event.ReportId
-					debugMsg["status"] = model.Success
-					debugMsg["type"] = model.WaitControllerType
-					debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "毫秒"
-					debugMsg["next_list"] = event.NextList
-					if requestCollection != nil {
-						model.Insert(requestCollection, debugMsg)
-					}
-				}
-				expiration := 60 * time.Second
-				err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-				if err != nil {
-					log.Logger.Error("事件状态写入数据库失败", err)
-				}
-				wgTemp.Done()
-				currentWg.Done()
-			}
-
-		}(node, wg, currentWg, options...)
+		go DisposeNode(scene, sceneId, node, gid, runType, wg, currentWg, reportMsg, resultDataMsgCh, requestCollection, options...)
 	}
 }
 
+// DisposeNode 处理node节点
+func DisposeNode(scene *model.Scene, sceneId string, event model.Event, gid string, runType string, wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, disOptions ...int64) {
+	defer wg.Done()
+	defer currentWg.Done()
+
+	var (
+		goroutineId int64 // 启动的第几个协程
+		current     int64 // 并发数
+		machineIp   = ""
+		reportId    = ""
+	)
+	if reportMsg != nil {
+		machineIp = reportMsg.MachineIp
+		reportId = reportMsg.ReportId
+	}
+	// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
+	if event.PreList != nil && len(event.PreList) > 0 {
+
+		// 将上一级事件放入一个map中进行维护
+		var preMap = make(map[string]bool)
+		for _, eventId := range event.PreList {
+			if eventId != "" {
+				preMap[eventId] = false
+			}
+		}
+
+		startTime := time.Now().UnixMilli()
+
+		for len(preMap) > 0 {
+			if runType == "scene" {
+				err, sceneStatus := model.QuerySceneStatus(sceneId + ":status")
+				if err == nil && sceneStatus == "stop" {
+					debugMsg := make(map[string]interface{})
+					debugMsg["uuid"] = event.Uuid.String()
+					debugMsg["event_id"] = event.Id
+					debugMsg["status"] = model.NotRun
+					debugMsg["type"] = event.Type
+					debugMsg["report_id"] = event.ReportId
+					debugMsg["next_list"] = event.NextList
+					if requestCollection != nil {
+						model.Insert(requestCollection, debugMsg)
+					}
+					return
+				}
+			}
+			for eventId, _ := range preMap {
+				if eventId != "" {
+					// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
+					err, preEventStatus := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + gid + ":" + sceneId + ":" + eventId + ":status")
+					if err != nil {
+						break
+					}
+					switch preEventStatus {
+					case model.End:
+						delete(preMap, eventId)
+					case model.NotRun:
+						expiration := 60 * time.Second
+						err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+						if err != nil {
+							log.Logger.Error("事件状态写入数据库失败", err)
+						}
+						debugMsg := make(map[string]interface{})
+						debugMsg["uuid"] = event.Uuid.String()
+						debugMsg["event_id"] = event.Id
+						debugMsg["status"] = model.NotRun
+						debugMsg["type"] = event.Type
+						debugMsg["report_id"] = event.ReportId
+						debugMsg["next_list"] = event.NextList
+						if requestCollection != nil {
+							model.Insert(requestCollection, debugMsg)
+						}
+						delete(preMap, eventId)
+						return
+					case model.NotHit:
+						expiration := 60 * time.Second
+						err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
+						if err != nil {
+							log.Logger.Error("事件状态写入数据库失败", err)
+						}
+						debugMsg := make(map[string]interface{})
+						debugMsg["uuid"] = event.Uuid.String()
+						debugMsg["event_id"] = event.Id
+						debugMsg["type"] = event.Type
+						debugMsg["status"] = model.NotRun
+						debugMsg["report_id"] = event.ReportId
+						debugMsg["next_list"] = event.NextList
+						if requestCollection != nil {
+							model.Insert(requestCollection, debugMsg)
+						}
+						delete(preMap, eventId)
+						return
+					}
+				}
+			}
+			if startTime+60000 < time.Now().UnixMilli() {
+				return
+			}
+		}
+
+		// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
+		if disOptions != nil && len(disOptions) > 1 {
+
+			// 上级事件的最大并发数
+			goroutineId = disOptions[0]
+			var preMaxCurrent = int64(0)
+			// 从redis获取到上一级事件中的最大并发数
+			var s = false
+
+			for !s {
+				for _, tempEvent := range event.PreList {
+
+					err, result := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + tempEvent + ":current")
+
+					if err != nil {
+						s = false
+						break
+					}
+					tempMaxCurrent, err := strconv.ParseInt(result, 10, 64)
+					if err != nil {
+						s = false
+						break
+					}
+					if preMaxCurrent <= tempMaxCurrent {
+						preMaxCurrent = tempMaxCurrent
+					}
+					s = true
+				}
+			}
+
+			if current <= 0 && event.Type != model.IfControllerType && event.Type != model.WaitControllerType {
+				return
+			}
+			if event.Weight == 100 {
+				current = preMaxCurrent
+			}
+
+			if event.Weight > 0 && event.Weight < 100 {
+				current = int64(float64(preMaxCurrent) * (float64(event.Weight) / 100))
+			}
+
+		}
+
+	} else {
+		if disOptions != nil && len(disOptions) > 1 {
+			if event.Weight == 100 {
+				current = disOptions[1]
+			}
+			if event.Weight > 0 && event.Weight < 100 {
+				current = int64(math.Ceil(float64(disOptions[1]) * (float64(event.Weight) / float64(100))))
+			}
+			if event.Weight == 100 {
+				current = disOptions[1]
+			}
+		}
+
+	}
+
+	if event.NextList != nil && len(event.NextList) > 0 {
+		// 将该接口的并发数写入到redis当中，由nextList中的接口去查询并计算自己的并发数
+		result := fmt.Sprintf("%d", current)
+		expiration := 60 * time.Second
+		err := model.InsertStatus(machineIp+":"+reportId+":"+event.Id+":"+"current", result, expiration)
+		if err != nil {
+			log.Logger.Error(event.Id, " ：并发数状态写入redis失败：  ", err)
+		}
+	}
+	event.TeamId = scene.TeamId
+	event.Debug = scene.Debug
+	event.ReportId = scene.ReportId
+	switch event.Type {
+	case model.RequestType:
+		event.Api.Uuid = scene.Uuid
+		if disOptions != nil && len(disOptions) > 0 {
+			var requestResults = &model.ResultDataMsg{}
+			DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, current)
+		} else {
+			DisposeRequest(reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
+		}
+		expiration := 60 * time.Second
+		err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+		if err != nil {
+			log.Logger.Error("事件状态写入redis数据库失败", err)
+		}
+	case model.IfControllerType:
+		keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
+
+		if len(keys) > 0 {
+			for _, val := range keys {
+				for _, kv := range scene.Configuration.Variable {
+					if kv.Key == val[1] {
+						event.Var = strings.Replace(event.Var, val[0], kv.Value, -1)
+					}
+				}
+			}
+		}
+		values := tools.FindAllDestStr(event.Val, "{{(.*?)}}")
+		if len(values) > 0 {
+			for _, val := range values {
+				for _, kv := range scene.Configuration.Variable {
+					if kv.Key == val[1] {
+						event.Val = strings.Replace(event.Val, val[0], kv.Value, -1)
+					}
+				}
+			}
+		}
+		var result = model.Failed
+		var msg = ""
+
+		var temp = false
+		for _, kv := range scene.Configuration.Variable {
+			if kv.Key == event.Var {
+				temp = true
+				result, msg = event.PerForm(kv.Value)
+				break
+			}
+		}
+		if temp == false {
+			result, msg = event.PerForm(event.Var)
+		}
+		if event.Debug != "" {
+			debugMsg := make(map[string]interface{})
+			debugMsg["uuid"] = event.Uuid.String()
+			debugMsg["event_id"] = event.Id
+			debugMsg["status"] = result
+			debugMsg["msg"] = msg
+			debugMsg["type"] = model.IfControllerType
+			debugMsg["report_id"] = event.ReportId
+			debugMsg["next_list"] = event.NextList
+			if requestCollection != nil {
+				model.Insert(requestCollection, debugMsg)
+			}
+		}
+
+		expiration := 60 * time.Second
+		if result == model.Failed {
+			err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
+			if err != nil {
+				log.Logger.Error("事件状态写入redis数据库失败", err)
+			}
+		} else {
+			err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+			if err != nil {
+				log.Logger.Error("事件状态写入redis数据库失败", err)
+			}
+		}
+	case model.WaitControllerType:
+		time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
+		if scene.Debug != "" {
+			debugMsg := make(map[string]interface{})
+			debugMsg["uuid"] = event.Uuid.String()
+			debugMsg["event_id"] = event.Id
+			debugMsg["report_id"] = event.ReportId
+			debugMsg["status"] = model.Success
+			debugMsg["type"] = model.WaitControllerType
+			debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "毫秒"
+			debugMsg["next_list"] = event.NextList
+			if requestCollection != nil {
+				model.Insert(requestCollection, debugMsg)
+			}
+		}
+		expiration := 60 * time.Second
+		err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
+		if err != nil {
+			log.Logger.Error("事件状态写入数据库失败", err)
+		}
+	}
+
+}
+
 // DisposeRequest 开始对请求进行处理
-func DisposeRequest(wg, currentWg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
+func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
 	event model.Event, mongoCollection *mongo.Collection, options ...int64) {
-	if wg != nil {
-		defer wg.Done()
-	}
-	if currentWg != nil {
-		defer currentWg.Done()
-	}
 
 	api := event.Api
 	if api.Debug == "" {

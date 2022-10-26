@@ -48,8 +48,8 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
-				}(i, concurrent)
 
+				}(i, concurrent)
 				if reheatTime > 0 && index == 0 {
 					durationTime := time.Now().UnixMilli() - startTime
 					if (concurrent/reheatTime) > 0 && i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
