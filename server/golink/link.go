@@ -164,12 +164,8 @@ func disposePlanNode(scene *model.Scene, sceneId string, event model.Event, gid 
 	switch event.Type {
 	case model.RequestType:
 		event.Api.Uuid = scene.Uuid
-		if disOptions != nil && len(disOptions) > 0 {
-			var requestResults = &model.ResultDataMsg{}
-			DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, current)
-		} else {
-			DisposeRequest(reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
-		}
+		var requestResults = &model.ResultDataMsg{}
+		DisposeRequest(nil, reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, current)
 		expiration := 60 * time.Second
 		err := model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 		if err != nil {
@@ -358,7 +354,7 @@ func disposeDebugNode(scene *model.Scene, sceneId string, event model.Event, gid
 	switch event.Type {
 	case model.RequestType:
 		event.Api.Uuid = scene.Uuid
-		DisposeRequest(reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
+		DisposeRequest(nil, reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
 		expiration := 60 * time.Second
 		err := model.InsertStatus(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
 		if err != nil {
@@ -451,8 +447,11 @@ func disposeDebugNode(scene *model.Scene, sceneId string, event model.Event, gid
 }
 
 // DisposeRequest 开始对请求进行处理
-func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
+func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestResults *model.ResultDataMsg, configuration *model.Configuration,
 	event model.Event, mongoCollection *mongo.Collection, options ...int64) {
+	if wg != nil {
+		defer wg.Done()
+	}
 	api := event.Api
 	if api.Debug == "" {
 		api.Debug = event.Debug

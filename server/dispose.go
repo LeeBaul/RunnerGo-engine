@@ -312,7 +312,9 @@ func DebugApi(debugApi model.Api) {
 	configuration := new(model.Configuration)
 	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
-
-	go golink.DisposeRequest(nil, nil, nil, configuration, event, mongoCollection)
-
+	var wg = &sync.WaitGroup{}
+	wg.Add(1)
+	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
+	wg.Wait()
+	log.Logger.Debug("接口: ", event.Api.Name, "   调试结束！")
 }
