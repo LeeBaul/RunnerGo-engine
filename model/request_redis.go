@@ -38,9 +38,6 @@ func InsertStatus(key, value string, expiration time.Duration) (err error) {
 
 func QueryPlanStatus(key string) (err error, value string) {
 	value, err = RDB.Get(key).Result()
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -61,9 +58,7 @@ func QueryTimingTaskStatus(key string) bool {
 
 func QuerySceneStatus(key string) (err error, value string) {
 	value, err = RDB.Get(key).Result()
-	if err != nil {
-		return
-	}
+
 	return
 }
 

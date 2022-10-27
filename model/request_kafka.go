@@ -27,7 +27,6 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
 			DataMsg.Partition = partition
-			DataMsg.Key = sarama.StringEncoder(reportId)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
@@ -48,7 +47,6 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
 			DataMsg.Partition = partition
-			DataMsg.Key = sarama.StringEncoder(reportId)
 			DataMsg.Value = sarama.StringEncoder(msg)
 			_, _, err = kafkaProducer.SendMessage(DataMsg)
 			if err != nil {
@@ -69,7 +67,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 func NewKafkaProducer(addrs []string) (kafkaProducer sarama.SyncProducer, err error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll           // 发送完数据需要leader和follow都确认
-	config.Producer.Partitioner = sarama.NewHashPartitioner    // 设置选择分区的策略为Hash,当设置key时，所有的key的消息都在一个分区Partitioner里
+	config.Producer.Partitioner = sarama.NewManualPartitioner  // 设置选择分区的策略为Hash,当设置key时，所有的key的消息都在一个分区Partitioner里
 	config.Producer.Return.Successes = true                    // 成功交付的消息将在success channel返回
 	kafkaProducer, err = sarama.NewSyncProducer(addrs, config) // 生产者客户端
 	if err != nil {
