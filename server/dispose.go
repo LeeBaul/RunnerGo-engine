@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
@@ -190,7 +191,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.ReportId = plan.ReportId
 	reportMsg.ReportName = plan.ReportName
 	reportMsg.MachineNum = plan.MachineNum
-	reportMsg.MachineIp = heartbeat.LocalIp
+	reportMsg.MachineIp = heartbeat.LocalIp + fmt.Sprintf("_%d", config.Conf.Heartbeat.Port)
 	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
 
 	log.Logger.Info("任务配置：    ", string(testModelJson))

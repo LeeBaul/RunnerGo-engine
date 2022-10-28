@@ -105,7 +105,12 @@ func (b *Body) SetBody(req *fasthttp.Request) string {
 				}
 			} else {
 				filedWriter, err := bodyWriter.CreateFormField(value.Key)
-				by, _ := json.Marshal(value.Value)
+				var by []byte
+				if value.Type == StringType {
+					by = []byte(value.Value.(string))
+				} else {
+					by, _ = json.Marshal(value.Value)
+				}
 				filed := bytes.NewReader(by)
 				_, err = io.Copy(filedWriter, filed)
 				if err != nil {

@@ -18,6 +18,15 @@ type Config struct {
 	Grpc      Grpc      `yaml:"grpc"`
 	Heartbeat Heartbeat `yaml:"heartbeat"`
 	Oss       Oss       `yaml:"oss"`
+	Machine   Machine   `yaml:"machine"`
+}
+
+type Machine struct {
+	Bandwidth     int64  `yaml:"bandwidth"`
+	MaxGoroutines int64  `yaml:"max_goroutines"`
+	ServerType    int64  `yaml:"server_type"`
+	NetName       string `yaml:"net_name"`
+	DiskName      string `yaml:"disk_name"`
 }
 
 type Heartbeat struct {

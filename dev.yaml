@@ -3,7 +3,7 @@
 heartbeat:
   port: 8002
   region: "北京"
-  duration: 3
+  duration: 1
   grpcHost: "kpcontroller.apipost.cn:443"
 
 
@@ -38,13 +38,6 @@ mongo:
   address: "172.17.18.255:27017"
 
 
-es:
-  host: "http://es-cn-7pp2x5zd10001vn8v.elasticsearch.aliyuncs.com:9200"
-  username: "elastic"
-  password: "dnRqw5rRicYjbkkE"
-  index: "report"
-  size: 10000000
-
 oss:
   endpoint: "http://oss-cn-beijing.aliyuncs.com"
   accessKeyID: "LTAI5tEAzFMCX559VD8mRDoZ"
@@ -53,3 +46,8 @@ oss:
   split: "kunpeng/"
   down: "/data/parameter"
 
+machine:
+  max_goroutines: 100000
+  server_type: 0
+  net_name: ""
+  disk_name: ""

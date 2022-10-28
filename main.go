@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -72,8 +73,10 @@ func initService() {
 		}
 	}()
 	// 注册并发送心跳数据
+	field := heartbeat.LocalIp + "_" + fmt.Sprintf("%d", config.Conf.Heartbeat.Port) + "_" + config.Conf.Heartbeat.Region
 	go func() {
-		heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
+		//heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
+		heartbeat.SendHeartBeatRedis(field, config.Conf.Heartbeat.Duration)
 	}()
 	/// 接收终止信号
 	quit := make(chan os.Signal)

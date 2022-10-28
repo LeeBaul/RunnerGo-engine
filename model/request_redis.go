@@ -70,3 +70,8 @@ func QueryReportData(key string) (value string) {
 	value = values[len(values)-1]
 	return
 }
+
+func InsertHeartbeat(key string, field string, value interface{}) error {
+	err := RDB.HSet(key, field, value).Err()
+	return err
+}

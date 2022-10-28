@@ -3,7 +3,10 @@ package heartbeat
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
+	"kp-runner/model"
 	gonet "net"
+	"runtime"
 	"strings"
 	"time"
 
@@ -26,16 +29,20 @@ import (
 var (
 	heartbeat = new(HeartBeat)
 	LocalIp   = ""
-	LocalHost = ""
+	Key       = "RunnerMachineList"
 )
 
-func CheckHeartBeat(ctx context.Context) *HeartBeat {
-	heartbeat.name = GetHostName()
-	heartbeat.cpu = GetCpuUsed()
-	heartbeat.mem = GetMemUsed()
-	heartbeat.cpuLoad = GetCPULoad()
-	heartbeat.network = GetNetwork("")
-	heartbeat.disk = GetDiskUsed("")
+func CheckHeartBeat() *HeartBeat {
+	heartbeat.Name = GetHostName()
+	heartbeat.CpuUsage = GetCpuUsed()
+	heartbeat.MemInfo = GetMemInfo()
+	heartbeat.CpuLoad = GetCPULoad()
+	heartbeat.Networks = GetNetwork()
+	heartbeat.MaxGoroutines = config.Conf.Machine.MaxGoroutines
+	heartbeat.DiskInfos = GetDiskInfo()
+	heartbeat.CreateTime = time.Now().Unix()
+	heartbeat.ServerType = config.Conf.Machine.ServerType
+	heartbeat.CurrentGoroutines = runtime.NumGoroutine()
 	return heartbeat
 }
 
@@ -74,13 +81,38 @@ func SendHeartBeat(host string, duration int64) {
 }
 
 type HeartBeat struct {
-	ip      string
-	name    string
-	cpu     float64
-	cpuLoad *load.AvgStat
-	mem     float64
-	network []uint64
-	disk    float64
+	Name              string        `json:"name"`
+	CpuUsage          float64       `json:"cpu_usage"`
+	CpuLoad           *load.AvgStat `json:"cpu_load"`
+	MemInfo           []MemInfo     `json:"mem_info"`
+	Networks          []Network     `json:"networks"`
+	DiskInfos         []DiskInfo    `json:"disk_infos"`
+	MaxGoroutines     int64         `json:"max_goroutines"`
+	CurrentGoroutines int           `json:"current_goroutines"`
+	ServerType        int64         `json:"server_type"`
+	CreateTime        int64         `json:"create_time"`
+}
+
+type MemInfo struct {
+	Total       uint64  `json:"total"`
+	Used        uint64  `json:"used"`
+	Free        uint64  `json:"free"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+type DiskInfo struct {
+	Total       uint64  `json:"total"`
+	Free        uint64  `json:"free"`
+	Used        uint64  `json:"used"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+type Network struct {
+	Name        string `json:"name"`
+	BytesSent   uint64 `json:"bytesSent"`
+	BytesRecv   uint64 `json:"bytesRecv"`
+	PacketsSent uint64 `json:"packetsSent"`
+	PacketsRecv uint64 `json:"packetsRecv"`
 }
 
 // CPU信息
@@ -99,12 +131,27 @@ func GetCPULoad() (info *load.AvgStat) {
 
 // 内存信息
 
-func GetMemUsed() float64 {
-	memInfo, err := mem.VirtualMemory()
+func GetMemInfo() (memInfoList []MemInfo) {
+	memVir := MemInfo{}
+	memInfoVir, err := mem.VirtualMemory()
 	if err != nil {
-		return 0
+		return
 	}
-	return memInfo.UsedPercent
+	memVir.Total = memInfoVir.Total
+	memVir.Free = memInfoVir.Free
+	memVir.Used = memInfoVir.Used
+	memVir.UsedPercent = memInfoVir.UsedPercent
+	memInfoList = append(memInfoList, memVir)
+	memInfoSwap, err := mem.SwapMemory()
+	if err != nil {
+		return
+	}
+	memVir.Total = memInfoSwap.Total
+	memVir.Free = memInfoSwap.Free
+	memVir.Used = memInfoSwap.Used
+	memVir.UsedPercent = memInfoSwap.UsedPercent
+	memInfoList = append(memInfoList, memVir)
+	return memInfoList
 }
 
 // 主机信息
@@ -116,30 +163,43 @@ func GetHostName() string {
 
 // 磁盘信息
 
-func GetDiskUsed(path string) float64 {
-	parts, _ := disk.Partitions(true)
-	for _, part := range parts {
-		partInfo, _ := disk.Usage(part.Mountpoint)
-		if partInfo.Path == path {
-			return partInfo.UsedPercent
-		}
+func GetDiskInfo() (diskInfoList []DiskInfo) {
+	disks, err := disk.Partitions(true)
+	if err != nil {
+		return
 	}
-	return 0
+	for _, v := range disks {
+		diskInfo := DiskInfo{}
+		info, err := disk.Usage(v.Device)
+		if err != nil {
+			continue
+		}
+		diskInfo.Total = info.Total
+		diskInfo.Free = info.Free
+		diskInfo.Used = info.Used
+		diskInfo.UsedPercent = info.UsedPercent
+		diskInfoList = append(diskInfoList, diskInfo)
+	}
+	return
 }
 
 // 网络信息
 
-func GetNetwork(networkName string) []uint64 {
-	var network []uint64
+func GetNetwork() (networkList []Network) {
 	netIOs, _ := net.IOCounters(true)
-	for _, netIO := range netIOs {
-		if netIO.Name == networkName {
-			network = append(network, netIO.BytesSent)
-			network = append(network, netIO.BytesRecv)
-			return network
-		}
+	if netIOs == nil {
+		return
 	}
-	return network
+	for _, netIO := range netIOs {
+		network := Network{}
+		network.Name = netIO.Name
+		network.BytesSent = netIO.BytesSent
+		network.BytesRecv = netIO.BytesRecv
+		network.PacketsSent = netIO.PacketsSent
+		network.PacketsRecv = netIO.PacketsRecv
+		networkList = append(networkList, network)
+	}
+	return
 }
 
 func InitLocalIp() {
@@ -152,4 +212,20 @@ func InitLocalIp() {
 	localAddr := conn.LocalAddr().(*gonet.UDPAddr)
 	LocalIp = strings.Split(localAddr.String(), ":")[0]
 	log.Logger.Info("本机ip：", LocalIp)
+}
+
+func SendHeartBeatRedis(field string, duration int64) {
+	ticker := time.NewTicker(time.Duration(duration) * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			CheckHeartBeat()
+			hb, _ := json.Marshal(heartbeat)
+			err := model.InsertHeartbeat(Key, field, string(hb))
+			if err != nil {
+				log.Logger.Error("心跳发送失败, 写入redis失败:   ", err)
+			}
+		}
+	}
+
 }

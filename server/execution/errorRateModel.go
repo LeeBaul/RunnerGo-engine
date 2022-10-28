@@ -74,11 +74,14 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 				break
 			}
 			for _, resultData := range result.Results {
-				errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
-				if errRate > resultData.ErrorThreshold {
-					log.Logger.Info("计划:", planId, "...............结束")
-					return
+				if resultData.TotalRequestNum != 0 {
+					errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
+					if errRate > resultData.ErrorThreshold {
+						log.Logger.Info("计划:", planId, "...............结束")
+						return
+					}
 				}
+
 			}
 		}
 
