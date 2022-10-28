@@ -175,8 +175,9 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	if scene.Configuration.ParameterizedFile != nil {
 		p := scene.Configuration.ParameterizedFile
 		p.VariableNames.Mu = sync.Mutex{}
-		teamId := strconv.FormatInt(plan.TeamId, 10)
-		p.DownLoadFile(teamId, plan.ReportId)
+		//teamId := strconv.FormatInt(plan.TeamId, 10)
+		//p.DownLoadFile(teamId, plan.ReportId)
+		p.UseFile()
 	}
 
 	var reportMsg = &model.ResultDataMsg{}
@@ -269,8 +270,9 @@ func DebugScene(scene *model.Scene) {
 			p.VariableNames = new(model.VariableNames)
 		}
 		p.VariableNames.Mu = sync.Mutex{}
-		teamId := strconv.FormatInt(scene.TeamId, 10)
-		p.DownLoadFile(teamId, scene.ReportId)
+		//teamId := strconv.FormatInt(scene.TeamId, 10)
+		//p.DownLoadFile(teamId, scene.ReportId)
+		p.UseFile()
 	}
 
 	scene.Debug = model.All

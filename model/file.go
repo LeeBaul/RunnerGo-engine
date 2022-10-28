@@ -3,6 +3,7 @@ package model
 import (
 	"bufio"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"io"
 	"kp-runner/config"
 	"kp-runner/log"
@@ -25,7 +26,52 @@ type VariableNames struct {
 	Mu         sync.Mutex          `json:"mu"`
 }
 
-// 从oss下载文件
+func (p *ParameterizedFile) UseFile() {
+	if p.Paths == nil || len(p.Paths) == 0 {
+		return
+	}
+	fc := &fasthttp.Client{}
+	req := fasthttp.AcquireRequest()
+	// set url
+	req.Header.SetMethod("GET")
+	req.Header.SetMethod("GET")
+	resp := fasthttp.AcquireResponse()
+	defer req.ConnectionClose()
+	defer resp.ConnectionClose()
+	p.VariableNames.VarMapList = make(map[string][]string)
+	for _, path := range p.Paths {
+		req.Header.SetRequestURI(path)
+		if err := fc.Do(req, resp); err != nil {
+			log.Logger.Error("下载参数化文件错误：", err)
+			continue
+		}
+		strs := strings.Split(string(resp.Body()), "\n")
+		index := 0
+		var keys []string
+		for _, str := range strs {
+			if index == 0 {
+				keys = strings.Split(str, ",")
+				for _, data := range keys {
+					data = strings.TrimSpace(data)
+					if _, ok := p.VariableNames.VarMapList[data]; !ok {
+						p.VariableNames.VarMapList[data] = []string{}
+					}
+
+				}
+
+			} else {
+				dataList := strings.Split(str, ",")
+				for i := 0; i < len(keys); i++ {
+					p.VariableNames.VarMapList[keys[i]] = append(p.VariableNames.VarMapList[keys[i]], dataList[i])
+				}
+			}
+			index++
+		}
+	}
+	p.VariableNames.Index = 0
+}
+
+// DownLoadFile 下载测试文件
 func (p *ParameterizedFile) DownLoadFile(teamId, reportId string) {
 	if p.Paths == nil {
 		return

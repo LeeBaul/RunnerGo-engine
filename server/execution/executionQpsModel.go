@@ -40,7 +40,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	concurrent := startConcurrent
 
 	startTime := time.Now().UnixMilli()
-	startCurrentTime := startTime
 	currentTime := startTime
 	index := 0
 
@@ -88,11 +87,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		index++
 		currentWg.Wait()
 		// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
-		distance := time.Now().UnixMilli() - startCurrentTime
-		if distance < 1000 {
-			sleepTime := time.Duration(1000-distance) * time.Millisecond
-			time.Sleep(sleepTime)
-		}
 		currentTime = time.Now().UnixMilli()
 
 		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
