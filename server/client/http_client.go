@@ -2,7 +2,6 @@ package client
 
 import (
 	"crypto/tls"
-	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
 	"kp-runner/log"
@@ -65,7 +64,7 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	}
 
 	requestTime = uint64(time.Since(startTime))
-	sendBytes, _ = decimal.NewFromFloat(float64(req.Header.ContentLength()) / 1024).Round(2).Float64()
+	sendBytes = float64(req.Header.ContentLength()) / 1024
 	timestamp = time.Now().UnixMilli()
 	return
 }

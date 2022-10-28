@@ -2,7 +2,6 @@
 package golink
 
 import (
-	"github.com/shopspring/decimal"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	log2 "kp-runner/log"
@@ -67,7 +66,7 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 	// 接收到的字节长度
 	//contentLength = uint(resp.Header.ContentLength())
 
-	receivedBytes, _ = decimal.NewFromFloat(float64(resp.Header.ContentLength()) / 1024).Round(2).Float64()
+	receivedBytes = float64(resp.Header.ContentLength()) / 1024
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug != "" && api.Debug != "stop" {
 		switch api.Debug {
