@@ -106,7 +106,7 @@ func (b *Body) SetBody(req *fasthttp.Request) string {
 			} else {
 				filedWriter, err := bodyWriter.CreateFormField(value.Key)
 				var by []byte
-				if value.Type == StringType {
+				if value.FieldType == StringType {
 					by = []byte(value.Value.(string))
 				} else {
 					by, _ = json.Marshal(value.Value)
