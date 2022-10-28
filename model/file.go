@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // ParameterizedFile 参数化文件
@@ -49,6 +50,7 @@ func (p *ParameterizedFile) UseFile() {
 		index := 0
 		var keys []string
 		for _, str := range strs {
+			str = strings.TrimSpace(str)
 			if index == 0 {
 				keys = strings.Split(str, ",")
 				for _, data := range keys {
@@ -62,7 +64,8 @@ func (p *ParameterizedFile) UseFile() {
 			} else {
 				dataList := strings.Split(str, ",")
 				for i := 0; i < len(keys); i++ {
-					p.VariableNames.VarMapList[keys[i]] = append(p.VariableNames.VarMapList[keys[i]], dataList[i])
+					data := strings.TrimSpace(dataList[i])
+					p.VariableNames.VarMapList[keys[i]] = append(p.VariableNames.VarMapList[keys[i]], data)
 				}
 			}
 			index++
@@ -170,10 +173,12 @@ func (p *ParameterizedFile) GetPathList(reportId string) {
 
 // UseVar 使用数据
 func (p *ParameterizedFile) UseVar(key string) (value string) {
+	fmt.Println("p:             ", p.VariableNames.VarMapList["id"])
 	if values, ok := p.VariableNames.VarMapList[key]; ok {
 		if p.VariableNames.Index >= len(p.VariableNames.VarMapList[key]) {
 			p.VariableNames.Index = 0
 		}
+		time.Sleep(10 * time.Second)
 		value = values[p.VariableNames.Index]
 		p.VariableNames.Index++
 	}
