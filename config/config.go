@@ -10,15 +10,24 @@ import (
 var Conf Config
 
 type Config struct {
-	Http      Http      `yaml:"http"`
-	Kafka     Kafka     `yaml:"kafka"`
-	Redis     Redis     `yaml:"redis"`
-	Mongo     Mongo     `yaml:"mongo"`
-	Es        Es        `yaml:"es"`
-	Grpc      Grpc      `yaml:"grpc"`
-	Heartbeat Heartbeat `yaml:"heartbeat"`
-	Oss       Oss       `yaml:"oss"`
-	Machine   Machine   `yaml:"machine"`
+	Http       Http       `yaml:"http"`
+	Kafka      Kafka      `yaml:"kafka"`
+	Redis      Redis      `yaml:"redis"`
+	Mongo      Mongo      `yaml:"mongo"`
+	Es         Es         `yaml:"es"`
+	Grpc       Grpc       `yaml:"grpc"`
+	Heartbeat  Heartbeat  `yaml:"heartbeat"`
+	Oss        Oss        `yaml:"oss"`
+	Machine    Machine    `yaml:"machine"`
+	Management Management `yaml:"management"`
+	Log        Log        `yaml:"log"`
+}
+
+type Log struct {
+	Path string `yaml:"path"`
+}
+type Management struct {
+	Address string `yaml:"address"`
 }
 
 type Machine struct {

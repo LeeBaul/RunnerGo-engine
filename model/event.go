@@ -14,6 +14,7 @@ type Event struct {
 	Tag               bool      `json:"tag" bson:"tag"` // Tps模式下，该标签代表以该接口为准
 	Debug             string    `json:"debug" bson:"debug"`
 	Mode              int64     `json:"mode"`                 // 模式类型
+	RequestThreshold  int64     `json:"request_threshold"`    // Rps（每秒请求数）阈值
 	ResponseThreshold int64     `json:"response_threshold"`   // 响应时间阈值
 	ErrorThreshold    float32   `json:"error_threshold"`      // 错误率阈值
 	PercentAge        int64     `json:"percent_age"`          // 响应时间线

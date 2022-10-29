@@ -75,9 +75,8 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			}
 			for _, resultData := range result.Results {
 				if resultData.TotalRequestNum != 0 {
-					errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
-					if errRate > resultData.ErrorThreshold {
-						log.Logger.Info("计划:", planId, "...............结束")
+					if resultData.ErrorRate > resultData.ErrorThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ": 错误率为： ", resultData.ErrorRate, "大于等于阈值：  ", resultData.ErrorThreshold, "   任务结束结束")
 						return
 					}
 				}

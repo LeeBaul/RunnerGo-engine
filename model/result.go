@@ -37,15 +37,21 @@ type ApiTestResultDataMsg struct {
 	TotalRequestNum                int64   `json:"total_request_num"`  // 总请求数
 	TotalRequestTime               int64   `json:"total_request_time"` // 总响应时间
 	SuccessNum                     int64   `json:"success_num"`
-	ErrorNum                       int64   `json:"error_num"`        // 错误数
-	ErrorThreshold                 float64 `json:"error_threshold"`  // 自定义错误率
-	AvgRequestTime                 float64 `json:"avg_request_time"` // 平均响应事件
+	ErrorRate                      float64 `json:"error_rate"`
+	ErrorNum                       int64   `json:"error_num"`          // 错误数
+	PercentAge                     int64   `json:"percent_age"`        // 响应时间线
+	ErrorThreshold                 float64 `json:"error_threshold"`    // 自定义错误率
+	RequestThreshold               int64   `json:"request_threshold"`  // Rps（每秒请求数）阈值
+	ResponseThreshold              int64   `json:"response_threshold"` // 响应时间阈值
+	AvgRequestTime                 float64 `json:"avg_request_time"`   // 平均响应事件
 	MaxRequestTime                 float64 `json:"max_request_time"`
 	MinRequestTime                 float64 `json:"min_request_time"` // 毫秒
 	CustomRequestTimeLine          int64   `json:"custom_request_time_line"`
+	FiftyRequestTimeline           int64   `json:"fifty_request_time_line" `
 	NinetyRequestTimeLine          int64   `json:"ninety_request_time_line"`
 	NinetyFiveRequestTimeLine      int64   `json:"ninety_five_request_time_line"`
 	NinetyNineRequestTimeLine      int64   `json:"ninety_nine_request_time_line"`
+	FiftyRequestTimelineValue      float64 `json:"fifty_request_time_line_value"`
 	CustomRequestTimeLineValue     float64 `json:"custom_request_time_line_value"`
 	NinetyRequestTimeLineValue     float64 `json:"ninety_request_time_line_value"`
 	NinetyFiveRequestTimeLineValue float64 `json:"ninety_five_request_time_line_value"`
@@ -73,8 +79,9 @@ type ResultDataMsg struct {
 	Name              string  `json:"name" bson:"name"`                       // 接口名称
 	RequestTime       uint64  `json:"request_time" bson:"request_time"`       // 请求响应时间
 	ResponseThreshold int64   `json:"response_threshold"`                     // 响应时间阈值
-	PercentAge        int64   `json:"percent_age" bson:"percent_age"`         // 自定义响应时间线
+	PercentAge        int64   `json:"percent_age" bson:"percent_age"`         // 响应时间线
 	ErrorThreshold    float32 `json:"error_threshold" bson:"error_threshold"` // 自定义错误率
+	RequestThreshold  int64   `json:"request_threshold"`                      // Rps（每秒请求数）阈值
 	ErrorType         int64   `json:"error_type" bson:"error_type"`           // 错误类型：1. 请求错误；2. 断言错误
 	IsSucceed         bool    `json:"is_succeed" bson:"is_succeed"`           // 请求是否有错：true / false   为了计数
 	ErrorMsg          string  `json:"error_msg" bson:"error_msg"`             // 错误信息

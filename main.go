@@ -25,13 +25,12 @@ var (
 
 func initService() {
 
+	// 初始化配置文件
+	config.InitConfig()
+
 	// 初始化logger
 	zap.S().Debug("初始化logger")
 	log.InitLogger()
-
-	// 初始化配置文件
-	zap.S().Debug("初始化配置文件")
-	config.InitConfig()
 
 	// 获取本机地址
 	heartbeat.InitLocalIp()

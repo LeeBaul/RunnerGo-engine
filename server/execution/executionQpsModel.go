@@ -8,6 +8,7 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"kp-runner/tools"
+	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -105,11 +106,15 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 				if err != nil {
 					break
 				}
+				apiNum := len(result.Results)
 				for _, resultData := range result.Results {
-					if resultData.Qps >= resultData.ErrorThreshold {
-						log.Logger.Info("计划:", planId, "...............结束")
-						maxConcurrent = concurrent
+					qps := int64(math.Ceil(resultData.Qps))
+					if resultData.RequestThreshold != 0 && qps >= resultData.RequestThreshold {
+						apiNum--
 					}
+				}
+				if apiNum == 0 {
+					maxConcurrent = concurrent
 				}
 			}
 

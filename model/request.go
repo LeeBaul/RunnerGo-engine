@@ -2,7 +2,8 @@ package model
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/binary"
+	"encoding/gob"
 	"fmt"
 	"github.com/comcast/go-edgegrid/edgegrid"
 	hawk "github.com/hiyosi/hawk"
@@ -13,6 +14,7 @@ import (
 	"io"
 	"kp-runner/log"
 	"kp-runner/tools"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -105,12 +107,7 @@ func (b *Body) SetBody(req *fasthttp.Request) string {
 				}
 			} else {
 				filedWriter, err := bodyWriter.CreateFormField(value.Key)
-				var by []byte
-				if value.FieldType == StringType {
-					by = []byte(value.Value.(string))
-				} else {
-					by, _ = json.Marshal(value.Value)
-				}
+				by := value.toByte()
 				filed := bytes.NewReader(by)
 				_, err = io.Copy(filedWriter, filed)
 				if err != nil {
@@ -162,7 +159,6 @@ func (b *Body) SetBody(req *fasthttp.Request) string {
 		req.SetBodyString(b.Raw)
 		return b.Raw
 	}
-
 	return ""
 }
 
@@ -226,6 +222,7 @@ type VarForm struct {
 	Description string      `json:"description" bson:"description"`
 	FieldType   string      `json:"field_type" bson:"field_type"`
 }
+
 type KV struct {
 	Key   string `json:"key" bson:"key"`
 	Value string `json:"value" bson:"value"`
@@ -468,49 +465,82 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 	}
 }
 
+func (v *VarForm) toByte() (by []byte) {
+	switch v.FieldType {
+	case StringType:
+		by = []byte(v.Value.(string))
+	case TextType:
+		by = []byte(v.Value.(string))
+	case ObjectType:
+		by = []byte(v.Value.(string))
+	case ArrayType:
+		by = []byte(v.Value.(string))
+	case NumberType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int))
+		by = bytesBuffer.Bytes()
+	case IntegerType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int))
+		by = bytesBuffer.Bytes()
+	case DoubleType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int64))
+		by = bytesBuffer.Bytes()
+	case FileType:
+		bits := math.Float64bits(v.Value.(float64))
+		binary.LittleEndian.PutUint64(by, bits)
+	case BooleanType:
+		buf := bytes.Buffer{}
+		enc := gob.NewEncoder(&buf)
+		_ = enc.Encode(v.Value.(bool))
+		by = buf.Bytes()
+	case DateType:
+		by = []byte(v.Value.(string))
+	case DateTimeType:
+		by = []byte(v.Value.(string))
+	case TimeStampType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int64))
+		by = bytesBuffer.Bytes()
+
+	}
+	return
+}
+
 // Conversion 将string转换为其他类型
 func (v *VarForm) Conversion() {
-	switch v.Type {
+	switch v.FieldType {
 	case StringType:
+		v.Value = v.Value.(string)
 		// 字符串类型不用转换
 	case TextType:
+		v.Value = v.Value.(string)
 		// 文本类型不用转换
 	case ObjectType:
+		v.Value = v.Value.(string)
 		// 对象不用转换
 	case ArrayType:
+		v.Value = v.Value.(string)
 		// 数组不用转换
 	case IntegerType:
-		value, err := strconv.ParseInt(v.Value.(string), 10, 64)
-		if err == nil {
-			v.Value = value
-		}
+		v.Value = v.Value.(int)
 	case NumberType:
-		value, err := strconv.ParseInt(v.Value.(string), 10, 64)
-		if err == nil {
-			v.Value = value
-		}
+		v.Value = v.Value.(int)
 	case FloatType:
-		value, err := strconv.ParseFloat(v.Value.(string), 32)
-		if err == nil {
-			v.Value = value
-		}
+		v.Value = v.Value.(float64)
 	case DoubleType:
-		value, err := strconv.ParseFloat(v.Value.(string), 64)
-		if err == nil {
-			v.Value = value
-		}
+		v.Value = v.Value.(float64)
 	case FileType:
+		v.Value = v.Value.(string)
 	case DateType:
+		v.Value = v.Value.(string)
 	case DateTimeType:
+		v.Value = v.Value.(string)
 	case TimeStampType:
-
+		v.Value = v.Value.(int64)
 	case BooleanType:
-		if v.Value == "true" {
-			v.Value = true
-		}
-		if v.Value == "false" {
-			v.Value = false
-		}
+		v.Value = v.Value.(bool)
 	}
 }
 

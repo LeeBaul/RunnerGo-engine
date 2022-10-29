@@ -51,3 +51,11 @@ machine:
   server_type: 0
   net_name: ""
   disk_name: ""
+
+
+log:
+  path: "/data/logs/kp-runner/kp-runner-info.log"
+
+
+management:
+  address: "https://kpmanage.apipost.cn/management/api/v1/plan/notify_stop_stress"

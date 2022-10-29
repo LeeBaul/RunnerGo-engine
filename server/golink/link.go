@@ -477,6 +477,8 @@ func DisposeRequest(wg *sync.WaitGroup, reportMsg *model.ResultDataMsg, resultDa
 		requestResults.ReportId = reportMsg.ReportId
 		requestResults.ReportName = reportMsg.ReportName
 		requestResults.PercentAge = event.PercentAge
+		requestResults.RequestThreshold = event.RequestThreshold
+		requestResults.ResponseThreshold = event.ResponseThreshold
 		requestResults.ErrorThreshold = event.ErrorThreshold
 		requestResults.TargetId = api.TargetId
 		requestResults.Name = api.Name
