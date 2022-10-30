@@ -301,7 +301,6 @@ func disposeDebugNode(scene *model.Scene, sceneId string, event model.Event, gid
 				}
 				switch preEventStatus {
 				case model.End:
-					log.Logger.Debug("event.id:                   ", event.Id)
 					delete(preMap, eventId)
 				case model.NotRun:
 					expiration := 60 * time.Second

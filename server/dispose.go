@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
-	"io/ioutil"
 	"kp-runner/config"
 	"kp-runner/log"
 	"kp-runner/model"
@@ -15,9 +14,7 @@ import (
 	"kp-runner/server/golink"
 	"kp-runner/server/heartbeat"
 	"kp-runner/tools"
-	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -216,7 +213,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		var machines []string
 		machine := reportMsg.MachineIp
 		machines = append(machines, machine)
-		SendStopStressReport(machines, plan.ReportId)
+		tools.SendStopStressReport(machines, plan.ReportId)
 	}
 	wg.Wait()
 	debugMsg := make(map[string]interface{})
@@ -225,43 +222,6 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	model.Insert(mongoCollection, debugMsg)
 
 	log.Logger.Info("计划:", plan.PlanId, ".............结束")
-
-}
-
-type StopMsg struct {
-	ReportId string   `json:"report_id"`
-	Machines []string `json:"machines"`
-}
-
-func SendStopStressReport(machines []string, reportId string) {
-	sm := StopMsg{
-		ReportId: reportId,
-	}
-	sm.Machines = machines
-
-	body, err := json.Marshal(&sm)
-	if err != nil {
-		log.Logger.Error(reportId, "   ,json转换失败：  ", err.Error())
-	}
-	res, err := http.Post(config.Conf.Management.Address, "application/json", strings.NewReader(string(body)))
-
-	if err != nil {
-		log.Logger.Error("http请求建立链接失败：", err.Error())
-		return
-	}
-	defer res.Body.Close()
-
-	_, err = ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		log.Logger.Error(reportId, " ,发送停止任务失败，http请求失败", err.Error())
-		return
-	}
-	if res.StatusCode == 200 {
-		log.Logger.Error(reportId, "  :停止任务成功：")
-	} else {
-		log.Logger.Error(reportId, "  :停止任务失败：status code:  ", res.StatusCode)
-	}
 
 }
 
