@@ -4,7 +4,6 @@ package golink
 import (
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
-	log2 "kp-runner/log"
 	"kp-runner/model"
 	"kp-runner/server/client"
 	"time"
@@ -150,7 +149,6 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 					debugMsg["regex"] = regex
 				}
 				if requestCollection != nil {
-					log2.Logger.Debug("report_id", debugMsg["report_id"])
 					debugMsg["report_id"] = event.ReportId
 					model.Insert(requestCollection, debugMsg)
 				}
