@@ -8,7 +8,6 @@ import (
 	"kp-runner/model"
 	"kp-runner/server/golink"
 	"kp-runner/tools"
-	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -39,19 +38,15 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	stableDuration *= 1000
 	concurrent := startConcurrent
 
-	startTime := time.Now().UnixMilli()
-	currentTime := startTime
-	index := 0
+	index, target := 0, 0
 
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	// 创建es客户端
-	//es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
-	//if es == nil {
-	//	return
-	//}
+
 	currentWg := &sync.WaitGroup{}
+	startTime := time.Now().Unix()
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+stepRunTime > currentTime {
+	for startTime+stepRunTime > time.Now().Unix() {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
 			return
@@ -60,11 +55,27 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		debug := model.QueryDebugStatus(debugCollection, reportId)
 		if debug != "" {
 			scene.Debug = debug
-		} else {
-			scene.Debug = ""
+		}
+		res := model.QueryReportData(key)
+		if res != "" {
+			var result = new(model.RedisSceneTestResultDataMsg)
+			err := json.Unmarshal([]byte(res), result)
+			if err != nil {
+				break
+			}
+			for _, resultData := range result.Results {
+				if resultData.TotalRequestNum != 0 {
+					if resultData.Qps >= float64(resultData.RequestThreshold) {
+						concurrent = maxConcurrent
+						stepRunTime = stableDuration
+						target += 1
+					}
+				}
+
+			}
 		}
 
-		startConcurrentTime := time.Now().UnixMilli()
+		startConcurrentTime := time.Now().Unix()
 
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
@@ -84,51 +95,36 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 			}
 		}
-		index++
+
 		currentWg.Wait()
 		// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
-		currentTime = time.Now().UnixMilli()
-
-		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().UnixMilli() {
-			log.Logger.Info("计划: ", planId, "..............结束")
-			return
+		endTime := time.Now().Unix()
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
 
 		// 如果当前并发数小于最大并发数，
-		if concurrent <= maxConcurrent {
-
-			res := model.QueryReportData(key)
-			if res != "" {
-				var result = new(model.RedisSceneTestResultDataMsg)
-				err := json.Unmarshal([]byte(res), result)
-				if err != nil {
-					break
-				}
-				apiNum := len(result.Results)
-				for _, resultData := range result.Results {
-					qps := int64(math.Ceil(resultData.Qps))
-					if resultData.RequestThreshold != 0 && qps >= resultData.RequestThreshold {
-						apiNum--
-					}
-				}
-				if apiNum == 0 {
-					maxConcurrent = concurrent
-				}
-			}
-
-			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+stepRunTime >= time.Now().UnixMilli() {
-				startTime = time.Now().UnixMilli()
-				//preConcurrent = concurrent
-				if concurrent+step <= maxConcurrent {
-					concurrent = concurrent + step
-				} else {
+		if concurrent < maxConcurrent {
+			if endTime-startTime >= stepRunTime {
+				// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
+				concurrent = concurrent + step
+				if concurrent > maxConcurrent {
 					concurrent = maxConcurrent
-					stepRunTime = stableDuration
 				}
 
+				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
+					startTime = startTime + stepRunTime
+
+				}
 			}
+
+		}
+		if concurrent == maxConcurrent {
+			if target == 0 {
+				stepRunTime = stableDuration
+				startTime = startTime + stepRunTime
+			}
+			target++
 		}
 
 		index++

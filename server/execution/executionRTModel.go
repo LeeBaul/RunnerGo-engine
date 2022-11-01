@@ -39,9 +39,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	stableDuration *= 1000
 	concurrent := startConcurrent
 
-	startTime := time.Now().UnixMilli()
-	currentTime := startTime
-	index := 0
+	index, target := 0, 0
 
 	//es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
 	//if es == nil {
@@ -50,7 +48,8 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+stepRunTime > currentTime {
+	startTime := time.Now().Unix()
+	for startTime+stepRunTime > time.Now().Unix() {
 
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
@@ -61,7 +60,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if debug != "" {
 			scene.Debug = debug
 		}
-		startConcurrentTime := time.Now().UnixMilli()
 
 		res := model.QueryReportData(key)
 		if res != "" {
@@ -120,6 +118,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 				}
 			}
 		}
+		startConcurrentTime := time.Now().Unix()
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
@@ -138,30 +137,35 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 
 			}
 		}
-		index++
 		currentWg.Wait()
-		currentTime = time.Now().UnixMilli()
-
+		endTime := time.Now().Unix()
 		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().UnixMilli() {
-			log.Logger.Info("计划: ", planId, "..............结束")
-			return
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
 
 		// 如果当前并发数小于最大并发数，
-		if concurrent <= maxConcurrent {
-			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+stepRunTime >= time.Now().UnixMilli() {
-				startTime = time.Now().UnixMilli()
-				//preConcurrent = concurrent
-				if concurrent+step <= maxConcurrent {
-					concurrent = concurrent + step
-				} else {
+		if concurrent < maxConcurrent {
+			if endTime-startTime >= stepRunTime {
+				// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
+				concurrent = concurrent + step
+				if concurrent > maxConcurrent {
 					concurrent = maxConcurrent
-					stepRunTime = stableDuration
 				}
 
+				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
+					startTime = startTime + stepRunTime
+
+				}
 			}
+
+		}
+		if concurrent == maxConcurrent {
+			if target == 0 {
+				stepRunTime = stableDuration
+				startTime = startTime + stepRunTime
+			}
+			target++
 		}
 		index++
 

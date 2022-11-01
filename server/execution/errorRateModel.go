@@ -36,12 +36,12 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
-	startTime := time.Now().Unix()
+
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent
 	concurrent := startConcurrent
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	index := 0
+	index, target := 0, 0
 	// 创建es客户端，获取测试数据
 	//es := model.NewEsClient(config.Conf.Es.Host, config.Conf.Es.UserName, config.Conf.Es.Password)
 	//if es == nil {
@@ -49,6 +49,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	//}
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
+	startTime := time.Now().Unix()
 	for startTime+stepRunTime > time.Now().Unix() {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -59,8 +60,6 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		debug := model.QueryDebugStatus(debugCollection, reportId)
 		if debug != "" {
 			scene.Debug = debug
-		} else {
-			scene.Debug = ""
 		}
 
 		// 查询当前错误率时多少
@@ -101,26 +100,36 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			}
 		}
 		currentWg.Wait()
-		index++
+		endTime := time.Now().Unix()
 
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime >= time.Now().Unix() {
-			log.Logger.Info("计划:", planId, ".....................结束")
-			return
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
+
 		// 如果当前并发数小于最大并发数，
-		if concurrent <= maxConcurrent {
-			// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
-			if startTime+stepRunTime >= time.Now().Unix() {
-				startTime = time.Now().Unix()
-				//preConcurrent = concurrent
-				if concurrent+step <= maxConcurrent {
-					concurrent = concurrent + step
-				} else {
+		if concurrent < maxConcurrent {
+			if endTime-startTime >= stepRunTime {
+				// 从开始时间算起，加上持续时长。如果大于现在是的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
+				concurrent = concurrent + step
+				if concurrent > maxConcurrent {
 					concurrent = maxConcurrent
-					stepRunTime = stableDuration
 				}
 
+				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
+					startTime = startTime + stepRunTime
+
+				}
 			}
+
 		}
+		if concurrent == maxConcurrent {
+			if target == 0 {
+				stepRunTime = stableDuration
+				startTime = startTime + stepRunTime
+			}
+			target++
+		}
+
+		index++
 	}
 }
