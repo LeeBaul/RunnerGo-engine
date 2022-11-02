@@ -31,11 +31,11 @@ type Management struct {
 }
 
 type Machine struct {
-	Bandwidth     int64  `yaml:"bandwidth"`
-	MaxGoroutines int64  `yaml:"max_goroutines"`
-	ServerType    int64  `yaml:"server_type"`
-	NetName       string `yaml:"net_name"`
-	DiskName      string `yaml:"disk_name"`
+	Bandwidth     int    `yaml:"bandwidth"`
+	MaxGoroutines int    `yaml:"maxGoroutines"`
+	ServerType    int    `yaml:"serverType"`
+	NetName       string `yaml:"netName"`
+	DiskName      string `yaml:"diskName"`
 }
 
 type Heartbeat struct {

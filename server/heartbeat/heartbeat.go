@@ -87,9 +87,9 @@ type HeartBeat struct {
 	MemInfo           []MemInfo     `json:"mem_info"`
 	Networks          []Network     `json:"networks"`
 	DiskInfos         []DiskInfo    `json:"disk_infos"`
-	MaxGoroutines     int64         `json:"max_goroutines"`
+	MaxGoroutines     int           `json:"max_goroutines"`
 	CurrentGoroutines int           `json:"current_goroutines"`
-	ServerType        int64         `json:"server_type"`
+	ServerType        int           `json:"server_type"`
 	CreateTime        int64         `json:"create_time"`
 }
 

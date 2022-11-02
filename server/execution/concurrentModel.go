@@ -12,7 +12,7 @@ import (
 )
 
 // ConcurrentModel 并发模式
-func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
+func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
 
 	startTime := time.Now().UnixMilli()
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
@@ -41,13 +41,13 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				currentWg.Add(1)
-				go func(i, concurrent int64) {
+				go func(i, concurrent int64, planSharedMap *sync.Map) {
 					gid := tools.GetGid()
-					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
 
-				}(i, concurrent)
+				}(i, concurrent, sharedMap)
 				if reheatTime > 0 && index == 0 {
 					durationTime := time.Now().UnixMilli() - startTime
 					if (concurrent/reheatTime) > 0 && i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
@@ -83,7 +83,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				currentWg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
-					golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
 				}(i, concurrent)

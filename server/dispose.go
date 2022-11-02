@@ -111,6 +111,7 @@ func ExecutionPlan(plan *model.Plan) {
 	topic := config.Conf.Kafka.TopIc
 	partition := plan.Partition
 	go model.SendKafkaMsg(kafkaProducer, resultDataMsgCh, topic, partition, plan.ReportId)
+	var sharedMap = new(sync.Map) // 存储场景中各个事件的状态
 
 	requestCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.StressDebugTable, mongoClient)
 	debugCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.DebugTable, mongoClient)
@@ -148,11 +149,11 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 分解任务
-	TaskDecomposition(plan, wg, resultDataMsgCh, debugCollection, requestCollection)
+	TaskDecomposition(plan, wg, resultDataMsgCh, debugCollection, requestCollection, sharedMap)
 }
 
 // TaskDecomposition 分解任务
-func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, mongoCollection *mongo.Collection) {
+func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, mongoCollection *mongo.Collection, sharedMap *sync.Map) {
 	defer close(resultDataMsgCh)
 	scene := plan.Scene
 	scene.TeamId = plan.TeamId
@@ -198,17 +199,17 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	log.Logger.Info("任务配置：    ", string(testModelJson))
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
-		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
+		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.ErrorRateModel:
-		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
+		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.LadderModel:
-		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
+		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
-		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
+		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.QpsModel:
-		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection)
+		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	default:
 		var machines []string
 		machine := reportMsg.MachineIp
@@ -278,13 +279,12 @@ func DebugScene(scene *model.Scene) {
 		//p.DownLoadFile(teamId, scene.ReportId)
 		p.UseFile()
 	}
-
+	var sharedMap = new(sync.Map)
 	scene.Debug = model.All
 	defer mongoClient.Disconnect(context.TODO())
 	mongoCollection := model.NewCollection(config.Conf.Mongo.DB, config.Conf.Mongo.SceneDebugTable, mongoClient)
-	golink.DisposeScene(wg, currentWg, gid, model.SceneType, scene, nil, nil, mongoCollection)
+	golink.DisposeScene(sharedMap, wg, currentWg, gid, model.SceneType, scene, nil, nil, mongoCollection)
 	currentWg.Wait()
-	wg.Wait()
 	log.Logger.Info("场景：    ", scene.SceneName, "        调试结束！")
 
 }
@@ -319,9 +319,6 @@ func DebugApi(debugApi model.Api) {
 	configuration := new(model.Configuration)
 	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
-	var wg = &sync.WaitGroup{}
-	wg.Add(1)
-	go golink.DisposeRequest(wg, nil, nil, nil, configuration, event, mongoCollection)
-	wg.Wait()
-	log.Logger.Debug("接口: ", event.Api.Name, "   调试结束！")
+	go golink.DisposeRequest(nil, nil, nil, configuration, event, mongoCollection)
+
 }

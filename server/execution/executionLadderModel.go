@@ -12,7 +12,7 @@ import (
 )
 
 // LadderModel 阶梯模式
-func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection) {
+func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
 	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
@@ -43,7 +43,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 			currentWg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
 				gid := tools.GetGid()
-				golink.DisposeScene(wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent, wg)
@@ -57,9 +57,9 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		}
 		currentWg.Wait()
 		endTime := time.Now().Unix()
-
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
 			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
+			return
 		}
 
 		// 如果当前并发数小于最大并发数，
