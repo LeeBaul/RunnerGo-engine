@@ -172,9 +172,6 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent)
 		eventResult.Status = model.End
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
-		sharedMap.Range(func(key, value any) bool {
-			return true
-		})
 	case model.IfControllerType:
 		keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
 		if len(keys) > 0 {
@@ -312,11 +309,8 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 	case model.RequestType:
 		event.Api.Uuid = scene.Uuid
 		DisposeRequest(reportMsg, resultDataMsgCh, nil, scene.Configuration, event, requestCollection)
-		expiration := 60 * time.Second
-		err := model.InsertStatus(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-		if err != nil {
-			log.Logger.Error("事件状态写入redis数据库失败", err)
-		}
+		eventResult.Status = model.End
+		sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	case model.IfControllerType:
 		keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
 
@@ -367,17 +361,12 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			}
 		}
 
-		expiration := 60 * time.Second
 		if result == model.Failed {
-			err := model.InsertStatus(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit, expiration)
-			if err != nil {
-				log.Logger.Error("事件状态写入redis数据库失败", err)
-			}
+			eventResult.Status = model.NotHit
+			sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		} else {
-			err := model.InsertStatus(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-			if err != nil {
-				log.Logger.Error("事件状态写入redis数据库失败", err)
-			}
+			eventResult.Status = model.End
+			sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		}
 	case model.WaitControllerType:
 		time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
@@ -394,11 +383,8 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 				model.Insert(requestCollection, debugMsg)
 			}
 		}
-		expiration := 60 * time.Second
-		err := model.InsertStatus(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", model.End, expiration)
-		if err != nil {
-			log.Logger.Error("事件状态写入数据库失败", err)
-		}
+		eventResult.Status = model.End
+		sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	}
 
 }

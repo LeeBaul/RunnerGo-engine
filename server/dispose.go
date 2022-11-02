@@ -319,6 +319,6 @@ func DebugApi(debugApi model.Api) {
 	configuration := new(model.Configuration)
 	configuration.Variable = []*model.KV{}
 	configuration.Mu = sync.Mutex{}
-	go golink.DisposeRequest(nil, nil, nil, configuration, event, mongoCollection)
+	golink.DisposeRequest(nil, nil, nil, configuration, event, mongoCollection)
 
 }
