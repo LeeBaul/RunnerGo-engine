@@ -750,6 +750,7 @@ func (r *Api) FindParameterizes() {
 	if r.Parameters == nil {
 		r.Parameters = new(sync.Map)
 	}
+	r.Request.URL = strings.TrimSpace(r.Request.URL)
 	urls := tools.FindAllDestStr(r.Request.URL, "{{(.*?)}}")
 
 	for _, name := range urls {
