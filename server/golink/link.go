@@ -171,7 +171,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 	case model.RequestType:
 		event.Api.Uuid = scene.Uuid
 		var requestResults = &model.ResultDataMsg{}
-		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent, disOptions[3])
+		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent)
 		eventResult.Status = model.End
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	case model.IfControllerType:
@@ -459,7 +459,6 @@ func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.
 		requestResults.SendBytes = sendBytes
 		requestResults.ReceivedBytes = receivedBytes
 		requestResults.ErrorMsg = errMsg
-		requestResults.Timestamp = options[2]
 		resultDataMsgCh <- requestResults
 	}
 
