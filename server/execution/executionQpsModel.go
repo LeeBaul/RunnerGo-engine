@@ -44,7 +44,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	// 创建es客户端
 
 	currentWg := &sync.WaitGroup{}
-	startTime, concurrentStartTime := time.Now().Unix(), time.Now().Unix()
+	startTime := time.Now().Unix()
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > time.Now().Unix() {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -75,18 +75,14 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 			}
 		}
 
-		if time.Now().Unix()-startTime > 1 {
-			concurrentStartTime = time.Now().Unix()
-		}
-
-		startConcurrentTime := time.Now().Unix()
+		startConcurrentTime := time.Now().UnixMilli()
 
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent)

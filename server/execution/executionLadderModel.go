@@ -27,7 +27,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	concurrent := startConcurrent
 	index, target := 0, 0
 	currentWg := &sync.WaitGroup{}
-	startTime, concurrentStartTime := time.Now().Unix(), time.Now().Unix()
+	startTime := time.Now().Unix()
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > time.Now().Unix() {
@@ -39,21 +39,19 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)
 		debug := model.QueryDebugStatus(debugCollection, reportId)
 		scene.Debug = debug
-		if time.Now().Unix()-startTime > 1 {
-			concurrentStartTime = time.Now().Unix()
-		}
+		startConcurrentTime := time.Now().UnixMilli()
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
 			go func(i, concurrent int64, wg *sync.WaitGroup) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent, wg)
 			// 如果设置了启动并发时长
 			if reheatTime > 0 && index == 0 {
-				durationTime := time.Now().UnixMilli() - startTime
+				durationTime := time.Now().UnixMilli() - startConcurrentTime
 				if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
 					time.Sleep(time.Duration(durationTime) * time.Millisecond)
 				}

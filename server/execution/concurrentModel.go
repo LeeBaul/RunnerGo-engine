@@ -21,12 +21,11 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		log.Logger.Info("开始性能测试,持续时间", scene.ConfigTask.ModeConf.Duration, "秒")
 		index := 0
 		duration := scene.ConfigTask.ModeConf.Duration * 1000
-		currentTime := time.Now().UnixMilli()
 
 		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
-		startTime, concurrentStartTime := time.Now().UnixMilli(), time.Now().Unix()
-		for startTime+duration > currentTime {
+		startTime := time.Now().Unix()
+		for startTime+duration >= time.Now().Unix() {
 			// 查询是否停止
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
@@ -38,21 +37,19 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			if debug != "" {
 				scene.Debug = debug
 			}
-			if time.Now().Unix()-startTime > 1 {
-				concurrentStartTime = time.Now().Unix()
-			}
+			startConcurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				currentWg.Add(1)
 				go func(i, concurrent int64, planSharedMap *sync.Map) {
 					gid := tools.GetGid()
-					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
+					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
 
 				}(i, concurrent, sharedMap)
 				if reheatTime > 0 && index == 0 {
-					durationTime := time.Now().UnixMilli() - startTime
+					durationTime := time.Now().UnixMilli() - startConcurrentTime
 					if (concurrent/reheatTime) > 0 && i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
 						time.Sleep(time.Duration(durationTime) * time.Millisecond)
 					}
@@ -61,14 +58,13 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 			currentWg.Wait()
 			index++
-			currentTime = time.Now().UnixMilli()
 		}
 
 	} else {
 		index := 0
 		rounds := scene.ConfigTask.ModeConf.RoundNum
 		currentWg := &sync.WaitGroup{}
-		startTime, concurrentStartTime := time.Now().UnixMilli(), time.Now().Unix()
+		startTime := time.Now().UnixMilli()
 		for i := int64(0); i < rounds; i++ {
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
@@ -81,16 +77,13 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			} else {
 				scene.Debug = ""
 			}
-			if time.Now().Unix()-startTime > 1 {
-				concurrentStartTime = time.Now().Unix()
-			}
 			currentTime := time.Now().UnixMilli()
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				currentWg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
-					golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
+					golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
 				}(i, concurrent)
