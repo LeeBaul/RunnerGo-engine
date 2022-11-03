@@ -5,6 +5,7 @@ package tools
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/thedevsaddam/gojsonq"
 	"kp-runner/log"
 	"os"
 	"regexp"
@@ -136,4 +137,16 @@ func GetGid() (gid string) {
 	b = b[:bytes.IndexByte(b, ' ')]
 	gid = string(b)
 	return
+}
+
+// JsonPath json格式提取数据
+func JsonPath(source, expression string) (district interface{}) {
+	gq := gojsonq.New().FromString(source)
+	district = gq.Find(expression)
+	return
+}
+
+//  HtmlPath html格式提取数据
+func HtmlPath() {
+
 }

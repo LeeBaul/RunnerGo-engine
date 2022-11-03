@@ -10,16 +10,15 @@ import (
 )
 
 // HttpSend 发送http请求
-func HttpSend(event model.Event, api model.Api, configuration *model.Configuration, requestCollection *mongo.Collection) (bool, int64, uint64, float64, float64, string, int64) {
+func HttpSend(event model.Event, api model.Api, configuration *model.Configuration, requestCollection *mongo.Collection) (bool, int64, uint64, float64, float64, string) {
 	var (
 		isSucceed     = true
 		errCode       = model.NoError
 		receivedBytes = float64(0)
 		errMsg        = ""
-		timestamp     = int64(0)
 	)
 
-	resp, req, requestTime, sendBytes, err, timestamp, str := client.HTTPRequest(api.Method, api.Request.URL, api.Request.Body, api.Request.Query,
+	resp, req, requestTime, sendBytes, err, str := client.HTTPRequest(api.Method, api.Request.URL, api.Request.Body, api.Request.Query,
 		api.Request.Header, api.Request.Auth, api.Timeout)
 	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 	defer fasthttp.ReleaseRequest(req)
@@ -192,5 +191,5 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 
 		}
 	}
-	return isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg, timestamp
+	return isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg
 }

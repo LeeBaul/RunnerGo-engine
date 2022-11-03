@@ -14,7 +14,6 @@ import (
 // ConcurrentModel 并发模式
 func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
 
-	startTime := time.Now().UnixMilli()
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
@@ -26,6 +25,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
+		startTime, concurrentStartTime := time.Now().UnixMilli(), time.Now().Unix()
 		for startTime+duration > currentTime {
 			// 查询是否停止
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -38,12 +38,15 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			if debug != "" {
 				scene.Debug = debug
 			}
+			if time.Now().Unix()-startTime > 1 {
+				concurrentStartTime = time.Now().Unix()
+			}
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				currentWg.Add(1)
 				go func(i, concurrent int64, planSharedMap *sync.Map) {
 					gid := tools.GetGid()
-					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
 					wg.Done()
 					currentWg.Done()
 
@@ -65,6 +68,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		index := 0
 		rounds := scene.ConfigTask.ModeConf.RoundNum
 		currentWg := &sync.WaitGroup{}
+		startTime, concurrentStartTime := time.Now().UnixMilli(), time.Now().Unix()
 		for i := int64(0); i < rounds; i++ {
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
@@ -77,13 +81,16 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			} else {
 				scene.Debug = ""
 			}
+			if time.Now().Unix()-startTime > 1 {
+				concurrentStartTime = time.Now().Unix()
+			}
 			currentTime := time.Now().UnixMilli()
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				currentWg.Add(1)
 				go func(i, concurrent int64) {
 					gid := tools.GetGid()
-					golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+					golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
 					wg.Done()
 					currentWg.Done()
 				}(i, concurrent)

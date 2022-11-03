@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/Shopify/sarama"
 	"kp-runner/log"
+	"time"
 )
 
 /*
@@ -39,6 +40,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			result.ReportId = reportId
 			result.End = true
 			result.MachineNum = num
+			result.Timestamp = time.Now().Unix()
 			msg, err := json.Marshal(result)
 			if err != nil {
 				log.Logger.Error("json转换失败", err)

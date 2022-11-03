@@ -48,7 +48,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	startTime := time.Now().Unix()
+	startTime, concurrentStartTime := time.Now().Unix(), time.Now().Unix()
 	for startTime+stepRunTime > time.Now().Unix() {
 
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
@@ -118,13 +118,18 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 				}
 			}
 		}
+
+		if time.Now().Unix()-startTime > 1 {
+			concurrentStartTime = time.Now().Unix()
+		}
+
 		startConcurrentTime := time.Now().Unix()
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, concurrentStartTime)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent)

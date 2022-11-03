@@ -17,6 +17,7 @@ import (
 func DisposeScene(sharedMap *sync.Map, wg, currentWg *sync.WaitGroup, gid string, runType string, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, requestCollection *mongo.Collection, options ...int64) {
 	nodes := scene.Nodes
 	sceneId := fmt.Sprintf("%d", scene.SceneId)
+
 	for _, node := range nodes {
 		node.Uuid = scene.Uuid
 		wg.Add(1)
@@ -25,6 +26,7 @@ func DisposeScene(sharedMap *sync.Map, wg, currentWg *sync.WaitGroup, gid string
 		switch runType {
 		case model.PlanType:
 			go disposePlanNode(sharedMap, scene, sceneId, node, gid, wg, currentWg, reportMsg, resultDataMsgCh, requestCollection, options...)
+
 		case model.SceneType:
 			go disposeDebugNode(sharedMap, scene, sceneId, node, gid, wg, currentWg, reportMsg, resultDataMsgCh, requestCollection)
 		}
@@ -169,7 +171,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 	case model.RequestType:
 		event.Api.Uuid = scene.Uuid
 		var requestResults = &model.ResultDataMsg{}
-		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent)
+		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent, disOptions[3])
 		eventResult.Status = model.End
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	case model.IfControllerType:
@@ -437,11 +439,10 @@ func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.
 		sendBytes     = float64(0)
 		receivedBytes = float64(0)
 		errMsg        = ""
-		timestamp     = int64(0)
 	)
 	switch api.TargetType {
 	case model.FormTypeHTTP:
-		isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg, timestamp = HttpSend(event, api, configuration, mongoCollection)
+		isSucceed, errCode, requestTime, sendBytes, receivedBytes, errMsg = HttpSend(event, api, configuration, mongoCollection)
 	case model.FormTypeWebSocket:
 		isSucceed, errCode, requestTime, sendBytes, receivedBytes = webSocketSend(api)
 	case model.FormTypeGRPC:
@@ -458,7 +459,7 @@ func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.
 		requestResults.SendBytes = sendBytes
 		requestResults.ReceivedBytes = receivedBytes
 		requestResults.ErrorMsg = errMsg
-		requestResults.Timestamp = timestamp
+		requestResults.Timestamp = options[2]
 		resultDataMsgCh <- requestResults
 	}
 

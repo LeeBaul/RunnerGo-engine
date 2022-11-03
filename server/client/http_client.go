@@ -4,13 +4,12 @@ import (
 	"crypto/tls"
 	"github.com/valyala/fasthttp"
 	"kp-runner/config"
-	"kp-runner/log"
 	"kp-runner/model"
 	"strings"
 	"time"
 )
 
-func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes float64, err error, timestamp int64, str string) {
+func HTTPRequest(method, url string, body *model.Body, query *model.Query, header *model.Header, auth *model.Auth, timeout int64) (resp *fasthttp.Response, req *fasthttp.Request, requestTime uint64, sendBytes float64, err error, str string) {
 
 	client := fastClient(timeout)
 	req = fasthttp.AcquireRequest()
@@ -59,13 +58,11 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	resp = fasthttp.AcquireResponse()
 
 	startTime := time.Now()
-	if err = client.Do(req, resp); err != nil {
-		log.Logger.Error("请求错误", err)
-	}
+	// 发送请求
+	err = client.Do(req, resp)
 
 	requestTime = uint64(time.Since(startTime))
 	sendBytes = float64(req.Header.ContentLength()) / 1024
-	timestamp = time.Now().UnixMilli()
 	return
 }
 
