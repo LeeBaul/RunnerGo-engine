@@ -14,9 +14,16 @@ import (
 // SendKafkaMsg 发送消息到kafka
 func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *ResultDataMsg, topic string, partition int32, reportId string) {
 	defer kafkaProducer.Close()
-	num := int64(0)
+	num, startTime := int64(0), int64(0)
 	for {
 		if resultDataMsg, ok := <-resultDataMsgCh; ok {
+			if startTime == 0 {
+				startTime = time.Now().Unix()
+			}
+			if time.Now().Unix()-startTime >= 1 {
+				startTime = time.Now().Unix()
+			}
+			resultDataMsg.Timestamp = startTime
 			msg, err := json.Marshal(resultDataMsg)
 			if err != nil {
 				log.Logger.Error("json转换失败", err)
@@ -25,6 +32,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 			if num == 0 {
 				num = resultDataMsg.MachineNum
 			}
+
 			DataMsg := &sarama.ProducerMessage{}
 			DataMsg.Topic = topic
 			DataMsg.Partition = partition
