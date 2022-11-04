@@ -97,13 +97,20 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 	case ResponseData:
 		switch assertionText.Compare {
 		case Equal:
-			rex := fmt.Sprintf("%s:(.*?)", assertionText.Var)
-			str := tools.FindDestStr(response.String(), rex)
-			if assertionText.Val == str {
-				return NoError, true, "响应中，" + assertionText.Var + " = " + assertionText.Val + " 断言: 成功"
-			} else {
-				return AssertError, false, "响应中," + assertionText.Var + " = " + assertionText.Val + " 断言: 失败"
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
 			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value == num {
+					return NoError, true, fmt.Sprintf("%f 等于 %f, 断言： 成功", value, num)
+				} else {
+					return AssertError, false, fmt.Sprintf("%f 不等于 %f, 断言： 失败", value, num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
+
 		case Includes:
 			if strings.Contains(response.String(), assertionText.Val) {
 				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
@@ -133,22 +140,28 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 
 		case GreaterThan:
 			value := tools.JsonPath(string(response.Body()), assertionText.Var)
-			if num, err := strconv.Atoi(assertionText.Val); err == nil {
-				if value.(int) > num {
-					return NoError, true, fmt.Sprintf("%d 大于 %d, 断言： 成功", value.(int), num)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
+			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value.(float64) > num {
+					return NoError, true, fmt.Sprintf("%f 大于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%d 不大于 %d, 断言： 失败", value.(int), num)
+					return AssertError, false, fmt.Sprintf("%f 不大于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
 			}
 		case GreaterThanOrEqual:
 			value := tools.JsonPath(string(response.Body()), assertionText.Var)
-			if num, err := strconv.Atoi(assertionText.Val); err == nil {
-				if value.(int) >= num {
-					return NoError, true, fmt.Sprintf("%d 大于等于 %d, 断言： 成功", value.(int), num)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
+			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value.(float64) >= num {
+					return NoError, true, fmt.Sprintf("%f 大于等于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%d 小于 %d, 断言： 失败", value.(int), num)
+					return AssertError, false, fmt.Sprintf("%f 小于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
@@ -156,22 +169,28 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 
 		case LessThan:
 			value := tools.JsonPath(string(response.Body()), assertionText.Var)
-			if num, err := strconv.Atoi(assertionText.Val); err == nil {
-				if value.(int) < num {
-					return NoError, true, fmt.Sprintf("%d 小于 %d, 断言： 成功", value.(int), num)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
+			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value.(float64) < num {
+					return NoError, true, fmt.Sprintf("%f 小于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%d 不小于 %d, 断言： 失败", value.(int), num)
+					return AssertError, false, fmt.Sprintf("%f 不小于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
 			}
 		case LessThanOrEqual:
 			value := tools.JsonPath(string(response.Body()), assertionText.Var)
-			if num, err := strconv.Atoi(assertionText.Val); err == nil {
-				if value.(int) <= num {
-					return NoError, true, fmt.Sprintf("%d 小于等于 %d, 断言： 成功", value.(int), num)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
+			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value.(float64) <= num {
+					return NoError, true, fmt.Sprintf("%f 小于等于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%d 大于 %d, 断言： 失败", value.(int), num)
+					return AssertError, false, fmt.Sprintf("%f 大于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
