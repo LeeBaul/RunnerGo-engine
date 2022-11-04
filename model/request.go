@@ -192,22 +192,35 @@ type Cookie struct {
 }
 
 type RegularExpression struct {
-	Var     string `json:"var"`     // 变量
-	Express string `json:"express"` // 表达式
-	Val     string `json:"val"`     // 值
+	IsChecked int         `json:"is_checked"` // 1 选中, -1未选
+	Type      int         `json:"type"`       // 0 正则  1 json
+	Var       string      `json:"var"`        // 变量
+	Express   string      `json:"express"`    // 表达式
+	Val       interface{} `json:"val"`        // 值
 }
 
 // Extract 提取response 中的值
-func (re RegularExpression) Extract(str string, configuration *Configuration) (value string) {
+func (re RegularExpression) Extract(str string, configuration *Configuration) (value interface{}) {
 	name := tools.VariablesMatch(re.Var)
-	if value = tools.FindDestStr(str, re.Express); value != "" {
-		re.Val = value
+	switch re.Type {
+	case 0:
 		kv := &KV{
-			Key:   name,
-			Value: value,
+			Key: name,
+		}
+		if value = tools.FindDestStr(str, re.Express); value != "" {
+			re.Val = value
+			kv.Value = value
 		}
 		configuration.Variable = append(configuration.Variable, kv)
+	case 1:
+		kv := &KV{
+			Key: name,
+		}
+		value = tools.JsonPath(str, re.Express)
+		kv.Value = value
+		configuration.Variable = append(configuration.Variable, kv)
 	}
+
 	return
 }
 
@@ -224,8 +237,8 @@ type VarForm struct {
 }
 
 type KV struct {
-	Key   string `json:"key" bson:"key"`
-	Value string `json:"value" bson:"value"`
+	Key   string      `json:"key" bson:"key"`
+	Value interface{} `json:"value" bson:"value"`
 }
 
 type PlanKv struct {
@@ -347,7 +360,7 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 	if auth != nil && auth.Type != NoAuth {
 		switch auth.Type {
 		case Kv:
-			req.Header.Add(auth.KV.Key, auth.KV.Value)
+			req.Header.Add(auth.KV.Key, auth.KV.Value.(string))
 		case BEarer:
 			req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
 		case BAsic:
@@ -697,11 +710,11 @@ func (r *Api) ReplaceAuthVarForm() {
 		case Kv:
 
 			if r.Request.Auth.KV != nil && r.Request.Auth.KV.Key != "" {
-				values := tools.FindAllDestStr(r.Request.Auth.KV.Value, "{{(.*?)}}")
+				values := tools.FindAllDestStr(r.Request.Auth.KV.Value.(string), "{{(.*?)}}")
 				if values != nil {
 					for _, value := range values {
 						if v, ok := r.Parameters.Load(value[1]); ok {
-							r.Request.Auth.KV.Value = strings.Replace(r.Request.Auth.KV.Value, value[0], v.(string), -1)
+							r.Request.Auth.KV.Value = strings.Replace(r.Request.Auth.KV.Value.(string), value[0], v.(string), -1)
 						}
 					}
 				}
@@ -935,7 +948,7 @@ func (r *Api) findAuthParameters() {
 			if r.Request.Auth.KV.Value == "" {
 				return
 			}
-			values := tools.FindAllDestStr(r.Request.Auth.KV.Value, "{{(.*?)}}")
+			values := tools.FindAllDestStr(r.Request.Auth.KV.Value.(string), "{{(.*?)}}")
 			for _, value := range values {
 				if _, ok := r.Parameters.Load(value[1]); !ok {
 					r.Parameters.Store(value[1], value[0])

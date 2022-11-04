@@ -25,6 +25,9 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 	var regex []map[string]interface{}
 	if api.Regex != nil {
 		for _, regular := range api.Regex {
+			if regular.IsChecked == -1 {
+				continue
+			}
 			reg := make(map[string]interface{})
 			value := regular.Extract(string(resp.Body()), configuration)
 			reg[regular.Var] = value
@@ -49,6 +52,9 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 			msg     = ""
 		)
 		for _, v := range api.Assert {
+			if v.IsChecked == -1 {
+				continue
+			}
 			code, succeed, msg = v.VerifyAssertionText(resp)
 			if succeed != true {
 				errCode = code

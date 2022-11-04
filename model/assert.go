@@ -19,6 +19,7 @@ type Assertion struct {
 
 // AssertionText 文本断言 0
 type AssertionText struct {
+	IsChecked    int    `json:"is_checked"`    // 1 选中  -1 未选
 	ResponseType int8   `json:"response_type"` //  1:ResponseHeaders; 2:ResponseData; 3: ResponseCode;
 	Compare      string `json:"compare"`       // Includes、UNIncludes、Equal、UNEqual、GreaterThan、GreaterThanOrEqual、LessThan、LessThanOrEqual、Includes、UNIncludes、NULL、NotNULL、OriginatingFrom、EndIn
 	Var          string `json:"var"`
@@ -80,6 +81,13 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			} else {
 				return AssertError, false, "响应头中," + assertionText.Var + " = " + assertionText.Val + " 断言: 失败"
 			}
+		case UNIncludes:
+			if strings.Contains(response.String(), assertionText.Val) {
+				return AssertError, false, "响应头中包含：" + assertionText.Val + " 断言: 失败"
+			} else {
+				return NoError, true, "响应头中不包含：" + assertionText.Val + " 断言: 成功"
+
+			}
 		}
 	case ResponseData:
 		switch assertionText.Compare {
@@ -96,6 +104,13 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
 			} else {
 				return AssertError, false, "响应中不包含：" + assertionText.Val + " 断言: 失败"
+			}
+		case UNIncludes:
+			if strings.Contains(response.String(), assertionText.Val) {
+				return AssertError, false, "响应中包含：" + assertionText.Val + " 断言: 失败"
+			} else {
+				return NoError, true, "响应中不包含：" + assertionText.Val + " 断言: 成功"
+
 			}
 		}
 	}

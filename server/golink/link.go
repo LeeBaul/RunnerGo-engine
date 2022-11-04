@@ -52,6 +52,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 	// 如果该事件上一级有事件，那么就一直查询上一级事件的状态，直到上一级所有事件全部完成
 	if event.PreList != nil && len(event.PreList) > 0 {
 		var preMaxConcurrent = int64(0) // 上一级最大并发数
+		var preMaxWeight = int64(0)
 		// 将上一级事件放入一个map中进行维护
 		var preMap = make(map[string]bool)
 
@@ -107,11 +108,14 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					}
 
 				}
-
 				goroutineId = disOptions[0]
-				if event.Weight > 0 && event.Weight <= 100 {
-					if preEventStatus.Concurrent >= preMaxConcurrent {
-						preMaxConcurrent = preEventStatus.Concurrent
+				if preEventStatus.Concurrent >= preMaxConcurrent {
+					preMaxConcurrent = preEventStatus.Concurrent
+				}
+
+				if event.Type == model.IfControllerType || event.Type == model.WaitControllerType {
+					if preEventStatus.Weight >= preMaxWeight {
+						preMaxWeight = preEventStatus.Weight
 					}
 				}
 
@@ -120,10 +124,12 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					delete(preMap, eventId)
 				case model.NotRun:
 					eventResult.Status = model.NotRun
+					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
 				case model.NotHit:
 					eventResult.Status = model.NotRun
+					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
 				}
@@ -132,9 +138,14 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 				return
 			}
 		}
+
+		if event.Type == model.WaitControllerType || event.Type == model.IfControllerType {
+			event.Weight = preMaxWeight
+		}
 		if event.Weight > 0 && event.Weight < 100 {
 			eventResult.Concurrent = int64(math.Ceil(float64(event.Weight) * float64(preMaxConcurrent) / 100))
 		}
+
 		if event.Weight == 100 {
 			eventResult.Concurrent = preMaxConcurrent
 		}
@@ -142,6 +153,9 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		// 如果该事件上一级有事件, 并且上一级事件中的第一个事件的权重不等于100，那么并发数就等于上一级的并发*权重
 
 	} else {
+		if event.Type == model.WaitControllerType || event.Type == model.IfControllerType {
+			event.Weight = 100
+		}
 		if disOptions != nil && len(disOptions) > 1 {
 			if event.Weight == 100 {
 				eventResult.Concurrent = disOptions[1]
@@ -155,11 +169,13 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 
 	if eventResult.Concurrent == 0 {
 		eventResult.Status = model.NotRun
+		eventResult.Weight = event.Weight
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		return
 	}
 	if goroutineId > eventResult.Concurrent {
 		eventResult.Status = model.NotRun
+		eventResult.Weight = event.Weight
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		return
 	}
@@ -173,6 +189,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		var requestResults = &model.ResultDataMsg{}
 		DisposeRequest(reportMsg, resultDataMsgCh, requestResults, scene.Configuration, event, requestCollection, goroutineId, eventResult.Concurrent, disOptions[2])
 		eventResult.Status = model.End
+		eventResult.Weight = event.Weight
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	case model.IfControllerType:
 		keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
@@ -180,7 +197,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			for _, val := range keys {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Var = strings.Replace(event.Var, val[0], kv.Value, -1)
+						event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
 					}
 				}
 			}
@@ -190,7 +207,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			for _, val := range values {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Val = strings.Replace(event.Val, val[0], kv.Value, -1)
+						event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
 					}
 				}
 			}
@@ -202,7 +219,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		for _, kv := range scene.Configuration.Variable {
 			if kv.Key == event.Var {
 				temp = true
-				result, msg = event.PerForm(kv.Value)
+				result, msg = event.PerForm(kv.Value.(string))
 				break
 			}
 		}
@@ -225,9 +242,11 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 
 		if result == model.Failed {
 			eventResult.Status = model.End
+			eventResult.Weight = event.Weight
 			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		} else {
 			eventResult.Status = model.End
+			eventResult.Weight = event.Weight
 			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		}
 	case model.WaitControllerType:
@@ -246,7 +265,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			}
 		}
 		eventResult.Status = model.End
-		log.Logger.Debug("eventResult.status:          ")
+		eventResult.Weight = event.Weight
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	}
 
@@ -288,7 +307,6 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 				case model.End:
 					delete(preMap, eventId)
 				case model.NotRun:
-
 					eventResult.Status = model.NotRun
 					sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
@@ -321,7 +339,7 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			for _, val := range keys {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Var = strings.Replace(event.Var, val[0], kv.Value, -1)
+						event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
 					}
 				}
 			}
@@ -331,7 +349,7 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			for _, val := range values {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Val = strings.Replace(event.Val, val[0], kv.Value, -1)
+						event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
 					}
 				}
 			}
@@ -343,7 +361,7 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 		for _, kv := range scene.Configuration.Variable {
 			if kv.Key == event.Var {
 				temp = true
-				result, msg = event.PerForm(kv.Value)
+				result, msg = event.PerForm(kv.Value.(string))
 				break
 			}
 		}
