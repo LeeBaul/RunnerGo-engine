@@ -54,15 +54,15 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 		switch assertionText.Compare {
 		case Equal:
 			if value == response.StatusCode() {
-				return NoError, true, strconv.Itoa(response.StatusCode()) + "=" + strconv.Itoa(value) + "断言：成功"
+				return NoError, true, strconv.Itoa(response.StatusCode()) + "等于" + strconv.Itoa(value) + "断言：成功"
 			} else {
-				return AssertError, false, strconv.Itoa(response.StatusCode()) + "不等于" + strconv.Itoa(value) + "断言：失败"
+				return AssertError, false, strconv.Itoa(response.StatusCode()) + "等于" + strconv.Itoa(value) + "断言：失败"
 			}
 		case UNEqual:
 			if value != response.StatusCode() {
-				return NoError, true, strconv.Itoa(response.StatusCode()) + UNEqual + strconv.Itoa(value) + "断言:成功"
+				return NoError, true, strconv.Itoa(response.StatusCode()) + "不等于" + strconv.Itoa(value) + "断言:成功"
 			} else {
-				return AssertError, false, strconv.Itoa(response.StatusCode()) + Equal + strconv.Itoa(value) + "断言:失败"
+				return AssertError, false, strconv.Itoa(response.StatusCode()) + "不等于" + strconv.Itoa(value) + "断言:失败"
 			}
 		}
 	case ResponseHeaders:
@@ -71,27 +71,25 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			if strings.Contains(response.String(), assertionText.Val) {
 				return NoError, true, "响应头中包含：" + assertionText.Val + " 断言: 成功"
 			} else {
-				return AssertError, false, "响应头中不包含：" + assertionText.Val + " 断言: 失败"
+				return AssertError, false, "响应头中包含：" + assertionText.Val + " 断言: 失败"
 			}
 		case NULL:
 			if response.Header.String() == "" {
 				return NoError, true, "响应头为空， 断言: 成功"
 			} else {
-				return AssertError, false, "响应头不为空， 断言: 失败"
+				return AssertError, false, "响应头为空， 断言: 失败"
 			}
 		case UNIncludes:
 			if strings.Contains(response.String(), assertionText.Val) {
-				return AssertError, false, "响应头中包含：" + assertionText.Val + " 断言: 失败"
-			} else {
 				return NoError, true, "响应头中不包含：" + assertionText.Val + " 断言: 成功"
-
+			} else {
+				return AssertError, false, "响应头中不包含：" + assertionText.Val + " 断言: 失败"
 			}
 		case NotNULL:
-			if response.Header.String() == "" {
+			if response.Header.String() != "" {
 				return AssertError, false, "响应头不为空， 断言: 成功"
-
 			} else {
-				return NoError, true, "响应头为空， 断言: 失败"
+				return NoError, true, "响应头不为空， 断言: 失败"
 			}
 		}
 	case ResponseData:
@@ -101,55 +99,85 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			if value == nil {
 				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
 			}
-			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
-				if value == num {
-					return NoError, true, fmt.Sprintf("%f 等于 %f, 断言： 成功", value, num)
+			switch fmt.Sprintf("%T", value) {
+			case "string":
+				if value == assertionText.Val {
+					return NoError, true, fmt.Sprintf("%s 等于 %s, 断言： 成功", value, assertionText.Val)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 不等于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%s 等于 %s, 断言： 失败", value, assertionText.Val)
 				}
-			} else {
-				return AssertError, false, "不是数字类型，无法比较大小"
+			case "bool":
+				if value == true && assertionText.Val == "true" {
+					return NoError, true, fmt.Sprintf("%b 等于 %s, 断言： 成功", value, assertionText.Val)
+				} else {
+					return AssertError, false, fmt.Sprintf("%b 等于 %s, 断言： 失败", value, assertionText.Val)
+				}
+			case "float64":
+				if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+					if value == num {
+						return NoError, true, fmt.Sprintf("%f 等于 %f, 断言： 成功", value, num)
+					} else {
+						return AssertError, false, fmt.Sprintf("%f 等于 %f, 断言： 失败", value, num)
+					}
+				} else {
+					return AssertError, false, "不是数字类型，无法比较大小"
+				}
 			}
+
 		case UNEqual:
 			value := tools.JsonPath(string(response.Body()), assertionText.Var)
 			if value == nil {
 				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
 			}
-			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
-				if value == num {
-					return NoError, true, fmt.Sprintf("%f 不等于 %f, 断言： 成功", value, num)
-
+			switch fmt.Sprintf("%T", value) {
+			case "string":
+				if value != assertionText.Val {
+					return NoError, true, fmt.Sprintf("%s 不等于 %s, 断言： 成功", value, assertionText.Val)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 等于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%s 不等于 %s, 断言： 失败", value, assertionText.Val)
 				}
-			} else {
-				return AssertError, false, "不是数字类型，无法比较大小"
+			case "bool":
+				if value != true && assertionText.Val != "true" {
+					return NoError, true, fmt.Sprintf("%b 不等于 %s, 断言： 成功", value, assertionText.Val)
+				} else {
+					return AssertError, false, fmt.Sprintf("%b 不等于 %s, 断言： 失败", value, assertionText.Val)
+				}
+			case "float64":
+				if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+					if value == num {
+						return NoError, true, fmt.Sprintf("%f 不等于 %f, 断言： 成功", value, num)
+
+					} else {
+						return AssertError, false, fmt.Sprintf("%f 不等于 %f, 断言： 失败", value, num)
+					}
+				} else {
+					return AssertError, false, "不是数字类型，无法比较大小"
+				}
 			}
 		case Includes:
 			if strings.Contains(response.String(), assertionText.Val) {
 				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
 			} else {
-				return AssertError, false, "响应中不包含：" + assertionText.Val + " 断言: 失败"
+				return AssertError, false, "响应中包含：" + assertionText.Val + " 断言: 失败"
 			}
 		case UNIncludes:
 			if strings.Contains(response.String(), assertionText.Val) {
 				return AssertError, false, "响应中包含：" + assertionText.Val + " 断言: 失败"
 			} else {
-				return NoError, true, "响应中不包含：" + assertionText.Val + " 断言: 成功"
+				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
 
 			}
 		case NULL:
 			if string(response.Body()) == "" {
 				return NoError, true, "响应体为空， 断言: 成功"
-
 			} else {
-				return AssertError, false, "响应不为空， 断言: 失败"
+				return AssertError, false, "响应为空， 断言: 失败"
 			}
 		case NotNULL:
 			if string(response.Body()) == "" {
 				return NoError, true, "响应体不为空， 断言: 成功"
 			} else {
-				return AssertError, false, "响应为空， 断言: 失败"
+				return AssertError, false, "响应不为空， 断言: 失败"
 			}
 
 		case GreaterThan:
@@ -161,7 +189,7 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				if value.(float64) > num {
 					return NoError, true, fmt.Sprintf("%f 大于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 不大于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%f 大于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
@@ -175,7 +203,7 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				if value.(float64) >= num {
 					return NoError, true, fmt.Sprintf("%f 大于等于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 小于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%f 大于等于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
@@ -190,7 +218,7 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				if value.(float64) < num {
 					return NoError, true, fmt.Sprintf("%f 小于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 不小于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%f 小于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
@@ -204,7 +232,7 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				if value.(float64) <= num {
 					return NoError, true, fmt.Sprintf("%f 小于等于 %f, 断言： 成功", value, num)
 				} else {
-					return AssertError, false, fmt.Sprintf("%f 大于 %f, 断言： 失败", value, num)
+					return AssertError, false, fmt.Sprintf("%f 小于等于 %f, 断言： 失败", value, num)
 				}
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
