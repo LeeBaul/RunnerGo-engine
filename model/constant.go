@@ -49,7 +49,7 @@ const (
 	Equal              = "eq"         // 等于
 	UNEqual            = "uneq"       // 不等于
 	GreaterThan        = "gt"         // 大于
-	GreaterThanOrEqual = "qte"        // 大于或等于
+	GreaterThanOrEqual = "gte"        // 大于或等于
 	LessThan           = "lt"         // 小于
 	LessThanOrEqual    = "lte"        // 小于或等于
 	Includes           = "includes"   // 包含

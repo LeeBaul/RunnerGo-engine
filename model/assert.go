@@ -110,7 +110,21 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			} else {
 				return AssertError, false, "不是数字类型，无法比较大小"
 			}
+		case UNEqual:
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if value == nil {
+				return AssertError, false, "响应中" + assertionText.Var + "不存在， 断言: 失败"
+			}
+			if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
+				if value == num {
+					return NoError, true, fmt.Sprintf("%f 不等于 %f, 断言： 成功", value, num)
 
+				} else {
+					return AssertError, false, fmt.Sprintf("%f 等于 %f, 断言： 失败", value, num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
 		case Includes:
 			if strings.Contains(response.String(), assertionText.Val) {
 				return NoError, true, "响应中包含：" + assertionText.Val + " 断言: 成功"
