@@ -225,10 +225,10 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 
 		if result == model.Failed {
 			eventResult.Status = model.End
-			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotHit)
+			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		} else {
 			eventResult.Status = model.End
-			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End)
+			sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 		}
 	case model.WaitControllerType:
 		time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
@@ -246,7 +246,8 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			}
 		}
 		eventResult.Status = model.End
-		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.End)
+		log.Logger.Debug("eventResult.status:          ")
+		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	}
 
 }
