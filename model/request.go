@@ -127,10 +127,7 @@ func (b *Body) SetBody(req *fasthttp.Request) string {
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 		args := req.PostArgs()
 		for _, value := range b.Parameter {
-			if value.IsChecked != 1 {
-				continue
-			}
-			if value.Key == "" {
+			if value.IsChecked != 1 || value.Key == "" || value.Value == nil {
 				continue
 			}
 			args.Add(value.Key, value.Value.(string))
@@ -170,6 +167,9 @@ func (header *Header) SetHeader(req *fasthttp.Request) {
 	if header != nil && header.Parameter != nil {
 		for _, v := range header.Parameter {
 			if v.IsChecked == 1 {
+				if v.Value == nil {
+					continue
+				}
 				if strings.EqualFold(v.Key, "content-type") {
 					req.Header.SetContentType(v.Value.(string))
 				}
@@ -360,7 +360,10 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 	if auth != nil && auth.Type != NoAuth {
 		switch auth.Type {
 		case Kv:
-			req.Header.Add(auth.KV.Key, auth.KV.Value.(string))
+			if auth.KV.Value != nil {
+				req.Header.Add(auth.KV.Key, auth.KV.Value.(string))
+			}
+
 		case BEarer:
 			req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
 		case BAsic:
@@ -479,6 +482,9 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 }
 
 func (v *VarForm) toByte() (by []byte) {
+	if v.Value == nil {
+		return
+	}
 	switch v.FieldType {
 	case StringType:
 		by = []byte(v.Value.(string))
@@ -523,6 +529,9 @@ func (v *VarForm) toByte() (by []byte) {
 
 // Conversion 将string转换为其他类型
 func (v *VarForm) Conversion() {
+	if v.Value == nil {
+		return
+	}
 	switch v.FieldType {
 	case StringType:
 		v.Value = v.Value.(string)
@@ -567,6 +576,9 @@ func (r *Api) ReplaceQueryParameterizes() {
 					return true
 				})
 				if value, ok := r.Parameters.Load(v[1]); ok {
+					if value == nil {
+						continue
+					}
 					r.Request.URL = strings.Replace(r.Request.URL, v[0], value.(string), -1)
 				}
 			}
@@ -603,14 +615,23 @@ func (r *Api) ReplaceBodyVarForm() {
 				if keys != nil {
 					for _, v := range keys {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil {
+								continue
+							}
 							parameter.Key = strings.Replace(parameter.Key, v[0], value.(string), -1)
 						}
 					}
+				}
+				if parameter.Value == nil {
+					continue
 				}
 				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
 				if values != nil {
 					for _, v := range values {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil || parameter.Value == nil {
+								continue
+							}
 							parameter.Value = strings.Replace(parameter.Value.(string), v[0], value.(string), -1)
 						}
 					}
@@ -625,14 +646,23 @@ func (r *Api) ReplaceBodyVarForm() {
 				if keys != nil {
 					for _, v := range keys {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil {
+								continue
+							}
 							parameter.Key = strings.Replace(parameter.Key, v[0], value.(string), -1)
 						}
 					}
+				}
+				if parameter.Value == nil {
+					continue
 				}
 				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
 				if values != nil {
 					for _, v := range values {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil || parameter.Value == nil {
+								continue
+							}
 							parameter.Value = strings.Replace(parameter.Value.(string), v[0], value.(string), -1)
 
 						}
@@ -646,6 +676,9 @@ func (r *Api) ReplaceBodyVarForm() {
 		if bosys != nil {
 			for _, v := range bosys {
 				if value, ok := r.Parameters.Load(v[1]); ok {
+					if value == nil {
+						continue
+					}
 					r.Request.Body.Raw = strings.Replace(r.Request.Body.Raw, v[0], value.(string), -1)
 				}
 			}
@@ -661,14 +694,23 @@ func (r *Api) ReplaceHeaderVarForm() {
 			if queryParameterizes != nil {
 				for _, v := range queryParameterizes {
 					if value, ok := r.Parameters.Load(v[1]); ok {
+						if value == nil {
+							continue
+						}
 						queryVarForm.Key = strings.Replace(queryVarForm.Key, v[0], value.(string), -1)
 					}
 				}
+			}
+			if queryVarForm.Value == nil {
+				continue
 			}
 			queryParameterizes = tools.FindAllDestStr(queryVarForm.Value.(string), "{{(.*?)}}")
 			if queryParameterizes != nil {
 				for _, v := range queryParameterizes {
 					if value, ok := r.Parameters.Load(v[1]); ok {
+						if queryVarForm.Value == nil || value == nil {
+							continue
+						}
 						queryVarForm.Value = strings.Replace(queryVarForm.Value.(string), v[0], value.(string), -1)
 					}
 				}
@@ -682,10 +724,16 @@ func (r *Api) ReplaceQueryVarForm() {
 	if r.Request.Query != nil && r.Request.Query.Parameter != nil && len(r.Request.Query.Parameter) > 0 {
 		if r.Request.Header.Parameter != nil && len(r.Request.Header.Parameter) > 0 {
 			for _, queryVarForm := range r.Request.Header.Parameter {
+				if queryVarForm.Value == nil {
+					continue
+				}
 				queryParameterizes := tools.FindAllDestStr(queryVarForm.Key, "{{(.*?)}}")
 				if queryParameterizes != nil {
 					for _, v := range queryParameterizes {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil {
+								continue
+							}
 							queryVarForm.Key = strings.Replace(queryVarForm.Key, v[0], value.(string), -1)
 						}
 					}
@@ -694,6 +742,9 @@ func (r *Api) ReplaceQueryVarForm() {
 				if queryParameterizes != nil {
 					for _, v := range queryParameterizes {
 						if value, ok := r.Parameters.Load(v[1]); ok {
+							if value == nil {
+								continue
+							}
 							queryVarForm.Value = strings.Replace(queryVarForm.Value.(string), v[0], value.(string), -1)
 						}
 					}
@@ -705,7 +756,8 @@ func (r *Api) ReplaceQueryVarForm() {
 }
 
 func (r *Api) ReplaceAuthVarForm() {
-	if r.Request.Auth != nil {
+
+	if r.Request.Auth != nil && r.Request.Auth.KV.Value != nil {
 		switch r.Request.Auth.Type {
 		case Kv:
 
@@ -714,7 +766,10 @@ func (r *Api) ReplaceAuthVarForm() {
 				if values != nil {
 					for _, value := range values {
 						if v, ok := r.Parameters.Load(value[1]); ok {
-							r.Request.Auth.KV.Value = strings.Replace(r.Request.Auth.KV.Value.(string), value[0], v.(string), -1)
+							if v != nil {
+								r.Request.Auth.KV.Value = strings.Replace(r.Request.Auth.KV.Value.(string), value[0], v.(string), -1)
+							}
+
 						}
 					}
 				}
@@ -726,7 +781,9 @@ func (r *Api) ReplaceAuthVarForm() {
 				if values != nil {
 					for _, value := range values {
 						if v, ok := r.Parameters.Load(value[1]); ok {
-							r.Request.Auth.Bearer.Key = strings.Replace(r.Request.Auth.Bearer.Key, value[0], v.(string), -1)
+							if v != nil {
+								r.Request.Auth.Bearer.Key = strings.Replace(r.Request.Auth.Bearer.Key, value[0], v.(string), -1)
+							}
 						}
 					}
 				}
@@ -737,7 +794,9 @@ func (r *Api) ReplaceAuthVarForm() {
 				if names != nil {
 					for _, value := range names {
 						if v, ok := r.Parameters.Load(value[1]); ok {
-							r.Request.Auth.Basic.UserName = strings.Replace(r.Request.Auth.Basic.UserName, value[0], v.(string), -1)
+							if v != nil {
+								r.Request.Auth.Basic.UserName = strings.Replace(r.Request.Auth.Basic.UserName, value[0], v.(string), -1)
+							}
 						}
 					}
 				}
@@ -749,7 +808,9 @@ func (r *Api) ReplaceAuthVarForm() {
 				if passwords != nil {
 					for _, value := range passwords {
 						if v, ok := r.Parameters.Load(value[1]); ok {
-							r.Request.Auth.Basic.Password = strings.Replace(r.Request.Auth.Basic.Password, value[0], v.(string), -1)
+							if v != nil {
+								r.Request.Auth.Basic.Password = strings.Replace(r.Request.Auth.Basic.Password, value[0], v.(string), -1)
+							}
 						}
 					}
 				}
@@ -788,6 +849,9 @@ func (r *Api) ReplaceParameters(configuration *Configuration) {
 	}
 
 	r.Parameters.Range(func(k, v any) bool {
+		if k == nil {
+			return true
+		}
 
 		if configuration.Variable != nil {
 			for _, kv := range configuration.Variable {
@@ -825,6 +889,9 @@ func (r *Api) findQueryParameters() {
 				r.Parameters.Store(name[1], name[0])
 			}
 		}
+		if varForm.Value == nil {
+			continue
+		}
 		valueParameters := tools.FindAllDestStr(varForm.Value.(string), "{{(.*?)}}")
 		for _, value := range valueParameters {
 			if len(value) > 1 {
@@ -855,6 +922,9 @@ func (r *Api) findBodyParameters() {
 						}
 					}
 				}
+				if parameter.Value == nil {
+					continue
+				}
 				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
 				if values != nil {
 					for _, value := range values {
@@ -877,6 +947,9 @@ func (r *Api) findBodyParameters() {
 							r.Parameters.Store(key[1], key[0])
 						}
 					}
+				}
+				if parameter.Value == nil {
+					continue
 				}
 				values := tools.FindAllDestStr(parameter.Value.(string), "{{(.*?)}}")
 				if values != nil {
@@ -919,6 +992,9 @@ func (r *Api) findHeaderParameters() {
 				r.Parameters.Store(name[1], name[0])
 			}
 		}
+		if varForm.Value == nil {
+			continue
+		}
 		valueParameters := tools.FindAllDestStr(varForm.Value.(string), "{{(.*?)}}")
 		for _, value := range valueParameters {
 			if len(value) > 1 {
@@ -945,9 +1021,12 @@ func (r *Api) findAuthParameters() {
 					r.Parameters.Store(key[1], key[0])
 				}
 			}
-			if r.Request.Auth.KV.Value == "" {
+
+			if r.Request.Auth.KV.Value == nil {
 				return
+
 			}
+
 			values := tools.FindAllDestStr(r.Request.Auth.KV.Value.(string), "{{(.*?)}}")
 			for _, value := range values {
 				if _, ok := r.Parameters.Load(value[1]); !ok {
