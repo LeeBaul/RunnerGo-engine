@@ -73,13 +73,11 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			} else {
 				return AssertError, false, "响应头中不包含：" + assertionText.Val + " 断言: 失败"
 			}
-		case Equal:
-			rex := fmt.Sprintf("%s:(.*?)", assertionText.Var)
-			str := tools.FindDestStr(response.String(), rex)
-			if assertionText.Val == str {
-				return NoError, true, "响应头中，" + assertionText.Var + " = " + assertionText.Val + " 断言: 成功"
+		case NULL:
+			if response.Header.String() == "" {
+				return NoError, true, "响应头为空， 断言: 成功"
 			} else {
-				return AssertError, false, "响应头中," + assertionText.Var + " = " + assertionText.Val + " 断言: 失败"
+				return AssertError, false, "响应头不为空， 断言: 失败"
 			}
 		case UNIncludes:
 			if strings.Contains(response.String(), assertionText.Val) {
@@ -87,6 +85,13 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 			} else {
 				return NoError, true, "响应头中不包含：" + assertionText.Val + " 断言: 成功"
 
+			}
+		case NotNULL:
+			if response.Header.String() == "" {
+				return AssertError, false, "响应头不为空， 断言: 成功"
+
+			} else {
+				return NoError, true, "响应头为空， 断言: 失败"
 			}
 		}
 	case ResponseData:
@@ -112,12 +117,72 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				return NoError, true, "响应中不包含：" + assertionText.Val + " 断言: 成功"
 
 			}
+		case NULL:
+			if string(response.Body()) == "" {
+				return NoError, true, "响应体为空， 断言: 成功"
+
+			} else {
+				return AssertError, false, "响应不为空， 断言: 失败"
+			}
+		case NotNULL:
+			if string(response.Body()) == "" {
+				return NoError, true, "响应体不为空， 断言: 成功"
+			} else {
+				return AssertError, false, "响应为空， 断言: 失败"
+			}
+
+		case GreaterThan:
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if num, err := strconv.Atoi(assertionText.Val); err == nil {
+				if value.(int) > num {
+					return NoError, true, fmt.Sprintf("%d 大于 %d, 断言： 成功", value.(int), num)
+				} else {
+					return AssertError, false, fmt.Sprintf("%d 不大于 %d, 断言： 失败", value.(int), num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
+		case GreaterThanOrEqual:
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if num, err := strconv.Atoi(assertionText.Val); err == nil {
+				if value.(int) >= num {
+					return NoError, true, fmt.Sprintf("%d 大于等于 %d, 断言： 成功", value.(int), num)
+				} else {
+					return AssertError, false, fmt.Sprintf("%d 小于 %d, 断言： 失败", value.(int), num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
+
+		case LessThan:
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if num, err := strconv.Atoi(assertionText.Val); err == nil {
+				if value.(int) < num {
+					return NoError, true, fmt.Sprintf("%d 小于 %d, 断言： 成功", value.(int), num)
+				} else {
+					return AssertError, false, fmt.Sprintf("%d 不小于 %d, 断言： 失败", value.(int), num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
+		case LessThanOrEqual:
+			value := tools.JsonPath(string(response.Body()), assertionText.Var)
+			if num, err := strconv.Atoi(assertionText.Val); err == nil {
+				if value.(int) <= num {
+					return NoError, true, fmt.Sprintf("%d 小于等于 %d, 断言： 成功", value.(int), num)
+				} else {
+					return AssertError, false, fmt.Sprintf("%d 大于 %d, 断言： 失败", value.(int), num)
+				}
+			} else {
+				return AssertError, false, "不是数字类型，无法比较大小"
+			}
 		}
 	}
 	return
 }
 
 type AssertionMsg struct {
+	Type      string `json:"type"`
 	Code      int64  `json:"code" bson:"code"`
 	IsSucceed bool   `json:"isSucceed" bson:"isSucceed"`
 	Msg       string `json:"msg" bson:"msg"`
