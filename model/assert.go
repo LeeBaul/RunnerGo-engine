@@ -144,9 +144,8 @@ func (assertionText *AssertionText) VerifyAssertionText(response *fasthttp.Respo
 				}
 			case "float64":
 				if num, err := strconv.ParseFloat(assertionText.Val, 64); err == nil {
-					if value == num {
+					if value != num {
 						return NoError, true, fmt.Sprintf("%f 不等于 %f, 断言： 成功", value, num)
-
 					} else {
 						return AssertError, false, fmt.Sprintf("%f 不等于 %f, 断言： 失败", value, num)
 					}
