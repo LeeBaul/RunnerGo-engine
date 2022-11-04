@@ -82,7 +82,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, startConcurrentTime)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent)

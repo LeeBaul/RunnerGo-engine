@@ -81,19 +81,19 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 			}
 		}
-
+		startConcurrentTime := time.Now().UnixMilli()
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, startConcurrentTime)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent)
 			// 如果设置了启动并发时长
 			if reheatTime > 0 && index == 0 {
-				durationTime := time.Now().UnixMilli() - startTime
+				durationTime := time.Now().UnixMilli() - startConcurrentTime
 				if i%(concurrent/reheatTime) == 0 && durationTime < 1000 {
 					time.Sleep(time.Duration(durationTime) * time.Millisecond)
 				}
