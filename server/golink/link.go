@@ -197,7 +197,10 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			for _, val := range keys {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+						if kv.Value != nil {
+							event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+						}
+
 					}
 				}
 			}
@@ -207,7 +210,10 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			for _, val := range values {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+						if kv.Value != nil {
+							event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+						}
+
 					}
 				}
 			}
@@ -219,7 +225,10 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		for _, kv := range scene.Configuration.Variable {
 			if kv.Key == event.Var {
 				temp = true
-				result, msg = event.PerForm(kv.Value.(string))
+				if kv.Value != nil {
+					result, msg = event.PerForm(kv.Value.(string))
+				}
+
 				break
 			}
 		}
@@ -339,7 +348,10 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			for _, val := range keys {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+						if kv.Value != nil {
+							event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+						}
+
 					}
 				}
 			}
@@ -349,7 +361,9 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			for _, val := range values {
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
-						event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+						if kv.Value != nil {
+							event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+						}
 					}
 				}
 			}
@@ -361,7 +375,9 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 		for _, kv := range scene.Configuration.Variable {
 			if kv.Key == event.Var {
 				temp = true
-				result, msg = event.PerForm(kv.Value.(string))
+				if kv.Value != nil {
+					result, msg = event.PerForm(kv.Value.(string))
+				}
 				break
 			}
 		}
