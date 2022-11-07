@@ -232,6 +232,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	wg.Wait()
 
 	// 发送结束消息时间戳
+	startMsg.Start = false
 	startMsg.End = true
 	startMsg.Timestamp = time.Now().UnixMilli()
 	resultDataMsgCh <- startMsg
