@@ -88,8 +88,8 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 			}
 			target++
 		}
-
 		index++
+		log.Logger.Debug("时长：", startTime+stepRunTime, "当前时间：", time.Now().Unix())
 	}
 
 }
