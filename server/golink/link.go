@@ -64,39 +64,7 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 
 		startTime := time.Now().UnixMilli()
 
-		//for len(preMap) > 0 {
-		//	for eventId, _ := range preMap {
-		//		// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
-		//		err, preEventResult := model.QueryPlanStatus(machineIp + ":" + reportId + ":" + gid + ":" + sceneId + ":" + eventId + ":status")
-		//		if err != nil {
-		//			break
-		//		}
-		//		switch preEventResult {
-		//		case model.End:
-		//			delete(preMap, eventId)
-		//		case model.NotRun:
-		//			expiration := 60 * time.Second
-		//			err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
-		//			if err != nil {
-		//				log.Logger.Error("事件状态写入数据库失败", err)
-		//			}
-		//			delete(preMap, eventId)
-		//		case model.NotHit:
-		//			expiration := 60 * time.Second
-		//			err = model.InsertStatus(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", model.NotRun, expiration)
-		//			if err != nil {
-		//				log.Logger.Error("事件状态写入数据库失败", err)
-		//			}
-		//			delete(preMap, eventId)
-		//		}
-		//	}
-		//	if startTime+60000 < time.Now().UnixMilli() {
-		//		return
-		//	}
-		//}
-
 		for len(preMap) > 0 {
-
 			for eventId, _ := range preMap {
 				// 查询上一级状态，如果都完成，则进行该请求，如果未完成，继续查询，直到上一级请求完成
 				preEventStatus := model.EventResult{}
@@ -108,19 +76,18 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					}
 
 				}
-				goroutineId = disOptions[0]
-				if preEventStatus.Concurrent >= preMaxConcurrent {
-					preMaxConcurrent = preEventStatus.Concurrent
-				}
-
-				if event.Type == model.IfControllerType || event.Type == model.WaitControllerType {
-					if preEventStatus.Weight >= preMaxWeight {
-						preMaxWeight = preEventStatus.Weight
-					}
-				}
-
 				switch preEventStatus.Status {
 				case model.End:
+					goroutineId = disOptions[0]
+					if preEventStatus.Concurrent >= preMaxConcurrent {
+						preMaxConcurrent = preEventStatus.Concurrent
+					}
+
+					if event.Type == model.IfControllerType || event.Type == model.WaitControllerType {
+						if preEventStatus.Weight >= preMaxWeight {
+							preMaxWeight = preEventStatus.Weight
+						}
+					}
 					delete(preMap, eventId)
 				case model.NotRun:
 					eventResult.Status = model.NotRun
