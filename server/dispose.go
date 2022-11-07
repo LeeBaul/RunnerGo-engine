@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
 	"kp-runner/config"
@@ -149,11 +150,11 @@ func ExecutionPlan(plan *model.Plan) {
 	}
 
 	// 分解任务
-	TaskDecomposition(plan, wg, resultDataMsgCh, debugCollection, requestCollection, sharedMap)
+	TaskDecomposition(plan, wg, resultDataMsgCh, debugCollection, requestCollection, sharedMap, kafkaProducer)
 }
 
 // TaskDecomposition 分解任务
-func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, mongoCollection *mongo.Collection, sharedMap *sync.Map) {
+func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, mongoCollection *mongo.Collection, sharedMap *sync.Map, kafkaProducer sarama.SyncProducer) {
 	defer close(resultDataMsgCh)
 	scene := plan.Scene
 	scene.TeamId = plan.TeamId
@@ -196,7 +197,19 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	reportMsg.MachineIp = heartbeat.LocalIp + fmt.Sprintf("_%d", config.Conf.Heartbeat.Port)
 	testModelJson, _ := json.Marshal(scene.ConfigTask.ModeConf)
 
+	var startMsg = &model.ResultDataMsg{}
+	startMsg.TeamId = plan.TeamId
+	startMsg.PlanId = plan.PlanId
+	startMsg.SceneId = scene.SceneId
+	startMsg.SceneName = scene.SceneName
+	startMsg.PlanName = plan.PlanName
+	startMsg.ReportId = plan.ReportId
+	startMsg.ReportName = plan.ReportName
+	startMsg.MachineNum = plan.MachineNum
+	startMsg.Timestamp = time.Now().UnixMilli()
+	startMsg.Start = true
 	log.Logger.Info("任务配置：    ", string(testModelJson))
+	resultDataMsgCh <- reportMsg
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
@@ -217,6 +230,11 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		tools.SendStopStressReport(machines, plan.ReportId)
 	}
 	wg.Wait()
+
+	// 发送结束消息时间戳
+	startMsg.End = true
+	startMsg.Timestamp = time.Now().UnixMilli()
+	resultDataMsgCh <- startMsg
 	debugMsg := make(map[string]interface{})
 	debugMsg["report_id"] = plan.ReportId
 	debugMsg["end"] = true

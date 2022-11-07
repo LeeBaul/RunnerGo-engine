@@ -8,6 +8,8 @@ import (
 // Scene 场景结构体
 type Scene struct {
 	SceneId                 int64          `json:"scene_id" bson:"scene_id"` // 场景Id
+	Partition               int32          `json:"partition"`
+	MachineNum              int64          `json:"machine_num" bson:"machine_num"` // 使用的机器数量
 	Uuid                    uuid.UUID      `json:"uuid" bson:"uuid"`
 	ReportId                string         `json:"report_id" bson:"report_id"`
 	TeamId                  int64          `json:"team_id" bson:"team_id"`
