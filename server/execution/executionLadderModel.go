@@ -85,12 +85,12 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		if concurrent == maxConcurrent {
 			if target == 0 {
 				stepRunTime = stableDuration
-				startTime = startTime + stepRunTime
+				startTime = time.Now().Unix() + stepRunTime
 			}
 			target++
 		}
 		index++
-		log.Logger.Debug("时长：", startTime+stepRunTime, "当前时间：", time.Now().Unix())
+		log.Logger.Debug("时长：", startTime, "当前时间：", time.Now().Unix())
 	}
 
 }
