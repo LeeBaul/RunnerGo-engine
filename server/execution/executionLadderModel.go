@@ -27,10 +27,10 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	concurrent := startConcurrent
 	index, target := 0, 0
 	currentWg := &sync.WaitGroup{}
-	startTime := time.Now().Unix()
+	startTime, endTime := time.Now().Unix(), time.Now().Unix()
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+stepRunTime > time.Now().Unix() {
+	for startTime+stepRunTime > endTime {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
@@ -59,8 +59,8 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		}
 		log.Logger.Debug("当前并发数：", concurrent)
 		currentWg.Wait()
-		endTime := time.Now().Unix()
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+		endTime = time.Now().Unix()
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
 			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 			return
 		}
@@ -75,9 +75,9 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 					concurrent = maxConcurrent
 				}
 
-				log.Logger.Debug("时间：", startTime+stepRunTime, "         当前时间：", time.Now().Unix(), "    concurrent:   ", concurrent, "    max:   ", maxConcurrent)
-				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
-					startTime = time.Now().Unix() + stepRunTime
+				log.Logger.Debug("时间：", startTime+stepRunTime, "         当前时间：", endTime, "    concurrent:   ", concurrent, "    max:   ", maxConcurrent)
+				if startTime+stepRunTime <= endTime && concurrent < maxConcurrent {
+					startTime = endTime + stepRunTime
 				}
 			}
 
@@ -85,12 +85,12 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		if concurrent == maxConcurrent {
 			if target == 0 {
 				stepRunTime = stableDuration
-				startTime = time.Now().Unix() + stepRunTime
+				startTime = endTime + stepRunTime
 			}
 			target++
 		}
 		index++
-		log.Logger.Debug("时长：", startTime, "当前时间：", time.Now().Unix())
+		log.Logger.Debug("时长：", startTime, "当前时间：", endTime)
 	}
 
 }
