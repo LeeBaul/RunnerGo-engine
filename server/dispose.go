@@ -209,7 +209,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	startMsg.Timestamp = time.Now().UnixMilli()
 	startMsg.Start = true
 	log.Logger.Info("任务配置：    ", string(testModelJson))
-	resultDataMsgCh <- reportMsg
+	resultDataMsgCh <- startMsg
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
