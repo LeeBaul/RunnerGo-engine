@@ -18,7 +18,7 @@ func SendKafkaMsg(kafkaProducer sarama.SyncProducer, resultDataMsgCh chan *Resul
 	for {
 		if resultDataMsg, ok := <-resultDataMsgCh; ok {
 			msg, err := json.Marshal(resultDataMsg)
-
+			resultDataMsg.Timestamp = time.Now().UnixMilli()
 			if err != nil {
 				log.Logger.Error("json转换失败", err)
 				break

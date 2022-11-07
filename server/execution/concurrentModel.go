@@ -43,7 +43,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 				currentWg.Add(1)
 				go func(i, concurrent int64, planSharedMap *sync.Map) {
 					gid := tools.GetGid()
-					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, startConcurrentTime)
+					golink.DisposeScene(planSharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 					wg.Done()
 					currentWg.Done()
 

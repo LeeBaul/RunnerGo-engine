@@ -87,7 +87,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			currentWg.Add(1)
 			go func(i, concurrent int64) {
 				gid := tools.GetGid()
-				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent, startConcurrentTime)
+				golink.DisposeScene(sharedMap, wg, currentWg, gid, model.PlanType, scene, reportMsg, resultDataMsgCh, requestCollection, i, concurrent)
 				wg.Done()
 				currentWg.Done()
 			}(i, concurrent)
