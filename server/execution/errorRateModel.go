@@ -49,8 +49,8 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	//}
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
-	startTime := time.Now().Unix()
-	for startTime+stepRunTime > time.Now().Unix() {
+	startTime, endTime := time.Now().Unix(), time.Now().Unix()
+	for startTime+stepRunTime > endTime {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
@@ -100,9 +100,9 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			}
 		}
 		currentWg.Wait()
-		endTime := time.Now().Unix()
+		endTime = time.Now().Unix()
 
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
 			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
 
@@ -115,8 +115,8 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 					concurrent = maxConcurrent
 				}
 
-				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
-					startTime = startTime + stepRunTime
+				if startTime+stepRunTime <= endTime && concurrent < maxConcurrent {
+					startTime = endTime + stepRunTime
 
 				}
 			}
@@ -125,7 +125,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		if concurrent == maxConcurrent {
 			if target == 0 {
 				stepRunTime = stableDuration
-				startTime = startTime + stepRunTime
+				startTime = endTime + stepRunTime
 			}
 			target++
 		}

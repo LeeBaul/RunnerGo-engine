@@ -44,9 +44,9 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	// 创建es客户端
 
 	currentWg := &sync.WaitGroup{}
-	startTime := time.Now().Unix()
+	startTime, endTime := time.Now().Unix(), time.Now().Unix()
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	for startTime+stepRunTime > time.Now().Unix() {
+	for startTime+stepRunTime > endTime {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
 			return
@@ -98,8 +98,8 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 		currentWg.Wait()
 		// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
-		endTime := time.Now().Unix()
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+		endTime = time.Now().Unix()
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
 			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
 
@@ -112,8 +112,8 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 					concurrent = maxConcurrent
 				}
 
-				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
-					startTime = startTime + stepRunTime
+				if startTime+stepRunTime <= endTime && concurrent < maxConcurrent {
+					startTime = endTime + stepRunTime
 
 				}
 			}
@@ -122,7 +122,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		if concurrent == maxConcurrent {
 			if target == 0 {
 				stepRunTime = stableDuration
-				startTime = startTime + stepRunTime
+				startTime = endTime + stepRunTime
 			}
 			target++
 		}

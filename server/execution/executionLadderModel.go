@@ -57,7 +57,6 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 				}
 			}
 		}
-		log.Logger.Debug("当前并发数：", concurrent)
 		currentWg.Wait()
 		endTime = time.Now().Unix()
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
@@ -71,16 +70,12 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 				// 从开始时间算起，加上持续时长。如果大于现在的时间，说明已经运行了持续时长的时间，那么就要将开始时间的值，变为现在的时间值
 				concurrent = concurrent + step
 				if concurrent > maxConcurrent {
-					log.Logger.Debug("最大并发数。。。。。")
 					concurrent = maxConcurrent
 				}
-
-				log.Logger.Debug("时间：", startTime+stepRunTime, "         当前时间：", endTime, "    concurrent:   ", concurrent, "    max:   ", maxConcurrent)
 				if startTime+stepRunTime <= endTime && concurrent < maxConcurrent {
 					startTime = endTime + stepRunTime
 				}
 			}
-
 		}
 		if concurrent == maxConcurrent {
 			if target == 0 {
@@ -90,7 +85,6 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 			target++
 		}
 		index++
-		log.Logger.Debug("时长：", startTime, "当前时间：", endTime)
 	}
 
 }

@@ -48,8 +48,8 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
 	// 只要开始时间+持续时长大于当前时间就继续循环
-	startTime := time.Now().Unix()
-	for startTime+stepRunTime > time.Now().Unix() {
+	startTime, endTime := time.Now().Unix(), time.Now().Unix()
+	for startTime+stepRunTime > endTime {
 
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
@@ -139,9 +139,9 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 			}
 		}
 		currentWg.Wait()
-		endTime := time.Now().Unix()
+		endTime = time.Now().Unix()
 		// 当此时的并发等于最大并发数时，并且持续时长等于稳定持续时长且当前运行时长大于等于此时时结束
-		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= time.Now().Unix() {
+		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
 			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
 		}
 
@@ -154,8 +154,8 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 					concurrent = maxConcurrent
 				}
 
-				if startTime+stepRunTime <= time.Now().Unix() && concurrent < maxConcurrent {
-					startTime = startTime + stepRunTime
+				if startTime+stepRunTime <= endTime && concurrent < maxConcurrent {
+					startTime = endTime + stepRunTime
 
 				}
 			}
@@ -164,7 +164,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if concurrent == maxConcurrent {
 			if target == 0 {
 				stepRunTime = stableDuration
-				startTime = startTime + stepRunTime
+				startTime = endTime + stepRunTime
 			}
 			target++
 		}

@@ -94,11 +94,13 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					return
 				case model.NotHit:
 					eventResult.Status = model.NotRun
 					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					return
 				}
 			}
 			if startTime+60000 < time.Now().UnixMilli() {
@@ -286,10 +288,12 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 					eventResult.Status = model.NotRun
 					sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					return
 				case model.NotHit:
 					eventResult.Status = model.NotRun
 					sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					return
 				}
 			}
 			if startTime+60000 < time.Now().UnixMilli() {
