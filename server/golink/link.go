@@ -94,12 +94,32 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					if event.Debug != "" {
+						debugMsg := make(map[string]interface{})
+						debugMsg["uuid"] = event.Uuid.String()
+						debugMsg["event_id"] = event.Id
+						debugMsg["status"] = model.NotRun
+						debugMsg["next_list"] = event.NextList
+						if requestCollection != nil {
+							model.Insert(requestCollection, debugMsg)
+						}
+					}
 					return
 				case model.NotHit:
 					eventResult.Status = model.NotRun
 					eventResult.Weight = event.Weight
 					sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
+					if event.Debug != "" {
+						debugMsg := make(map[string]interface{})
+						debugMsg["uuid"] = event.Uuid.String()
+						debugMsg["event_id"] = event.Id
+						debugMsg["status"] = model.NotRun
+						debugMsg["next_list"] = event.NextList
+						if requestCollection != nil {
+							model.Insert(requestCollection, debugMsg)
+						}
+					}
 					return
 				}
 			}
