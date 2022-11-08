@@ -288,31 +288,34 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 					eventResult.Status = model.NotRun
 					sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
-					if event.Debug != "" {
-						debugMsg := make(map[string]interface{})
-						debugMsg["uuid"] = event.Uuid.String()
-						debugMsg["event_id"] = event.Id
-						debugMsg["status"] = model.NotRun
-						debugMsg["next_list"] = event.NextList
-						if requestCollection != nil {
-							model.Insert(requestCollection, debugMsg)
-						}
+					debugMsg := make(map[string]interface{})
+					debugMsg["uuid"] = event.Uuid.String()
+					debugMsg["event_id"] = event.Id
+					debugMsg["status"] = model.NotRun
+					debugMsg["msg"] = "未运行"
+					debugMsg["type"] = event.Type
+					debugMsg["next_list"] = event.NextList
+					if requestCollection != nil {
+						model.Insert(requestCollection, debugMsg)
 					}
+
 					return
 				case model.NotHit:
+
 					eventResult.Status = model.NotRun
 					sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 					delete(preMap, eventId)
-					if event.Debug != "" {
-						debugMsg := make(map[string]interface{})
-						debugMsg["uuid"] = event.Uuid.String()
-						debugMsg["event_id"] = event.Id
-						debugMsg["status"] = model.NotRun
-						debugMsg["next_list"] = event.NextList
-						if requestCollection != nil {
-							model.Insert(requestCollection, debugMsg)
-						}
+					debugMsg := make(map[string]interface{})
+					debugMsg["uuid"] = event.Uuid.String()
+					debugMsg["event_id"] = event.Id
+					debugMsg["status"] = model.NotRun
+					debugMsg["msg"] = "未运行"
+					debugMsg["type"] = event.Type
+					debugMsg["next_list"] = event.NextList
+					if requestCollection != nil {
+						model.Insert(requestCollection, debugMsg)
 					}
+
 					return
 				}
 			}
@@ -382,7 +385,6 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			debugMsg["status"] = result
 			debugMsg["msg"] = msg
 			debugMsg["type"] = model.IfControllerType
-			debugMsg["report_id"] = event.ReportId
 			debugMsg["next_list"] = event.NextList
 			if requestCollection != nil {
 				model.Insert(requestCollection, debugMsg)
@@ -402,7 +404,6 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			debugMsg := make(map[string]interface{})
 			debugMsg["uuid"] = event.Uuid.String()
 			debugMsg["event_id"] = event.Id
-			debugMsg["report_id"] = event.ReportId
 			debugMsg["status"] = model.Success
 			debugMsg["type"] = model.WaitControllerType
 			debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "毫秒"
