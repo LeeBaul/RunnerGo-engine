@@ -167,7 +167,16 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
 						if kv.Value != nil {
-							event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+							str := ""
+							switch fmt.Sprintf("%T", kv.Value) {
+							case "string":
+								str = kv.Value.(string)
+							case "float64":
+								str = fmt.Sprintf("%f", kv.Value)
+							case "bool":
+								str = fmt.Sprintf("%b", kv.Value)
+							}
+							event.Var = strings.Replace(event.Var, val[0], str, -1)
 						}
 
 					}
@@ -180,7 +189,16 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
 						if kv.Value != nil {
-							event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+							str := ""
+							switch fmt.Sprintf("%T", kv.Value) {
+							case "string":
+								str = kv.Value.(string)
+							case "float64":
+								str = fmt.Sprintf("%f", kv.Value)
+							case "bool":
+								str = fmt.Sprintf("%b", kv.Value)
+							}
+							event.Val = strings.Replace(event.Val, val[0], str, -1)
 						}
 
 					}
@@ -195,7 +213,16 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			if kv.Key == event.Var {
 				temp = true
 				if kv.Value != nil {
-					result, msg = event.PerForm(kv.Value.(string))
+					str := ""
+					switch fmt.Sprintf("%T", kv.Value) {
+					case "string":
+						str = kv.Value.(string)
+					case "float64":
+						str = fmt.Sprintf("%f", kv.Value)
+					case "bool":
+						str = fmt.Sprintf("%b", kv.Value)
+					}
+					result, msg = event.PerForm(str)
 				}
 
 				break
@@ -343,7 +370,16 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
 						if kv.Value != nil {
-							event.Var = strings.Replace(event.Var, val[0], kv.Value.(string), -1)
+							str := ""
+							switch fmt.Sprintf("%T", kv.Value) {
+							case "string":
+								str = kv.Value.(string)
+							case "float64":
+								str = fmt.Sprintf("%f", kv.Value)
+							case "bool":
+								str = fmt.Sprintf("%b", kv.Value)
+							}
+							event.Var = strings.Replace(event.Var, val[0], str, -1)
 						}
 
 					}
@@ -356,7 +392,16 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 				for _, kv := range scene.Configuration.Variable {
 					if kv.Key == val[1] {
 						if kv.Value != nil {
-							event.Val = strings.Replace(event.Val, val[0], kv.Value.(string), -1)
+							str := ""
+							switch fmt.Sprintf("%T", kv.Value) {
+							case "string":
+								str = kv.Value.(string)
+							case "float64":
+								str = fmt.Sprintf("%f", kv.Value)
+							case "bool":
+								str = fmt.Sprintf("%b", kv.Value)
+							}
+							event.Val = strings.Replace(event.Val, val[0], str, -1)
 						}
 					}
 				}
@@ -370,7 +415,16 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 			if kv.Key == event.Var {
 				temp = true
 				if kv.Value != nil {
-					result, msg = event.PerForm(kv.Value.(string))
+					str := ""
+					switch fmt.Sprintf("%T", kv.Value) {
+					case "string":
+						str = kv.Value.(string)
+					case "float64":
+						str = fmt.Sprintf("%f", kv.Value)
+					case "bool":
+						str = fmt.Sprintf("%b", kv.Value)
+					}
+					result, msg = event.PerForm(str)
 				}
 				break
 			}
