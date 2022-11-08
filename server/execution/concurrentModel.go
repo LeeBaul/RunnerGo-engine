@@ -20,7 +20,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 	if scene.ConfigTask.ModeConf.Duration != 0 {
 		log.Logger.Info("开始性能测试,持续时间", scene.ConfigTask.ModeConf.Duration, "秒")
 		index := 0
-		duration := scene.ConfigTask.ModeConf.Duration * 1000
+		duration := scene.ConfigTask.ModeConf.Duration
 
 		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
