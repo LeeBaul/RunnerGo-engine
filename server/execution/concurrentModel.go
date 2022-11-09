@@ -1,11 +1,12 @@
 package execution
 
 import (
+	"RunnerGo-engine/log"
+	"RunnerGo-engine/model"
+	"RunnerGo-engine/server/golink"
+	"RunnerGo-engine/tools"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/log"
-	"kp-runner/model"
-	"kp-runner/server/golink"
-	"kp-runner/tools"
 	"strconv"
 	"sync"
 	"time"
@@ -27,7 +28,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		startTime := time.Now().Unix()
 		for startTime+duration >= time.Now().Unix() {
 			// 查询是否停止
-			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:", reportMsg.TeamId, reportMsg.PlanId) + reportMsg.ReportId + ":status")
 			if status == "stop" {
 				return
 			}
