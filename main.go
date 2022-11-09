@@ -1,6 +1,7 @@
 package main
 
 import (
+	"RunnerGo-engine/tools"
 	"context"
 	"fmt"
 	"net/http"
@@ -64,6 +65,9 @@ func initService() {
 		WriteTimeout:   config.Conf.Http.WriteTimeout * time.Millisecond,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// 初始化全局函数
+	tools.InitPublicFunc()
 
 	go func() {
 		if err := kpRunnerService.ListenAndServe(); err != nil {

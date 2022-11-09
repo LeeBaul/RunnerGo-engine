@@ -6,9 +6,7 @@ import (
 	"RunnerGo-engine/log"
 	"bytes"
 	"encoding/json"
-	idvalidator "github.com/guanguans/id-validator"
 	"github.com/thedevsaddam/gojsonq"
-	"math/rand"
 	"os"
 	"regexp"
 	"runtime"
@@ -152,60 +150,4 @@ func JsonPath(source, expression string) (district interface{}) {
 //  HtmlPath html格式提取数据
 func HtmlPath() {
 
-}
-
-// RandomFloat0 随机生成0-1之间的小数
-func RandomFloat0() float64 {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Float64()
-}
-
-// RandomString 从list中随机生成n个字符组成的字符出
-func RandomString(list []string, n int) (str string) {
-	rand.Seed(time.Now().UnixNano())
-	for i := 0; i < n; i++ {
-		index := rand.Intn(len(list) - 0)
-		str = str + list[index]
-	}
-	return
-}
-
-// RandomInt 生成min-max之间的随机数
-func RandomInt(min, max int) int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max-min) + min
-}
-
-// SpecifiedRandomIdCard 根据参数生成身份证号
-func SpecifiedRandomIdCard(isEighteen bool, address string, birthday string, sex int) string {
-	return idvalidator.FakeRequireId(isEighteen, address, birthday, sex)
-}
-
-// RandomIdCard 随机生成身份证号
-func RandomIdCard() string {
-	return idvalidator.FakeId()
-}
-
-// VerifyIdCard 验证身份证号是否合法
-func VerifyIdCard(str string, strict bool) bool {
-	return idvalidator.IsValid(str, strict)
-}
-
-var ControllerMapsType = make(map[string]interface{})
-
-func InitPublicFunc() {
-	ControllerMapsType["RandomFloat0"] = RandomFloat0
-	ControllerMapsType["RandomString"] = RandomString
-	ControllerMapsType["RandomInt"] = RandomInt
-	ControllerMapsType["SpecifiedRandomIdCard"] = SpecifiedRandomIdCard
-	ControllerMapsType["RandomIdCard"] = RandomIdCard
-	ControllerMapsType["VerifyIdCard"] = VerifyIdCard
-
-}
-
-func CallPublicFunc(funcName string) interface{} {
-	if function, ok := ControllerMapsType[funcName]; ok {
-		return function
-	}
-	return nil
 }

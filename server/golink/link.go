@@ -336,7 +336,6 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 		sharedMap.Store(machineIp+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)
 	case model.IfControllerType:
 		keys := tools.FindAllDestStr(event.Var, "{{(.*?)}}")
-
 		if len(keys) > 0 {
 			for _, val := range keys {
 				for _, kv := range scene.Configuration.Variable {
@@ -348,6 +347,9 @@ func disposeDebugNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, e
 								str = kv.Value.(string)
 							case "float64":
 								str = fmt.Sprintf("%f", kv.Value)
+								if strings.HasSuffix(str, ".000000") {
+									str = strings.Split(str, ".")[0]
+								}
 							case "bool":
 								str = fmt.Sprintf("%b", kv.Value)
 							}
@@ -477,7 +479,7 @@ func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.
 	// 将请求信息中所有用的变量添加到接口变量维护的map中
 	api.FindParameterizes()
 
-	// 如果请求中使用的变量在场景设置的全局变量中存在存在，则将其赋值给变量
+	// 如果请求中使用的变量在场景设置的全局变量中存在，则将其赋值给变量
 	if configuration != nil {
 		api.ReplaceParameters(configuration)
 	}
