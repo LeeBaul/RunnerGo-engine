@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"kp-runner/model"
+	"RunnerGo-engine/model"
 )
 
 // WebSocketResponseJSON 返回数据结构体，返回值为json

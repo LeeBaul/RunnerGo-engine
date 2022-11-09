@@ -1,19 +1,19 @@
 package model
 
 import (
+	"RunnerGo-engine/log"
+	"RunnerGo-engine/tools"
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"github.com/ThomsonReutersEikon/go-ntlm/ntlm"
 	"github.com/comcast/go-edgegrid/edgegrid"
 	hawk "github.com/hiyosi/hawk"
-	"github.com/lixiangyun/go-ntlm"
 	"github.com/lixiangyun/go-ntlm/messages"
 	uuid "github.com/satori/go.uuid"
 	"github.com/valyala/fasthttp"
 	"io"
-	"kp-runner/log"
-	"kp-runner/tools"
 	"math"
 	"mime/multipart"
 	"net/http"

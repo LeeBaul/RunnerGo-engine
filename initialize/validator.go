@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"RunnerGo-engine/global"
 	"fmt"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/en"
@@ -9,7 +10,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
-	"kp-runner/global"
 	"reflect"
 	"strings"
 )

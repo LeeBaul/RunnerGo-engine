@@ -12,11 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"kp-runner/config"
-	"kp-runner/initialize"
-	"kp-runner/log"
-	"kp-runner/model"
-	"kp-runner/server/heartbeat"
+	"RunnerGo-engine/config"
+	"RunnerGo-engine/initialize"
+	"RunnerGo-engine/log"
+	"RunnerGo-engine/model"
+	"RunnerGo-engine/server/heartbeat"
 )
 
 var (

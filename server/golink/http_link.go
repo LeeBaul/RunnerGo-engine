@@ -2,10 +2,10 @@
 package golink
 
 import (
+	"RunnerGo-engine/model"
+	"RunnerGo-engine/server/client"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/model"
-	"kp-runner/server/client"
 	"time"
 )
 

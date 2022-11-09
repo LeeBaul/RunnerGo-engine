@@ -1,10 +1,10 @@
 package log
 
 import (
+	"RunnerGo-engine/config"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"kp-runner/config"
 	"os"
 )
 

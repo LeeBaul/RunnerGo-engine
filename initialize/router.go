@@ -1,9 +1,9 @@
 package initialize
 
 import (
+	"RunnerGo-engine/middlewares"
+	"RunnerGo-engine/routers"
 	"github.com/gin-gonic/gin"
-	"kp-runner/middlewares"
-	"kp-runner/routers"
 )
 
 func Routers() *gin.Engine {

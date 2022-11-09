@@ -2,9 +2,9 @@
 package golink
 
 import (
+	"RunnerGo-engine/model"
+	"RunnerGo-engine/server/client"
 	"github.com/shopspring/decimal"
-	"kp-runner/model"
-	"kp-runner/server/client"
 )
 
 func webSocketSend(api model.Api) (bool, int64, uint64, float64, float64) {

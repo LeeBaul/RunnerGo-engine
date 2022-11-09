@@ -1,8 +1,8 @@
 package model
 
 import (
+	log2 "RunnerGo-engine/log"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	log2 "kp-runner/log"
 )
 
 func NewOssClient(endpoint, accessKeyID, accessKeySecret string) (client *oss.Client) {

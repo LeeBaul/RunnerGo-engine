@@ -1,9 +1,9 @@
 package client
 
 import (
+	"RunnerGo-engine/log"
+	"RunnerGo-engine/tools"
 	"github.com/gorilla/websocket"
-	"kp-runner/log"
-	"kp-runner/tools"
 	"time"
 )
 

@@ -1,12 +1,12 @@
 package model
 
 import (
+	"RunnerGo-engine/log"
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"kp-runner/log"
 )
 
 func NewMongoClient(user, password, host, db string) (mongoClient *mongo.Client, err error) {

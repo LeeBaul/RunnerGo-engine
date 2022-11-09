@@ -1,10 +1,10 @@
 package client
 
 import (
+	"RunnerGo-engine/config"
+	"RunnerGo-engine/model"
 	"crypto/tls"
 	"github.com/valyala/fasthttp"
-	"kp-runner/config"
-	"kp-runner/model"
 	"strings"
 	"time"
 )

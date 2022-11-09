@@ -1,11 +1,11 @@
 package golink
 
 import (
+	"RunnerGo-engine/log"
+	"RunnerGo-engine/model"
+	"RunnerGo-engine/tools"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
-	"kp-runner/log"
-	"kp-runner/model"
-	"kp-runner/tools"
 	"math"
 	"strconv"
 	"strings"
@@ -206,7 +206,6 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 			}
 		}
 		var result = model.Failed
-		var msg = ""
 
 		var temp = false
 		for _, kv := range scene.Configuration.Variable {
@@ -222,29 +221,15 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 					case "bool":
 						str = fmt.Sprintf("%b", kv.Value)
 					}
-					result, msg = event.PerForm(str)
+					result, _ = event.PerForm(str)
 				}
 
 				break
 			}
 		}
 		if temp == false {
-			result, msg = event.PerForm(event.Var)
+			result, _ = event.PerForm(event.Var)
 		}
-		if event.Debug != "" {
-			debugMsg := make(map[string]interface{})
-			debugMsg["uuid"] = event.Uuid.String()
-			debugMsg["event_id"] = event.Id
-			debugMsg["status"] = result
-			debugMsg["msg"] = msg
-			debugMsg["type"] = model.IfControllerType
-			debugMsg["report_id"] = event.ReportId
-			debugMsg["next_list"] = event.NextList
-			if requestCollection != nil {
-				model.Insert(requestCollection, debugMsg)
-			}
-		}
-
 		if result == model.Failed {
 			eventResult.Status = model.End
 			eventResult.Weight = event.Weight
@@ -256,19 +241,6 @@ func disposePlanNode(sharedMap *sync.Map, scene *model.Scene, sceneId string, ev
 		}
 	case model.WaitControllerType:
 		time.Sleep(time.Duration(event.WaitTime) * time.Millisecond)
-		if scene.Debug != "" {
-			debugMsg := make(map[string]interface{})
-			debugMsg["uuid"] = event.Uuid.String()
-			debugMsg["event_id"] = event.Id
-			debugMsg["report_id"] = event.ReportId
-			debugMsg["status"] = model.Success
-			debugMsg["type"] = model.WaitControllerType
-			debugMsg["msg"] = "等待了" + strconv.Itoa(event.WaitTime) + "毫秒"
-			debugMsg["next_list"] = event.NextList
-			if requestCollection != nil {
-				model.Insert(requestCollection, debugMsg)
-			}
-		}
 		eventResult.Status = model.End
 		eventResult.Weight = event.Weight
 		sharedMap.Store(machineIp+":"+reportId+":"+gid+":"+sceneId+":"+event.Id+":status", eventResult)

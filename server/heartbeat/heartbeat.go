@@ -1,10 +1,10 @@
 package heartbeat
 
 import (
+	"RunnerGo-engine/model"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"kp-runner/model"
 	gonet "net"
 	"runtime"
 	"strings"
@@ -21,9 +21,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"kp-runner/config"
-	"kp-runner/log"
-	services "kp-runner/proto"
+	"RunnerGo-engine/config"
+	"RunnerGo-engine/log"
+	services "RunnerGo-engine/proto"
 )
 
 var (
