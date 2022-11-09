@@ -14,12 +14,8 @@
 main
 main_linux
 main_win.exe
-kp-runner-mac
-kp-runner-linux
-kp-runner-win.exe
-model/modeltest/*
-model/modeltest*
-server.go
+RunnerGo-engine-mac
+RunnerGo-engine-linux
+RunnerGo-engine-win.exe
 vendor
-test.sh
 *.log

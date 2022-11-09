@@ -54,7 +54,7 @@ machine:
 
 
 log:
-  path: "/data/logs/kp-runner/kp-runner-info.log"
+  path: "/data/logs/RunnerGo/RunnerGo-engine-info.log"
 
 
 management:
