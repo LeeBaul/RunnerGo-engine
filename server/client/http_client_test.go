@@ -9,7 +9,7 @@ func TestHTTPRequest(t *testing.T) {
 	//method := "GET"
 	////url := "http://echo.apipost.cn/get.php"
 	//
-	//url := "http://lanjie.host.zzidc.ha.cn/404.html?url=/get.php&intercept_domain=echo.apipost.cn"
+	//url := "https://dev-tools-env-test.apipost.cn/api/demo/news_list?mobile=18289454846&theme_news=国际新闻&page=1&pageSize=20"
 	//par := &model.VarForm{
 	//	Type:       "File",
 	//	IsChecked:  1,

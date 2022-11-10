@@ -26,22 +26,22 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 
 	}
 
-	if method == "GET" {
-		if query != nil && query.Parameter != nil {
-			var temp []*model.VarForm
-			for _, v := range query.Parameter {
-				if v.IsChecked == 1 {
-					if !strings.Contains(url, v.Key) {
-						temp = append(temp, v)
-					}
-				}
-			}
-			for k, v := range temp {
-				if k == 0 {
-					url += "?" + v.Key + "=" + v.Value.(string)
-				} else {
-					url += "&" + v.Key + "=" + v.Value.(string)
-				}
+	urlQuery := req.URI().QueryArgs()
+
+	if strings.Contains(url, "?") && strings.Contains(url, "&") && strings.Contains(url, "=") {
+		strs := strings.Split(url, "?")
+		url = strs[0]
+		queryList := strings.Split(strs[1], "&")
+		for i := 0; i < len(queryList); i++ {
+			keys := strings.Split(queryList[i], "=")
+			urlQuery.Add(keys[0], keys[1])
+		}
+	}
+	if query != nil && query.Parameter != nil {
+		for _, v := range query.Parameter {
+			if v.IsChecked == 1 {
+				by := v.ValueToByte()
+				urlQuery.AddBytesV(v.Key, by)
 			}
 		}
 	}
@@ -58,9 +58,9 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	resp = fasthttp.AcquireResponse()
 
 	startTime := time.Now()
+
 	// 发送请求
 	err = client.Do(req, resp)
-
 	requestTime = uint64(time.Since(startTime))
 	sendBytes = float64(req.Header.ContentLength()) / 1024
 	return

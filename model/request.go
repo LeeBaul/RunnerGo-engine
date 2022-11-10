@@ -480,6 +480,51 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 		}
 	}
 }
+func (v *VarForm) ValueToByte() (by []byte) {
+	if v.Value == nil {
+		return
+	}
+	switch v.Type {
+	case StringType:
+		by = []byte(v.Value.(string))
+	case TextType:
+		by = []byte(v.Value.(string))
+	case ObjectType:
+		by = []byte(v.Value.(string))
+	case ArrayType:
+		by = []byte(v.Value.(string))
+	case NumberType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int))
+		by = bytesBuffer.Bytes()
+	case IntegerType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int))
+		by = bytesBuffer.Bytes()
+	case DoubleType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int64))
+		by = bytesBuffer.Bytes()
+	case FileType:
+		bits := math.Float64bits(v.Value.(float64))
+		binary.LittleEndian.PutUint64(by, bits)
+	case BooleanType:
+		buf := bytes.Buffer{}
+		enc := gob.NewEncoder(&buf)
+		_ = enc.Encode(v.Value.(bool))
+		by = buf.Bytes()
+	case DateType:
+		by = []byte(v.Value.(string))
+	case DateTimeType:
+		by = []byte(v.Value.(string))
+	case TimeStampType:
+		bytesBuffer := bytes.NewBuffer([]byte{})
+		_ = binary.Write(bytesBuffer, binary.BigEndian, v.Value.(int64))
+		by = bytesBuffer.Bytes()
+
+	}
+	return
+}
 
 func (v *VarForm) toByte() (by []byte) {
 	if v.Value == nil {
