@@ -4,7 +4,9 @@ import (
 	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
+	"RunnerGo-engine/server/heartbeat"
 	"RunnerGo-engine/tools"
+	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strconv"
@@ -38,6 +40,22 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			if debug != "" {
 				scene.Debug = debug
 			}
+
+			// 查询是否在报告中对任务模式进行修改
+			err, mode := model.QueryPlanStatus(fmt.Sprintf("adjust:%s:%d:%d:%s", heartbeat.LocalIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			if err == nil {
+				var modeConf = new(model.ModeConf)
+				_ = json.Unmarshal([]byte(mode), modeConf)
+				if modeConf.Duration > 0 {
+					startTime = time.Now().Unix()
+					duration = modeConf.Duration
+				}
+				if modeConf.Concurrency > 0 {
+					concurrent = modeConf.Concurrency
+				}
+				model.DeleteKey(fmt.Sprintf("adjust:%s:%d:%d:%s", heartbeat.LocalIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			}
+
 			startConcurrentTime := time.Now().UnixMilli()
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
@@ -78,6 +96,21 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			} else {
 				scene.Debug = ""
 			}
+
+			// 查询是否在报告中对任务模式进行修改
+			err, mode := model.QueryPlanStatus(fmt.Sprintf("adjust:%s:%d:%d:%s", reportMsg.MachineIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			if err == nil {
+				var modeConf = new(model.ModeConf)
+				_ = json.Unmarshal([]byte(mode), modeConf)
+				if modeConf.RoundNum > 0 {
+					rounds = modeConf.RoundNum
+				}
+				if modeConf.Concurrency > 0 {
+					concurrent = modeConf.Concurrency
+				}
+				model.DeleteKey(fmt.Sprintf("adjust:%s:%d:%d:%s", reportMsg.MachineIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			}
+
 			currentTime := time.Now().UnixMilli()
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)

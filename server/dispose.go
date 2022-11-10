@@ -210,6 +210,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	startMsg.Start = true
 	log.Logger.Info("任务配置：    ", string(testModelJson))
 	resultDataMsgCh <- startMsg
+	var msg string
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
 		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
@@ -220,11 +221,12 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
-		execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
+		msg = execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.QpsModel:
 		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	default:
 		var machines []string
+		msg = "任务类型不存在"
 		machine := reportMsg.MachineIp
 		machines = append(machines, machine)
 		tools.SendStopStressReport(machines, plan.ReportId)
@@ -241,7 +243,7 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	debugMsg["end"] = true
 	model.Insert(mongoCollection, debugMsg)
 
-	log.Logger.Info("计划:", plan.PlanId, ".............结束")
+	log.Logger.Info("计划:", plan.PlanId, "  ： ", msg)
 
 }
 

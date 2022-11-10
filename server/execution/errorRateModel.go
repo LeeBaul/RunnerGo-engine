@@ -4,6 +4,7 @@ import (
 	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
+	"RunnerGo-engine/server/heartbeat"
 	"RunnerGo-engine/tools"
 	"encoding/json"
 	"fmt"
@@ -60,6 +61,28 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		debug := model.QueryDebugStatus(debugCollection, reportId)
 		if debug != "" {
 			scene.Debug = debug
+		}
+
+		// 查询是否在报告中对任务模式进行修改
+		err, mode := model.QueryPlanStatus(fmt.Sprintf("adjust:%s:%d:%d:%s", heartbeat.LocalIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+		if err == nil {
+			var modeConf = new(model.ModeConf)
+			_ = json.Unmarshal([]byte(mode), modeConf)
+			if modeConf.StartConcurrency > 0 {
+				concurrent = modeConf.StartConcurrency
+			}
+			if modeConf.StepRunTime > 0 {
+				stepRunTime = modeConf.StepRunTime
+				startTime = time.Now().Unix()
+			}
+			if modeConf.MaxConcurrency > 0 {
+				maxConcurrent = modeConf.MaxConcurrency
+			}
+			if modeConf.Duration > 0 {
+				stableDuration = modeConf.Duration
+			}
+			// 删除redis中的key
+			model.DeleteKey(fmt.Sprintf("adjust:%s:%d:%d:%s", heartbeat.LocalIp, reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 		}
 
 		// 查询当前错误率时多少
