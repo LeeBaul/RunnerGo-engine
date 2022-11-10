@@ -72,45 +72,44 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 			for _, resultData := range result.Results {
 				switch resultData.PercentAge {
 				case 50:
-					times := int64(math.Ceil(resultData.FiftyRequestTimelineValue))
+					times := int64(math.Ceil(resultData.FiftyRequestTimelineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 90:
-					times := int64(math.Ceil(resultData.NinetyRequestTimeLineValue))
-					log.Logger.Debug("times:       ", times, "           ", resultData.RequestThreshold)
+					times := int64(math.Ceil(resultData.NinetyRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 95:
-					times := int64(math.Ceil(resultData.NinetyFiveRequestTimeLineValue))
+					times := int64(math.Ceil(resultData.NinetyFiveRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 99:
-					times := int64(math.Ceil(resultData.NinetyNineRequestTimeLineValue))
+					times := int64(math.Ceil(resultData.NinetyNineRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 100:
-					times := int64(math.Ceil(resultData.MaxRequestTime))
+					times := int64(math.Ceil(resultData.MaxRequestTime / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 101:
-					times := int64(math.Ceil(resultData.AvgRequestTime))
+					times := int64(math.Ceil(resultData.AvgRequestTime / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", "平均响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				default:
 					if resultData.PercentAge == resultData.CustomRequestTimeLine {
-						times := int64(math.Ceil(resultData.CustomRequestTimeLineValue))
+						times := int64(math.Ceil(resultData.CustomRequestTimeLineValue / float64(time.Millisecond)))
 						if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 							log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 							return fmt.Sprintf("测试报告：%s, 接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
