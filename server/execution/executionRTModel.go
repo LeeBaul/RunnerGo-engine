@@ -72,45 +72,46 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 				switch resultData.PercentAge {
 				case 50:
 					times := int64(math.Ceil(resultData.FiftyRequestTimelineValue))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				case 90:
 					times := int64(math.Ceil(resultData.NinetyRequestTimeLineValue))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					log.Logger.Debug("times:       ", times, "           ", resultData.RequestThreshold)
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				case 95:
 					times := int64(math.Ceil(resultData.NinetyFiveRequestTimeLineValue))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				case 99:
 					times := int64(math.Ceil(resultData.NinetyNineRequestTimeLineValue))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				case 100:
 					times := int64(math.Ceil(resultData.MaxRequestTime))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				case 101:
 					times := int64(math.Ceil(resultData.AvgRequestTime))
-					if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", "平均响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", "平均响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 						return
 					}
 				default:
 					if resultData.PercentAge == resultData.CustomRequestTimeLine {
 						times := int64(math.Ceil(resultData.CustomRequestTimeLineValue))
-						if resultData.RequestThreshold > 0 && times >= resultData.RequestThreshold {
-							log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.RequestThreshold, "   任务结束结束")
+						if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
+							log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ":  ", resultData.PercentAge, "%响应时间线大于等于阈值：  ", resultData.ResponseThreshold, "   任务结束结束")
 							return
 						}
 					}
