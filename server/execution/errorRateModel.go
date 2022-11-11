@@ -27,7 +27,7 @@ type Apis struct {
 }
 
 // ErrorRateModel 错误率模式
-func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
+func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) string {
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
 	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
@@ -35,7 +35,6 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	stableDuration := scene.ConfigTask.ModeConf.Duration
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
 
-	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 
 	// preConcurrent 是为了回退,此功能后续开发
@@ -50,12 +49,12 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 	//}
 	key := fmt.Sprintf("%d:%s:reportData", reportMsg.PlanId, reportMsg.ReportId)
 	currentWg := &sync.WaitGroup{}
-	startTime, endTime := time.Now().Unix(), time.Now().Unix()
+	targetTime, startTime, endTime := time.Now().Unix(), time.Now().Unix(), time.Now().Unix()
 	for startTime+stepRunTime > endTime {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
-			return
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)
 		debug := model.QueryDebugStatus(debugCollection, reportId)
@@ -88,6 +87,7 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		// 查询当前错误率时多少
 		//GetErrorRate(planId+":"+sceneId+":"+"errorRate", errorRateData)
 		res := model.QueryReportData(key)
+		log.Logger.Debug("          ", res)
 		if res != "" {
 			var result = new(model.RedisSceneTestResultDataMsg)
 			err := json.Unmarshal([]byte(res), result)
@@ -96,10 +96,13 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 			}
 			for _, resultData := range result.Results {
 				if resultData.TotalRequestNum != 0 {
-					if resultData.ErrorRate > resultData.ErrorThreshold {
-						log.Logger.Info("计划:", planId, "——测试报告：", result.ReportId, "  接口：", resultData.Name, ": 错误率为： ", resultData.ErrorRate, "大于等于阈值：  ", resultData.ErrorThreshold, "   任务结束结束")
-						return
+					if resultData.TotalRequestNum > 0 {
+						errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
+						if errRate > resultData.ErrorThreshold {
+							return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 接口：%s, 错误率为：%f, 大于等于阈值：%f， 任务结束！", reportMsg.ReportId, concurrent, endTime-targetTime, resultData.Name, errRate, resultData.ErrorThreshold)
+						}
 					}
+
 				}
 
 			}
@@ -126,7 +129,8 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		endTime = time.Now().Unix()
 
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
-			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
+			log.Logger.Debug("concurrent:     ", concurrent, maxConcurrent)
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 
 		// 如果当前并发数小于最大并发数，
@@ -155,4 +159,5 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 
 		index++
 	}
+	return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务非正常结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 }

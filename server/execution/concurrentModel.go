@@ -15,7 +15,7 @@ import (
 )
 
 // ConcurrentModel 并发模式
-func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
+func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) string {
 
 	concurrent := scene.ConfigTask.ModeConf.Concurrency
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
@@ -27,12 +27,12 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 
 		// 并发数的所有请求都完成后进行下一轮并发
 		currentWg := &sync.WaitGroup{}
-		startTime := time.Now().Unix()
+		targetTime, startTime := time.Now().Unix(), time.Now().Unix()
 		for startTime+duration >= time.Now().Unix() {
 			// 查询是否停止
 			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:", reportMsg.TeamId, reportMsg.PlanId) + reportMsg.ReportId + ":status")
 			if status == "stop" {
-				return
+				return fmt.Sprintf("测试报告：%s, 并发数：%d, 总运行时长%ds, 任务手动结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 			}
 			// 查询是否开启debug
 			reportId, _ := strconv.Atoi(reportMsg.ReportId)
@@ -78,6 +78,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			currentWg.Wait()
 			index++
 		}
+		return fmt.Sprintf("测试报告：%s, 并发数：%d, 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 
 	} else {
 		index := 0
@@ -87,7 +88,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		for i := int64(0); i < rounds; i++ {
 			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 			if status == "stop" {
-				return
+				return fmt.Sprintf("测试报告：%s, 并发数：%d， 运行了%d轮次, 任务手动结束！", reportMsg.ReportId, concurrent, i-1)
 			}
 			reportId, _ := strconv.Atoi(reportMsg.ReportId)
 			debug := model.QueryDebugStatus(debugCollection, reportId)
@@ -138,7 +139,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 		}
-
+		return fmt.Sprintf("测试报告：%s, 并发数：%d， 运行了%d轮次, 任务正常结束！", reportMsg.ReportId, concurrent, rounds)
 	}
 
 }

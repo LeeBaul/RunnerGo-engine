@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
 	"RunnerGo-engine/server/heartbeat"
@@ -15,14 +14,13 @@ import (
 )
 
 // LadderModel 阶梯模式
-func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
+func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) string {
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
 	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
 	stepRunTime := scene.ConfigTask.ModeConf.StepRunTime
 	stableDuration := scene.ConfigTask.ModeConf.Duration
 	reheatTime := scene.ConfigTask.ModeConf.ReheatTime
-	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 
 	// preConcurrent 是为了回退,此功能后续开发
@@ -30,14 +28,14 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 	concurrent := startConcurrent
 	index, target := 0, 0
 	currentWg := &sync.WaitGroup{}
-	startTime, endTime := time.Now().Unix(), time.Now().Unix()
+	targetTime, startTime, endTime := time.Now().Unix(), time.Now().Unix(), time.Now().Unix()
 
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > endTime {
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
-			return
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务手动结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)
 		debug := model.QueryDebugStatus(debugCollection, reportId)
@@ -85,8 +83,7 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		currentWg.Wait()
 		endTime = time.Now().Unix()
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
-			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
-			return
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 
 		// 如果当前并发数小于最大并发数，
@@ -111,5 +108,6 @@ func LadderModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Result
 		}
 		index++
 	}
+	return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务非正常结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 
 }

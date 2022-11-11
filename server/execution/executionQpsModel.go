@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
 	"RunnerGo-engine/server/heartbeat"
@@ -15,7 +14,7 @@ import (
 )
 
 // QPSModel 响应时间模式
-func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) {
+func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.ResultDataMsg, debugCollection, requestCollection *mongo.Collection, sharedMap *sync.Map) string {
 	startConcurrent := scene.ConfigTask.ModeConf.StartConcurrency
 	step := scene.ConfigTask.ModeConf.Step
 	maxConcurrent := scene.ConfigTask.ModeConf.MaxConcurrency
@@ -23,7 +22,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	stableDuration := scene.ConfigTask.ModeConf.Duration
 	timeUp := scene.ConfigTask.ModeConf.ReheatTime
 
-	planId := strconv.FormatInt(reportMsg.PlanId, 10)
 	// 定义一个chan, 从es中获取当前错误率与阈值分别是多少
 	// 连接es，并查询当前错误率为多少，并将其放入到chan中
 	//err, esClient := client.NewEsClient(config.Config["esHost"].(string))
@@ -45,12 +43,12 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 	// 创建es客户端
 
 	currentWg := &sync.WaitGroup{}
-	startTime, endTime := time.Now().Unix(), time.Now().Unix()
+	targetTime, startTime, endTime := time.Now().Unix(), time.Now().Unix(), time.Now().Unix()
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > endTime {
 		_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
 		if status == "stop" {
-			return
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)
 		debug := model.QueryDebugStatus(debugCollection, reportId)
@@ -123,7 +121,7 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		// 如果发送的并发数时间小于1000ms，那么休息剩余的时间;也就是说每秒只发送concurrent个请求
 		endTime = time.Now().Unix()
 		if concurrent == maxConcurrent && stepRunTime == stableDuration && startTime+stepRunTime <= endTime {
-			log.Logger.Info("计划: ", planId, "；报告：   ", reportId, "     :结束 ")
+			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 
 		// 如果当前并发数小于最大并发数，
@@ -153,5 +151,6 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		index++
 
 	}
+	return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务非正常结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 
 }

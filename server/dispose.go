@@ -213,17 +213,17 @@ func TaskDecomposition(plan *model.Plan, wg *sync.WaitGroup, resultDataMsgCh cha
 	var msg string
 	switch scene.ConfigTask.Mode {
 	case model.ConcurrentModel:
-		execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
+		msg = execution.ConcurrentModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.ErrorRateModel:
-		execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
+		msg = execution.ErrorRateModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.LadderModel:
-		execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
+		msg = execution.LadderModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 		//case task.QpsModel:
 		//	execution.ExecutionQpsModel()
 	case model.RTModel:
 		msg = execution.RTModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	case model.QpsModel:
-		execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
+		msg = execution.QPSModel(wg, scene, reportMsg, resultDataMsgCh, debugCollection, mongoCollection, sharedMap)
 	default:
 		var machines []string
 		msg = "任务类型不存在"
