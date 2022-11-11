@@ -90,14 +90,14 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		log.Logger.Debug("          ", res)
 		if res != "" {
 			var result = new(model.RedisSceneTestResultDataMsg)
+			log.Logger.Debug("RESULT:        ", result)
 			err := json.Unmarshal([]byte(res), result)
 			if err != nil {
 				break
 			}
 			for _, resultData := range result.Results {
-
+				log.Logger.Debug(resultData.Name, "           总请求数：       ", resultData.TotalRequestNum)
 				if resultData.TotalRequestNum > 0 {
-					log.Logger.Debug(resultData.Name, "           总请求数：       ", resultData.TotalRequestNum)
 					errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
 					log.Logger.Debug(resultData.Name, "           错误率：       ", errRate)
 					log.Logger.Debug(resultData.Name, "           errrate:      ", resultData.ErrorRate)
