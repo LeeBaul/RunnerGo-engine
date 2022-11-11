@@ -95,14 +95,16 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 				break
 			}
 			for _, resultData := range result.Results {
-				if resultData.TotalRequestNum != 0 {
-					if resultData.TotalRequestNum > 0 {
-						errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
-						if errRate > resultData.ErrorThreshold {
-							return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 接口：%s, 错误率为：%f, 大于等于阈值：%f， 任务结束！", reportMsg.ReportId, concurrent, endTime-targetTime, resultData.Name, errRate, resultData.ErrorThreshold)
-						}
-					}
 
+				if resultData.TotalRequestNum > 0 {
+					log.Logger.Debug(resultData.Name, "           总请求数：       ", resultData.TotalRequestNum)
+					errRate := float64(resultData.ErrorNum) / float64(resultData.TotalRequestNum)
+					log.Logger.Debug(resultData.Name, "           错误率：       ", errRate)
+					log.Logger.Debug(resultData.Name, "           errrate:      ", resultData.ErrorRate)
+					log.Logger.Debug(resultData.Name, "           阈值:          ", resultData.ErrorThreshold)
+					if errRate > resultData.ErrorThreshold {
+						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 接口：%s, 错误率为：%f, 大于等于阈值：%f， 任务结束！", reportMsg.ReportId, concurrent, endTime-targetTime, resultData.Name, errRate, resultData.ErrorThreshold)
+					}
 				}
 
 			}
