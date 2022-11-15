@@ -6,6 +6,7 @@ import (
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
@@ -82,7 +83,8 @@ func Stop(c *gin.Context) {
 	}
 	go func(stop model.Stop) {
 		for _, reportId := range stop.ReportIds {
-			err := model.InsertStatus(reportId+":status", "stop", 20)
+			key := fmt.Sprintf("%d:%d:%s:status", stop.TeamId, stop.PlanId, reportId)
+			err := model.InsertStatus(key, "stop", -1)
 			if err != nil {
 				log.Logger.Error("向redis写入任务状态失败：", err)
 			}

@@ -30,8 +30,9 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		targetTime, startTime := time.Now().Unix(), time.Now().Unix()
 		for startTime+duration >= time.Now().Unix() {
 			// 查询是否停止
-			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:", reportMsg.TeamId, reportMsg.PlanId) + reportMsg.ReportId + ":status")
+			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 			if status == "stop" {
+				model.DeleteKey(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 				return fmt.Sprintf("测试报告：%s, 并发数：%d, 总运行时长%ds, 任务手动结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 			}
 			// 查询是否开启debug
@@ -57,7 +58,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 			startConcurrentTime := time.Now().UnixMilli()
-			log.Logger.Debug("并发数：", concurrent)
 			for i := int64(0); i < concurrent; i++ {
 				wg.Add(1)
 				currentWg.Add(1)
@@ -87,8 +87,9 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		currentWg := &sync.WaitGroup{}
 		startTime := time.Now().UnixMilli()
 		for i := int64(0); i < rounds; i++ {
-			_, status := model.QueryPlanStatus(reportMsg.ReportId + ":status")
+			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 			if status == "stop" {
+				model.DeleteKey(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 				return fmt.Sprintf("测试报告：%s, 并发数：%d， 运行了%d轮次, 任务手动结束！", reportMsg.ReportId, concurrent, i-1)
 			}
 			reportId, _ := strconv.Atoi(reportMsg.ReportId)
@@ -114,7 +115,6 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 			currentTime := time.Now().UnixMilli()
-			log.Logger.Debug("并发数：", concurrent)
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				currentWg.Add(1)
