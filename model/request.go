@@ -367,7 +367,8 @@ func (auth *Auth) SetAuth(req *fasthttp.Request) {
 		case BEarer:
 			req.Header.Add("authorization", "Bearer "+auth.Bearer.Key)
 		case BAsic:
-			req.Header.Add("authorization", "Basic "+string(tools.Base64Encode(auth.Basic.UserName+auth.Basic.Password)))
+			pw := fmt.Sprintf("%s:%s", auth.Basic.UserName, auth.Basic.Password)
+			req.Header.Add("Authorization", "Basic "+tools.Base64EncodeStd(pw))
 		case DigestType:
 			encryption := tools.GetEncryption(auth.Digest.Algorithm)
 			if encryption != nil {

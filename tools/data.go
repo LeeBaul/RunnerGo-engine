@@ -33,9 +33,15 @@ func Base64DeEncode(str string, dataType string) (decoded []byte) {
 	return
 }
 
-// base64编码
+// base64编码 常规编码，末尾不补 =
 func Base64Encode(str string) (encode string) {
 	msg := []byte(str)
 	encode = base64.RawStdEncoding.EncodeToString(msg)
 	return
+}
+
+// 常规编码
+func Base64EncodeStd(str string) string {
+	msg := []byte(str)
+	return base64.StdEncoding.EncodeToString(msg)
 }
