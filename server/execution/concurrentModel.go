@@ -113,6 +113,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 			}
 
 			currentTime := time.Now().UnixMilli()
+			log.Logger.Debug("并发数：", concurrent)
 			for j := int64(0); j < concurrent; j++ {
 				wg.Add(1)
 				currentWg.Add(1)
