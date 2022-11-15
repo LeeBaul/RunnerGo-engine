@@ -84,6 +84,7 @@ func Stop(c *gin.Context) {
 	go func(stop model.Stop) {
 		for _, reportId := range stop.ReportIds {
 			key := fmt.Sprintf("%d:%d:%s:status", stop.TeamId, stop.PlanId, reportId)
+			log.Logger.Info("停止任务：   ", key)
 			err := model.InsertStatus(key, "stop", -1)
 			if err != nil {
 				log.Logger.Error("向redis写入任务状态失败：", err)
