@@ -138,6 +138,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		}
 
 		startConcurrentTime := time.Now().UnixMilli()
+		log.Logger.Debug("并发数：", concurrent)
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)
