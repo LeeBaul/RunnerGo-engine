@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
 	"RunnerGo-engine/server/heartbeat"
@@ -63,7 +62,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if res != "" {
 			var result = new(model.RedisSceneTestResultDataMsg)
 			err := json.Unmarshal([]byte(res), result)
-			log.Logger.Debug("RESULT:         ", res)
 			if err != nil {
 				break
 			}
@@ -72,39 +70,39 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 				case 50:
 					times := int64(math.Ceil(resultData.FiftyRequestTimelineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 90:
 					times := int64(math.Ceil(resultData.NinetyRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 95:
 					times := int64(math.Ceil(resultData.NinetyFiveRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
 
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 99:
 					times := int64(math.Ceil(resultData.NinetyNineRequestTimeLineValue / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 100:
 					times := int64(math.Ceil(resultData.MaxRequestTime / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				case 101:
 					times := int64(math.Ceil(resultData.AvgRequestTime / float64(time.Millisecond)))
 					if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-						return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+						return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 					}
 				default:
 					if resultData.PercentAge == resultData.CustomRequestTimeLine {
 						times := int64(math.Ceil(resultData.CustomRequestTimeLineValue / float64(time.Millisecond)))
 						if resultData.ResponseThreshold > 0 && times >= resultData.ResponseThreshold {
-							return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
+							return fmt.Sprintf("测试报告：%d, 最大并发数：%d， 总运行时长%ds,  接口：%s: %d 响应时间线大于等于阈值%d, 任务结束！", reportId, concurrent, endTime-targetTime, resultData.Name, resultData.PercentAge, resultData.RequestThreshold)
 						}
 					}
 
@@ -135,7 +133,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		}
 
 		startConcurrentTime := time.Now().UnixMilli()
-		log.Logger.Debug("并发数：", concurrent)
 		for i := int64(0); i < concurrent; i++ {
 			wg.Add(1)
 			currentWg.Add(1)

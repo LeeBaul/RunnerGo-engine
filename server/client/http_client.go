@@ -63,6 +63,9 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 	err = client.Do(req, resp)
 	requestTime = uint64(time.Since(startTime))
 	sendBytes = float64(req.Header.ContentLength()) / 1024
+	if sendBytes <= 0 {
+		sendBytes = float64(len(req.Body())) / 1024
+	}
 	return
 }
 

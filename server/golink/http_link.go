@@ -71,6 +71,9 @@ func HttpSend(event model.Event, api model.Api, configuration *model.Configurati
 	//contentLength = uint(resp.Header.ContentLength())
 
 	receivedBytes = float64(resp.Header.ContentLength()) / 1024
+	if receivedBytes <= 0 {
+		receivedBytes = float64(len(resp.Body())) / 1024
+	}
 	// 开启debug模式后，将请求响应信息写入到mongodb中
 	if api.Debug != "" && api.Debug != "stop" {
 		switch api.Debug {
