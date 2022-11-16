@@ -513,8 +513,8 @@ func DisposeRequest(reportMsg *model.ResultDataMsg, resultDataMsgCh chan *model.
 		requestResults.IsSucceed = isSucceed
 		requestResults.SendBytes = sendBytes
 		requestResults.ReceivedBytes = receivedBytes
-		requestResults.Timestamp = time.Now().UnixMilli()
 		requestResults.ErrorMsg = errMsg
+		requestResults.Timestamp = time.Now().UnixMilli()
 		resultDataMsgCh <- requestResults
 	}
 

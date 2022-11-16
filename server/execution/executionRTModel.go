@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/golink"
 	"RunnerGo-engine/server/heartbeat"
@@ -65,6 +66,7 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 		if res != "" {
 			var result = new(model.RedisSceneTestResultDataMsg)
 			err := json.Unmarshal([]byte(res), result)
+			log.Logger.Debug("RESULT:         ", res)
 			if err != nil {
 				break
 			}
