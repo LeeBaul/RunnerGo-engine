@@ -34,9 +34,6 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 
 	// preConcurrent 是为了回退,此功能后续开发
 	//preConcurrent := startConcurrent
-	stepRunTime *= 1000
-	step *= 1000
-	stableDuration *= 1000
 	concurrent := startConcurrent
 
 	index, target := 0, 0

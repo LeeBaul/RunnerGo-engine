@@ -67,7 +67,7 @@ func QueryReportData(key string) (value string) {
 	if len(values) <= 0 {
 		return
 	}
-	value = values[len(values)-1]
+	value = values[0]
 	return
 }
 
