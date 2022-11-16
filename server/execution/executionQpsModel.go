@@ -44,6 +44,8 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 
 	currentWg := &sync.WaitGroup{}
 	targetTime, startTime, endTime := time.Now().Unix(), time.Now().Unix(), time.Now().Unix()
+
+	qpsTag := false
 	// 只要开始时间+持续时长大于当前时间就继续循环
 	for startTime+stepRunTime > endTime {
 		_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
@@ -56,23 +58,41 @@ func QPSModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultDat
 		if debug != "" {
 			scene.Debug = debug
 		}
-		res := model.QueryReportData(key)
-		if res != "" {
-			var result = new(model.RedisSceneTestResultDataMsg)
-			err := json.Unmarshal([]byte(res), result)
-			if err != nil {
-				break
-			}
-			for _, resultData := range result.Results {
-				if resultData.TotalRequestNum != 0 {
-					if resultData.Qps >= float64(resultData.RequestThreshold) {
-						concurrent = maxConcurrent
-						stepRunTime = stableDuration
-						target += 1
-					}
+
+		// 如果所有的接口qps都达到阈值，则不在进行查询当前qps
+		if !qpsTag {
+			res := model.QueryReportData(key)
+			if res != "" {
+				var result = new(model.RedisSceneTestResultDataMsg)
+				err := json.Unmarshal([]byte(res), result)
+				if err != nil {
+					break
 				}
 
+				tag, apiLen := 0, len(result.Results)
+				for _, resultData := range result.Results {
+					if resultData.TotalRequestNum != 0 {
+						if resultData.ResponseThreshold == 0 {
+							tag++
+						}
+						if resultData.Qps >= float64(resultData.RequestThreshold) && resultData.ResponseThreshold != 0 {
+							tag++
+						}
+						if resultData.Qps < float64(resultData.RequestThreshold) && resultData.ResponseThreshold != 0 {
+							tag--
+						}
+
+					}
+
+				}
+				// 如果所有的接口qps都达到阈值，那么直接进入最大并发数
+				if tag == apiLen {
+					concurrent = maxConcurrent
+					stepRunTime = stableDuration
+					qpsTag = true
+				}
 			}
+
 		}
 
 		// 查询是否在报告中对任务模式进行修改

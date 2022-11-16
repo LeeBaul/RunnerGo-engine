@@ -3,7 +3,7 @@
 heartbeat:
   port: 8002
   region: "北京"
-  duration: 1
+  duration: 3
   grpcHost: "kpcontroller.apipost.cn:443"
 
 
