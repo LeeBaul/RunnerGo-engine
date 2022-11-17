@@ -47,7 +47,7 @@ oss:
   down: "/data/parameter"
 
 machine:
-  maxGoroutines: 1000001
+  maxGoroutines: 20005
   serverType: 1
   netName: ""
   diskName: ""

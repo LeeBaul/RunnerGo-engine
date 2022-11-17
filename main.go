@@ -4,20 +4,20 @@ import (
 	"RunnerGo-engine/tools"
 	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-
 	"RunnerGo-engine/config"
 	"RunnerGo-engine/initialize"
 	"RunnerGo-engine/log"
 	"RunnerGo-engine/model"
 	"RunnerGo-engine/server/heartbeat"
+	_ "net/http/pprof"
 )
 
 var (
@@ -68,6 +68,9 @@ func initService() {
 
 	// 初始化全局函数
 	tools.InitPublicFunc()
+	go func() {
+		log.Logger.Debug(http.ListenAndServe(":8002", nil))
+	}()
 
 	go func() {
 		if err := kpRunnerService.ListenAndServe(); err != nil {
@@ -75,6 +78,12 @@ func initService() {
 			return
 		}
 	}()
+
+	// pprof 监控
+	//go func() {
+	//	pprof.Register(GinRouter)
+	//	GinRouter.Run(":8003")
+	//}()
 	// 注册并发送心跳数据
 	field := heartbeat.LocalIp + "_" + fmt.Sprintf("%d", config.Conf.Heartbeat.Port) + "_" + config.Conf.Heartbeat.Region
 	go func() {

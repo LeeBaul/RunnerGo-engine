@@ -9,7 +9,6 @@ import (
 func Routers() *gin.Engine {
 
 	Routers := gin.Default()
-
 	// 配置跨域
 	Routers.Use(middlewares.Cors())
 
