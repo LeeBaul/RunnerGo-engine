@@ -58,7 +58,6 @@ func QueryTimingTaskStatus(key string) bool {
 
 func QuerySceneStatus(key string) (err error, value string) {
 	value, err = RDB.Get(key).Result()
-
 	return
 }
 

@@ -13,9 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -30,40 +28,40 @@ func DisposeTask(plan *model.Plan) {
 	switch plan.Scene.ConfigTask.TaskType {
 	case model.CommonTaskType:
 		ExecutionPlan(plan)
-	case model.TimingTaskType:
-		TimingExecutionPlan(plan, func() {
-			ExecutionPlan(plan)
-		})
-	case model.CICDTaskType:
-
+		//case model.TimingTaskType:
+		//	TimingExecutionPlan(plan, func() {
+		//		ExecutionPlan(plan)
+		//	})
+		//case model.CICDTaskType:
+		//
 	}
 }
 
-// TimingExecutionPlan 定时任务
-func TimingExecutionPlan(plan *model.Plan, job func()) {
-	if plan.ConfigTask.CronExpr == "" {
-		log.Logger.Error("定时任务，执行时间不能为空")
-		return
-	}
-	c := cron.New(
-		cron.WithLocation(time.UTC),
-		cron.WithSeconds(),
-	)
-
-	id, err := c.AddFunc(plan.ConfigTask.CronExpr, job)
-	if err != nil {
-		log.Logger.Error("定时任务执行失败", err)
-		return
-	}
-	c.Start()
-
-	// 查询定时任务状态，如果redis中的状态变为停止，则关闭定时任务
-	status := model.QueryTimingTaskStatus(strconv.FormatInt(plan.PlanId, 10) + ":" + strconv.FormatInt(plan.Scene.SceneId, 10) + ":" + "timing")
-	if status == false {
-		c.Remove(id)
-	}
-
-}
+//// TimingExecutionPlan 定时任务
+//func TimingExecutionPlan(plan *model.Plan, job func()) {
+//	if plan.ConfigTask.CronExpr == "" {
+//		log.Logger.Error("定时任务，执行时间不能为空")
+//		return
+//	}
+//	c := cron.New(
+//		cron.WithLocation(time.UTC),
+//		cron.WithSeconds(),
+//	)
+//
+//	id, err := c.AddFunc(plan.ConfigTask.CronExpr, job)
+//	if err != nil {
+//		log.Logger.Error("定时任务执行失败", err)
+//		return
+//	}
+//	c.Start()
+//
+//	// 查询定时任务状态，如果redis中的状态变为停止，则关闭定时任务
+//	status := model.QueryTimingTaskStatus(strconv.FormatInt(plan.PlanId, 10) + ":" + strconv.FormatInt(plan.Scene.SceneId, 10) + ":" + "timing")
+//	if status == false {
+//		c.Remove(id)
+//	}
+//
+//}
 
 // ExecutionPlan 执行计划
 func ExecutionPlan(plan *model.Plan) {

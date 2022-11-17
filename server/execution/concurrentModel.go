@@ -30,9 +30,9 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		targetTime, startTime := time.Now().Unix(), time.Now().Unix()
 		for startTime+duration >= time.Now().Unix() {
 			// 查询是否停止
-			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			_, status := model.QueryPlanStatus(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 			if status == "stop" {
-				model.DeleteKey(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+				model.DeleteKey(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 				return fmt.Sprintf("测试报告：%s, 并发数：%d, 总运行时长%ds, 任务手动结束！", reportMsg.ReportId, concurrent, time.Now().Unix()-targetTime)
 			}
 			// 查询是否开启debug

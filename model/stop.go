@@ -7,5 +7,6 @@ type Stop struct {
 }
 
 type StopScene struct {
+	TeamId  int64 `json:"team_id"`
 	SceneId int64 `json:"scene_id"`
 }

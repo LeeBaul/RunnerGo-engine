@@ -47,9 +47,9 @@ func RTModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.ResultData
 	targetTime, startTime, endTime := time.Now().Unix(), time.Now().Unix(), time.Now().Unix()
 	for startTime+stepRunTime > endTime {
 
-		_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+		_, status := model.QueryPlanStatus(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 		if status == "stop" {
-			model.DeleteKey(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			model.DeleteKey(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务手动结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)
