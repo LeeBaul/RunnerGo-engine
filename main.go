@@ -87,6 +87,10 @@ func initService() {
 		//heartbeat.SendHeartBeat(config.Conf.Heartbeat.GrpcHost, config.Conf.Heartbeat.Duration)
 		heartbeat.SendHeartBeatRedis(field, config.Conf.Heartbeat.Duration)
 	}()
+	// 资源监控数据
+	go func() {
+		heartbeat.SendMachineResources(config.Conf.Heartbeat.Resources)
+	}()
 	/// 接收终止信号
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

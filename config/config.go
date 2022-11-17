@@ -39,10 +39,11 @@ type Machine struct {
 }
 
 type Heartbeat struct {
-	Port     int32  `yaml:"port"`
-	Region   string `yaml:"region"`
-	Duration int64  `yaml:"duration"`
-	GrpcHost string `yaml:"grpcHost"`
+	Port      int32  `yaml:"port"`
+	Region    string `yaml:"region"`
+	Duration  int64  `yaml:"duration"`
+	Resources int64  `yaml:"resources"`
+	GrpcHost  string `yaml:"grpcHost"`
 }
 type Http struct {
 	Name                     string        `yaml:"name"`

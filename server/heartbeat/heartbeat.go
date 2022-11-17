@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	gonet "net"
 	"runtime"
 	"strings"
@@ -216,6 +217,7 @@ func InitLocalIp() {
 
 func SendHeartBeatRedis(field string, duration int64) {
 	ticker := time.NewTicker(time.Duration(duration) * time.Second)
+
 	for {
 		select {
 		case <-ticker.C:
@@ -227,5 +229,20 @@ func SendHeartBeatRedis(field string, duration int64) {
 			}
 		}
 	}
+}
 
+func SendMachineResources(duration int64) {
+	ticker := time.NewTicker(time.Duration(duration) * time.Second)
+	key := fmt.Sprintf("MachineMonitor:%s", LocalIp)
+	for {
+		select {
+		case <-ticker.C:
+			CheckHeartBeat()
+			hb, _ := json.Marshal(heartbeat)
+			err := model.InsertMachineResources(key, string(hb))
+			if err != nil {
+				log.Logger.Error("资源写入失败, 写入redis失败:   ", err)
+			}
+		}
+	}
 }

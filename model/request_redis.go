@@ -79,3 +79,8 @@ func DeleteKey(key string) {
 	_ = RDB.Del(key).Err()
 	return
 }
+
+func InsertMachineResources(key string, value interface{}) error {
+	err := RDB.LPush(key, value).Err()
+	return err
+}
