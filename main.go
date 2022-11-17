@@ -68,9 +68,6 @@ func initService() {
 
 	// 初始化全局函数
 	tools.InitPublicFunc()
-	go func() {
-		log.Logger.Debug(http.ListenAndServe(":8002", nil))
-	}()
 
 	go func() {
 		if err := kpRunnerService.ListenAndServe(); err != nil {
