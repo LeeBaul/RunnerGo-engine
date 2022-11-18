@@ -103,7 +103,7 @@ type Oss struct {
 func InitConfig() {
 
 	var conf string
-	flag.StringVar(&conf, "c", "./dev.yaml", "配置文件,默认为conf文件夹下的dev文件")
+	flag.StringVar(&conf, "c", "./prd.yaml", "配置文件,默认为conf文件夹下的dev文件")
 	if !flag.Parsed() {
 		flag.Parse()
 	}
