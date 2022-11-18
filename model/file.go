@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 // ParameterizedFile 参数化文件
@@ -180,7 +179,6 @@ func (p *ParameterizedFile) UseVar(key string) (value string) {
 		if p.VariableNames.Index >= len(p.VariableNames.VarMapList[key]) {
 			p.VariableNames.Index = 0
 		}
-		time.Sleep(10 * time.Second)
 		value = values[p.VariableNames.Index]
 		p.VariableNames.Index++
 	}
