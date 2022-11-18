@@ -92,7 +92,7 @@ func ConcurrentModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Re
 		currentWg := &sync.WaitGroup{}
 		startTime := time.Now().UnixMilli()
 		for i := int64(0); i < rounds; i++ {
-			_, status := model.QueryPlanStatus(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			_, status := model.QueryPlanStatus(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 			if status == "stop" {
 				model.DeleteKey(fmt.Sprintf("%d:%d:%s:status", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 				return fmt.Sprintf("测试报告：%s, 并发数：%d， 运行了%d轮次, 任务手动结束！", reportMsg.ReportId, concurrent, i-1)
