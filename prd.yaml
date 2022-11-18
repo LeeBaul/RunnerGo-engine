@@ -19,38 +19,38 @@ http:
   NoDefaultUserAgentHeader: 30000
 
 redis1:
-  address: "r-2zeygktm7wb4nd5b46.redis.rds.aliyuncs.com:6379"
-  password: "r-2zeygktm7wb4nd5b46"
+  address:
+  password:
   db: 0
 
 redis2:
-  address: "r-2zeyyzpdgra56jeqcz.redis.rds.aliyuncs.com:6379"
-  password: "r-2zeyyzpdgra56jeqcz"
+  address:
+  password:
   db: 0
 
 kafka:
-  address: "alikafka-pre-cn-tl32yargx002-1-vpc.alikafka.aliyuncs.com:9092"
+  address:
   topIc: "report"
 
 
 mongo:
   db: "runnergo"
   user: "runnergo"
-  password: "qt0goKAHtwy4c0Gz"
+  password:
   stressDebugTable: "stress_debug"
   sceneDebugTable: "scene_debug"
   apiDebugTable: "api_debug"
   debugTable: "debug_status"
-  address: "dds-2ze9902a2d29a7541.mongodb.rds.aliyuncs.com:3717"
+  address:
 
 
 oss:
   endpoint: "http://oss-cn-beijing.aliyuncs.com"
-  accessKeyID: "LTAI5tEAzFMCX559VD8mRDoZ"
-  accessKeySecret: "5IV7ZpVx95vBHZ3Y74jr9amaMtXpCQ"
-  bucket: "apipost"
-  split: "kunpeng/"
-  down: "/data/parameter"
+  accessKeyID:
+  accessKeySecret:
+  bucket:
+  split:
+  down:
 
 machine:
   maxGoroutines: 40005
@@ -64,4 +64,4 @@ log:
 
 
 management:
-  address: "https://pre-manage.apipost.cn/management/api/v1/plan/notify_stop_stress"
+  address:

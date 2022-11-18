@@ -5,7 +5,7 @@ heartbeat:
   region: "北京"
   duration: 3
   resources: 5
-  grpcHost: "kpcontroller.apipost.cn:443"
+  grpcHost:
 
 
 http:
@@ -19,33 +19,33 @@ http:
   NoDefaultUserAgentHeader: 30000
 
 redis:
-  address: "172.17.101.191:6398"
-  password: "apipost"
+  address:
+  password:
   db: 0
 
 kafka:
-  address: "172.17.101.188:9092"
+  address:
   topIc: "report"
 
 
 mongo:
-  db: "kunpeng"
-  user: "kunpeng"
-  password: "kYjJpU8BYvb4EJ9x"
+  db:
+  user:
+  password:
   stressDebugTable: "stress_debug"
   sceneDebugTable: "scene_debug"
   apiDebugTable: "api_debug"
   debugTable: "debug_status"
-  address: "172.17.18.255:27017"
+  address:
 
 
 oss:
-  endpoint: "http://oss-cn-beijing.aliyuncs.com"
-  accessKeyID: "LTAI5tEAzFMCX559VD8mRDoZ"
-  accessKeySecret: "5IV7ZpVx95vBHZ3Y74jr9amaMtXpCQ"
-  bucket: "apipost"
-  split: "kunpeng/"
-  down: "/data/parameter"
+  endpoint:
+  accessKeyID:
+  accessKeySecret:
+  bucket:
+  split:
+  down:
 
 machine:
   maxGoroutines: 20005
@@ -59,4 +59,4 @@ log:
 
 
 management:
-  address: "https://kpmanage.apipost.cn/management/api/v1/plan/notify_stop_stress"
+  address:
