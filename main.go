@@ -38,9 +38,12 @@ func initService() {
 	// 初始化redis客户端
 	log.Logger.Debug("初始化redis客户端")
 	if err := model.InitRedisClient(
-		config.Conf.Redis.Address,
-		config.Conf.Redis.Password,
-		config.Conf.Redis.DB,
+		config.Conf.Redis1.Address,
+		config.Conf.Redis1.Password,
+		config.Conf.Redis1.DB,
+		config.Conf.Redis2.Address,
+		config.Conf.Redis2.Password,
+		config.Conf.Redis2.DB,
 	); err != nil {
 		log.Logger.Error("redis连接失败:", err)
 		panic("redis 连接失败")

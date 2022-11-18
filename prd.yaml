@@ -18,9 +18,14 @@ http:
   MaxIdleConnDuration: 5000
   NoDefaultUserAgentHeader: 30000
 
-redis:
+redis1:
   address: "r-2zeygktm7wb4nd5b46.redis.rds.aliyuncs.com:6379"
   password: "r-2zeygktm7wb4nd5b46"
+  db: 0
+
+redis2:
+  address: "r-2zeyyzpdgra56jeqcz.redis.rds.aliyuncs.com:6379"
+  password: "r-2zeyyzpdgra56jeqcz"
   db: 0
 
 kafka:

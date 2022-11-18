@@ -12,7 +12,8 @@ var Conf Config
 type Config struct {
 	Http       Http       `yaml:"http"`
 	Kafka      Kafka      `yaml:"kafka"`
-	Redis      Redis      `yaml:"redis"`
+	Redis1     Redis1     `yaml:"redis1"`
+	Redis2     Redis2     `yaml:"redis2"`
 	Mongo      Mongo      `yaml:"mongo"`
 	Es         Es         `yaml:"es"`
 	Grpc       Grpc       `yaml:"grpc"`
@@ -62,7 +63,12 @@ type Kafka struct {
 	TopIc   string `yaml:"topIc"`
 }
 
-type Redis struct {
+type Redis1 struct {
+	Address  string `yaml:"address"`
+	Password string `yaml:"password"`
+	DB       int64  `yaml:"DB"`
+}
+type Redis2 struct {
 	Address  string `yaml:"address"`
 	Password string `yaml:"password"`
 	DB       int64  `yaml:"DB"`
