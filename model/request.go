@@ -768,8 +768,8 @@ func (r *Api) ReplaceHeaderVarForm() {
 
 func (r *Api) ReplaceQueryVarForm() {
 	if r.Request.Query != nil && r.Request.Query.Parameter != nil && len(r.Request.Query.Parameter) > 0 {
-		if r.Request.Header.Parameter != nil && len(r.Request.Header.Parameter) > 0 {
-			for _, queryVarForm := range r.Request.Header.Parameter {
+		if r.Request.Query.Parameter != nil && len(r.Request.Query.Parameter) > 0 {
+			for _, queryVarForm := range r.Request.Query.Parameter {
 				if queryVarForm.Value == nil {
 					continue
 				}
