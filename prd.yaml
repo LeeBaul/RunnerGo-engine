@@ -48,7 +48,7 @@ oss:
   down: "/data/parameter"
 
 machine:
-  maxGoroutines: 20005
+  maxGoroutines: 40005
   serverType: 1
   netName: ""
   diskName: ""
@@ -59,4 +59,4 @@ log:
 
 
 management:
-  address: "https://kpmanage.apipost.cn/management/api/v1/plan/notify_stop_stress"
+  address: "https://pre-manage.apipost.cn/management/api/v1/plan/notify_stop_stress"
