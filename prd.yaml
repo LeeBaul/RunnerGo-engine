@@ -36,7 +36,7 @@ mongo:
   sceneDebugTable: "scene_debug"
   apiDebugTable: "api_debug"
   debugTable: "debug_status"
-  address: "dds-2ze9902a2d29a7541.mongodb.rds.aliyuncs.com"
+  address: "dds-2ze9902a2d29a7541.mongodb.rds.aliyuncs.com:3717"
 
 
 oss:
