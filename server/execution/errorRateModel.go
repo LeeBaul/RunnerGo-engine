@@ -54,7 +54,12 @@ func ErrorRateModel(wg *sync.WaitGroup, scene *model.Scene, reportMsg *model.Res
 		// 查询任务是否结束
 		_, status := model.QueryPlanStatus(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
 		if status == "stop" {
-			model.DeleteKey(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			err := model.DeleteKey(fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId))
+			if err != nil {
+				log.Logger.Error("停止性能任务key: ", fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId), " ; 删除失败")
+			} else {
+				log.Logger.Info("停止性能任务key: ", fmt.Sprintf("StopPlan:%d:%d:%s", reportMsg.TeamId, reportMsg.PlanId, reportMsg.ReportId), " ; 删除成功")
+			}
 			return fmt.Sprintf("测试报告：%s, 最大并发数：%d， 总运行时长%ds, 任务正常结束！", reportMsg.ReportId, concurrent, endTime-targetTime)
 		}
 		reportId, _ := strconv.Atoi(reportMsg.ReportId)

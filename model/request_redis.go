@@ -75,8 +75,8 @@ func InsertHeartbeat(key string, field string, value interface{}) error {
 	return err
 }
 
-func DeleteKey(key string) {
-	_ = RDB.Del(key).Err()
+func DeleteKey(key string) (err error) {
+	err = RDB.Del(key).Err()
 	return
 }
 
