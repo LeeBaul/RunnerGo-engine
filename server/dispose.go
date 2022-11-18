@@ -25,16 +25,16 @@ func DisposeTask(plan *model.Plan) {
 	}
 	configTaskJson, _ := json.Marshal(plan.Scene.ConfigTask)
 	log.Logger.Info("plan.scene.Config:", string(configTaskJson))
-	switch plan.Scene.ConfigTask.TaskType {
-	case model.CommonTaskType:
-		ExecutionPlan(plan)
-		//case model.TimingTaskType:
-		//	TimingExecutionPlan(plan, func() {
-		//		ExecutionPlan(plan)
-		//	})
-		//case model.CICDTaskType:
-		//
-	}
+	//switch plan.Scene.ConfigTask.TaskType {
+	//case model.CommonTaskType:
+	ExecutionPlan(plan)
+	//case model.TimingTaskType:
+	//	TimingExecutionPlan(plan, func() {
+	//		ExecutionPlan(plan)
+	//	})
+	//case model.CICDTaskType:
+	//
+	//}
 }
 
 //// TimingExecutionPlan 定时任务
