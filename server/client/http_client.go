@@ -4,6 +4,7 @@ import (
 	"RunnerGo-engine/config"
 	"RunnerGo-engine/model"
 	"crypto/tls"
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"strings"
 	"time"
@@ -28,20 +29,25 @@ func HTTPRequest(method, url string, body *model.Body, query *model.Query, heade
 
 	urlQuery := req.URI().QueryArgs()
 
+	var queryMap = make(map[string]bool)
 	if strings.Contains(url, "?") && strings.Contains(url, "&") && strings.Contains(url, "=") {
 		strs := strings.Split(url, "?")
-		url = strs[0]
+		//url = strs[0]
 		queryList := strings.Split(strs[1], "&")
 		for i := 0; i < len(queryList); i++ {
 			keys := strings.Split(queryList[i], "=")
 			urlQuery.Add(keys[0], keys[1])
+			queryMap[keys[0]] = true
 		}
 	}
 	if query != nil && query.Parameter != nil {
 		for _, v := range query.Parameter {
 			if v.IsChecked == 1 {
-				by := v.ValueToByte()
-				urlQuery.AddBytesV(v.Key, by)
+				if _, ok := queryMap[v.Key]; !ok {
+					by := v.ValueToByte()
+					urlQuery.AddBytesV(v.Key, by)
+					url = url + fmt.Sprintf("&%s=%s", v.Key, string(v.ValueToByte()))
+				}
 			}
 		}
 	}
