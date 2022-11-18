@@ -13,7 +13,7 @@ func TestInitRedisClient(t *testing.T) {
 	req := fasthttp.AcquireRequest()
 	// set url
 	req.Header.SetMethod("GET")
-	url := "https://apipost.oss-cn-beijing.aliyuncs.com/kunpeng/test/c35a24da-6958-4e74-b9e5-dc6f081dae3d.txt"
+	url := ""
 	req.SetRequestURI(url)
 	resp := fasthttp.AcquireResponse()
 

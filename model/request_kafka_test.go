@@ -7,7 +7,7 @@ import (
 )
 
 func TestSendKafkaMsg(t *testing.T) {
-	address := "172.17.101.188:9092"
+	address := ""
 	kafkaProducer, err := NewKafkaProducer([]string{address})
 	if err != nil {
 		fmt.Println("kafka连接失败", err)
