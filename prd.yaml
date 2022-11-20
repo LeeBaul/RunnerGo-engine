@@ -18,12 +18,12 @@ http:
   MaxIdleConnDuration: 5000
   NoDefaultUserAgentHeader: 30000
 
-redis1:
+reportRedis:
   address:
   password:
   db: 0
 
-redis2:
+redis:
   address:
   password:
   db: 0

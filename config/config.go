@@ -10,18 +10,18 @@ import (
 var Conf Config
 
 type Config struct {
-	Http       Http       `yaml:"http"`
-	Kafka      Kafka      `yaml:"kafka"`
-	Redis1     Redis1     `yaml:"redis1"`
-	Redis2     Redis2     `yaml:"redis2"`
-	Mongo      Mongo      `yaml:"mongo"`
-	Es         Es         `yaml:"es"`
-	Grpc       Grpc       `yaml:"grpc"`
-	Heartbeat  Heartbeat  `yaml:"heartbeat"`
-	Oss        Oss        `yaml:"oss"`
-	Machine    Machine    `yaml:"machine"`
-	Management Management `yaml:"management"`
-	Log        Log        `yaml:"log"`
+	Http        Http        `yaml:"http"`
+	Kafka       Kafka       `yaml:"kafka"`
+	ReportRedis ReportRedis `yaml:"reportRedis"`
+	Redis       Redis       `yaml:"redis"`
+	Mongo       Mongo       `yaml:"mongo"`
+	Es          Es          `yaml:"es"`
+	Grpc        Grpc        `yaml:"grpc"`
+	Heartbeat   Heartbeat   `yaml:"heartbeat"`
+	Oss         Oss         `yaml:"oss"`
+	Machine     Machine     `yaml:"machine"`
+	Management  Management  `yaml:"management"`
+	Log         Log         `yaml:"log"`
 }
 
 type Log struct {
@@ -63,12 +63,12 @@ type Kafka struct {
 	TopIc   string `yaml:"topIc"`
 }
 
-type Redis1 struct {
+type ReportRedis struct {
 	Address  string `yaml:"address"`
 	Password string `yaml:"password"`
 	DB       int64  `yaml:"DB"`
 }
-type Redis2 struct {
+type Redis struct {
 	Address  string `yaml:"address"`
 	Password string `yaml:"password"`
 	DB       int64  `yaml:"DB"`
